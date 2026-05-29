@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conversor de NF-e — Portoexpress</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3350;
+  --accent:#4f6ef7;--accent2:#7c3aed;--green:#22c55e;--red:#ef4444;
+  --yellow:#f59e0b;--text:#e8eaf6;--muted:#8b92b8;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* Header */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 26px;display:flex;align-items:center;gap:12px}
+header .logo{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+header h1{font-size:17px;font-weight:700}
+header span{font-size:11px;color:var(--muted);display:block;margin-top:1px}
+
+.container{max-width:1180px;margin:0 auto;padding:22px 18px}
+
+/* Drop Zone */
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:36px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--surface);margin-bottom:14px;display:block}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(79,110,247,.07)}
+.drop-zone .icon{font-size:36px;margin-bottom:8px}
+.drop-zone h2{font-size:15px;font-weight:600;margin-bottom:4px}
+.drop-zone p{font-size:12px;color:var(--muted)}
+.drop-zone input[type=file]{display:none}
+
+/* Stats */
+.stats-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;flex:1;min-width:120px}
+.stat-card .val{font-size:22px;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+
+/* Tabs bar */
+.tabs-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.tabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:3px}
+.tab-btn{padding:7px 16px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s}
+.tab-btn.active{background:var(--accent);color:#fff}
+.tab-btn:hover:not(.active){color:var(--text)}
+
+/* Buttons */
+button{padding:8px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;display:inline-flex;align-items:center;gap:5px}
+button:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.88}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{opacity:.88}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{opacity:.85}
+.btn-purple{background:var(--accent2);color:#fff}.btn-purple:hover{opacity:.88}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* Inputs */
+input[type=text],input[type=search]{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 13px;font-size:13px;outline:none}
+input[type=text]:focus,input[type=search]:focus{border-color:var(--accent)}
+input::placeholder{color:var(--muted)}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input[type=search]{flex:1;min-width:180px}
+
+/* Table */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--surface2);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+thead th:hover{color:var(--accent)}
+thead th.sorted .sa{opacity:1;color:var(--accent)}
+.sa{margin-left:3px;opacity:.35}
+tbody tr:not(:last-child) td{border-bottom:1px solid var(--border)}
+tbody tr:hover td{background:rgba(79,110,247,.05)}
+td{padding:7px 12px;white-space:nowrap}
+td.nf{color:var(--accent);font-weight:700}
+td.cod{font-family:monospace;font-size:12px;color:var(--yellow)}
+td.sku{font-family:monospace;font-size:11px;color:var(--muted)}
+td.item{white-space:normal;max-width:280px}
+td.qtd{text-align:right;font-weight:600}
+.nf-group td{background:rgba(79,110,247,.09);color:var(--accent);font-weight:700;font-size:11px;border-top:2px solid rgba(79,110,247,.3)!important}
+
+/* File badges */
+.file-badge{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--muted);margin:2px}
+.file-badge .rm{cursor:pointer;color:var(--muted);font-size:13px;background:none;border:none;padding:0;margin:0;min-width:unset}.file-badge .rm:hover{color:var(--red)}
+#file-list{display:flex;flex-wrap:wrap;margin-bottom:12px;min-height:0}
+
+/* ── MINUTA TABLE ─────────────────────────────────────────────────────────── */
+.minuta-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:18px;overflow:hidden}
+.minuta-panel-head{background:var(--surface2);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.minuta-panel-head h3{font-size:13px;font-weight:700;color:var(--text)}
+.minuta-panel-head span{font-size:11px;color:var(--muted)}
+.minuta-row{display:grid;grid-template-columns:100px 1fr 120px 160px;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.minuta-row:last-child{border-bottom:none}
+.minuta-row:hover{background:rgba(79,110,247,.04)}
+.minuta-nf{font-size:14px;font-weight:700;color:var(--accent)}
+.minuta-dest{font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.minuta-loc{font-size:11px;color:var(--muted)}
+.minuta-input{width:100%;padding:7px 12px;font-size:14px;font-weight:700;letter-spacing:.5px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none}
+.minuta-input:focus{border-color:var(--accent)}
+.minuta-input.filled{border-color:var(--green);background:rgba(34,197,94,.08)}
+
+/* MD Import panel */
+.md-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
+.md-panel-head{background:var(--surface2);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--border);user-select:none}
+.md-panel-head:hover{background:rgba(79,110,247,.08)}
+.md-panel-head h3{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.md-panel-head .toggle-arrow{font-size:11px;color:var(--muted);transition:transform .2s}
+.md-panel-head .toggle-arrow.open{transform:rotate(180deg)}
+.md-panel-body{padding:16px;display:none}
+.md-panel-body.open{display:block}
+.md-textarea{width:100%;height:130px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 13px;font-size:12px;font-family:monospace;outline:none;resize:vertical;line-height:1.5}
+.md-textarea:focus{border-color:var(--accent)}
+.md-textarea::placeholder{color:var(--muted);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px}
+.md-actions{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.md-result{font-size:12px;color:var(--muted);margin-top:8px;padding:8px 12px;background:var(--surface2);border-radius:6px;display:none}
+.md-result.ok{color:var(--green);display:block}
+.md-result.warn{color:var(--yellow);display:block}
+
+/* Label count / print row */
+.label-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.label-count-badge{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--muted)}
+.label-count-badge b{color:var(--accent);font-size:14px}
+
+/* ── LABEL ─────────────────────────────────────────────────────────────────── */
+.labels-grid{display:flex;flex-wrap:wrap;gap:14px}
+
+.etiqueta{
+  width:148mm;height:105mm;
+  border:2px solid #000;background:#fff;color:#000;
+  font-family:Arial,Helvetica,sans-serif;
+  display:grid;
+  grid-template-rows:auto auto auto 13mm 7mm 14mm 9mm;
+  overflow:hidden;flex-shrink:0;
+}
+.et-row1{display:grid;grid-template-columns:1fr 40mm;grid-row:1}
+.et-row1-left{display:grid;grid-template-columns:1fr 42mm;border-bottom:1.5px solid #000}
+.et-vol-nfe{padding:2.5mm 3mm 2mm;border-right:1.5px solid #000;display:flex;flex-direction:column;justify-content:center}
+.et-vol-nfe .lbl{font-size:7pt;font-weight:400}
+.et-vol-nfe .val{font-size:16pt;font-weight:700;line-height:1.1}
+.et-nfe-num{padding:2mm 2.5mm;display:flex;flex-direction:column;justify-content:center}
+.et-nfe-num .lbl{font-size:7pt;color:#444}
+.et-nfe-box{background:#000;color:#fff;font-size:22pt;font-weight:900;padding:1mm 2.5mm;text-align:center;margin-top:0.5mm;letter-spacing:.5px}
+.et-city{grid-column:2;grid-row:1/3;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #000}
+.et-city-text{font-size:28pt;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);text-transform:uppercase}
+.et-row2{grid-row:2;grid-column:1;padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;border-bottom:1.5px solid #000}
+.et-row2 .lbl{font-size:7pt;font-weight:700;margin-bottom:.8mm}
+.et-row2 .val{font-size:9.5pt;font-weight:700;line-height:1.2}
+.et-row3{grid-row:3;grid-column:1/3;display:grid;grid-template-columns:1fr auto;border-bottom:1.5px solid #000}
+/* Row 3: Minuta (estilo NFE box) + UF */
+.et-minuta-r3{padding:2mm 2.5mm;display:flex;flex-direction:column;justify-content:center}
+.et-minuta-r3 .lbl{font-size:7pt;color:#444;margin-bottom:.5mm}
+.et-uf{padding:2mm 3mm;border-left:1.5px solid #000;display:flex;flex-direction:column;justify-content:center;min-width:16mm}
+.et-uf .lbl{font-size:7pt;font-weight:700}
+.et-uf .val{font-size:13pt;font-weight:700}
+/* Row 7: Cidade (onde era Minuta) */
+.et-cidade-bot{display:flex;align-items:center;gap:2.5mm}
+.et-cidade-bot .lbl{font-size:8pt;color:#333}
+.et-cidade-bot .val{font-size:10pt;font-weight:700}
+.et-row4{grid-row:4;grid-column:1/3;background:#000;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:1.5mm 3mm;border-bottom:1.5px solid #000}
+.et-cod-section{display:flex;flex-direction:column;justify-content:center}
+.et-cod-lbl{font-size:7pt;color:rgba(255,255,255,.65);line-height:1;margin-bottom:.5mm}
+.et-cod-val{font-size:22pt;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1}
+.et-sku-section{display:flex;flex-direction:column;align-items:flex-end;justify-content:center}
+.et-sku-lbl{font-size:7pt;color:rgba(255,255,255,.65);line-height:1;margin-bottom:.5mm}
+.et-sku-val{font-family:monospace;font-size:8pt;color:#fff;font-weight:700}
+.et-row5{grid-row:5;grid-column:1/3;background:#000;color:#fff;display:flex;align-items:center;padding:0 3mm;font-size:8.5pt;font-weight:700;border-bottom:1.5px solid #000}
+.et-row6{grid-row:6;grid-column:1/3;display:flex;align-items:center;justify-content:center;background:#fff;border-bottom:1.5px solid #000;padding:.5mm 3mm;overflow:hidden}
+.et-row6 svg{max-width:100%;max-height:15mm}
+.et-row7{grid-row:7;grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:0 3mm;background:#fff}
+.et-minuta{display:flex;align-items:center;gap:3mm}
+.et-minuta .lbl{font-size:8pt}
+.et-minuta .val{font-size:16pt;font-weight:700;letter-spacing:.5px}
+.et-vol-prod{display:flex;flex-direction:column;align-items:flex-end}
+.et-vol-prod .lbl{font-size:7pt}
+.et-vol-prod .val{font-size:14pt;font-weight:700}
+
+/* ── SIGLAS TAB ────────────────────────────────────────────────────────────── */
+.siglas-header{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.siglas-header input[type=search]{flex:1;min-width:160px}
+.siglas-add-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.siglas-add-form .field{display:flex;flex-direction:column;gap:4px}
+.siglas-add-form label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.siglas-count{font-size:12px;color:var(--muted)}
+.siglas-count b{color:var(--accent)}
+.siglas-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:auto;max-height:520px}
+.siglas-table-wrap table{width:100%}
+.siglas-table-wrap thead th{position:sticky;top:0;z-index:1}
+td.sig-cidade{font-weight:600}
+td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:13px}
+.sig-edit-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:12px;width:70px;outline:none}
+.sig-edit-input:focus{border-color:var(--accent)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .icon{font-size:44px;margin-bottom:10px}
+
+/* Toast */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--green);color:#fff;padding:11px 18px;border-radius:8px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.45);transform:translateY(80px);opacity:0;transition:transform .3s,opacity .3s;pointer-events:none;z-index:9999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{background:var(--red)}
+
+/* Print */
+@media print{
+  body,header,.container,.tabs-row,.toolbar,.stats-bar,#file-list,.drop-zone,#tabDados,#tabEtiquetas .minuta-panel,#tabEtiquetas .label-actions{display:none!important}
+  #tabEtiquetas{display:block!important;padding:0!important;margin:0!important}
+  .labels-grid{display:block}
+  .etiqueta{width:148mm;height:105mm;page-break-after:always;break-after:page;margin:0}
+  @page{size:A4 portrait;margin:5mm}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📄</div>
+  <div>
+    <h1>Conversor de NF-e</h1>
+    <span>Portoexpress Logística — Extração de itens · Minutas · Etiquetas</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Drop Zone -->
+  <label class="drop-zone" id="dropZone" for="fileInput">
+    <div class="icon">📂</div>
+    <h2>Arraste XMLs de NF-e aqui</h2>
+    <p>ou <u>clique para selecionar arquivos</u> (.xml ou .zip)</p>
+    <input type="file" id="fileInput" accept=".xml,.zip,application/zip,text/xml,application/xml" multiple>
+  </label>
+
+  <div id="file-list"></div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-card"><div class="val" id="statNfs">0</div><div class="lbl">Notas Fiscais</div></div>
+    <div class="stat-card"><div class="val" id="statItems">0</div><div class="lbl">Itens</div></div>
+    <div class="stat-card"><div class="val" id="statQtd">0</div><div class="lbl">Volume Total</div></div>
+    <div class="stat-card"><div class="val" id="statSkus">0</div><div class="lbl">SKUs Únicos</div></div>
+  </div>
+
+  <!-- Tabs bar -->
+  <div class="tabs-row" id="tabsBar" style="display:none">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('dados')"     id="btnTabDados">📋 Dados</button>
+      <button class="tab-btn"        onclick="switchTab('etiquetas')" id="btnTabEtiquetas">🏷 Etiquetas</button>
+      <button class="tab-btn"        onclick="switchTab('siglas')"    id="btnTabSiglas">🗂 Siglas</button>
+    </div>
+    <button class="btn-purple" onclick="switchTab('etiquetas');setTimeout(printLabels,250)">🖨 Imprimir Etiquetas</button>
+  </div>
+
+  <!-- ── TAB: DADOS ────────────────────────────────────────────────────────── -->
+  <div id="tabDados">
+    <div class="toolbar">
+      <input type="search" id="searchBox" placeholder="🔍  Filtrar por NF, cód, SKU ou descrição..." oninput="renderTable()">
+      <button class="btn-primary" onclick="copiarTSV()">📋 Copiar TSV</button>
+      <button class="btn-green"   onclick="exportarExcel()">⬇ Excel</button>
+      <button class="btn-outline" onclick="limpar()">🗑 Limpar</button>
+    </div>
+    <div id="tableArea">
+      <div class="empty-state"><div class="icon">📋</div>
+        <p>Nenhum arquivo carregado ainda.<br>Arraste XMLs de NF-e acima para começar.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: ETIQUETAS ───────────────────────────────────────────────────── -->
+  <div id="tabEtiquetas" style="display:none">
+
+    <!-- MD Import panel -->
+    <div class="md-panel">
+      <div class="md-panel-head" onclick="toggleMdPanel()">
+        <h3>📥 Importar Minutas via MD <span style="font-size:11px;color:var(--muted);font-weight:400">(copia e cola do sistema)</span></h3>
+        <span class="toggle-arrow" id="mdArrow">▼</span>
+      </div>
+      <div class="md-panel-body" id="mdPanelBody">
+        <textarea class="md-textarea" id="mdPasteArea"
+          placeholder="Cole aqui os dados do sistema MD (Ctrl+A → Ctrl+C na tela do sistema e cole aqui)..."></textarea>
+        <div class="md-actions">
+          <button class="btn-primary" onclick="processarMD()">🔗 Vincular Minutas</button>
+          <button class="btn-outline" onclick="limparMD()">🗑 Limpar</button>
+        </div>
+        <div class="md-result" id="mdResult"></div>
+      </div>
+    </div>
+
+    <!-- Minuta por NF -->
+    <div class="minuta-panel" id="minutaPanel">
+      <div class="minuta-panel-head">
+        <h3>Minutas por Nota Fiscal</h3>
+        <span>Preencha a minuta de cada NF — ela aparecerá nas etiquetas</span>
+      </div>
+      <div id="minutaRows">
+        <div class="empty-state" style="padding:28px"><div class="icon" style="font-size:28px">📥</div>
+          <p>Carregue XMLs para preencher as minutas.</p></div>
+      </div>
+    </div>
+
+    <!-- Label actions -->
+    <div class="label-actions">
+      <div class="label-count-badge">Total de etiquetas: <b id="labelCount">0</b></div>
+      <button class="btn-purple" onclick="printLabels()">🖨 Imprimir Etiquetas</button>
+    </div>
+
+    <!-- Labels preview -->
+    <div class="labels-grid" id="labelsGrid">
+      <div class="empty-state"><div class="icon">🏷</div>
+        <p>Carregue XMLs de NF-e para gerar etiquetas.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: SIGLAS ───────────────────────────────────────────────────────── -->
+  <div id="tabSiglas" style="display:none">
+
+    <!-- Add form -->
+    <div class="siglas-add-form">
+      <div class="field">
+        <label>Nome da Cidade</label>
+        <input type="text" id="addCidade" placeholder="Ex: NOVA CIDADE" style="width:220px" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="field">
+        <label>Sigla (IATA)</label>
+        <input type="text" id="addSigla" placeholder="Ex: NVC" style="width:90px" maxlength="6" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <button class="btn-green" onclick="addSigla()">➕ Adicionar</button>
+    </div>
+
+    <!-- Search + import -->
+    <div class="siglas-header">
+      <input type="search" id="siglasSearch" placeholder="🔍  Buscar cidade ou sigla..." oninput="renderSiglasTable()">
+      <span class="siglas-count">Total: <b id="siglasCount">0</b> cidades</span>
+      <button class="btn-outline" onclick="importarSiglasXlsx()">📥 Importar XLSX</button>
+      <input type="file" id="siglasFileInput" accept=".xlsx,.xls" style="display:none" onchange="onSiglasFile(this)">
+      <button class="btn-outline" onclick="exportarSiglasJson()">⬇ Exportar JSON</button>
+    </div>
+
+    <div class="siglas-table-wrap">
+      <table id="siglasTable">
+        <thead><tr>
+          <th style="width:50%">Cidade</th>
+          <th style="width:20%">Sigla</th>
+          <th style="width:30%">Ações</th>
+        </tr></thead>
+        <tbody id="siglasBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /container -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// SIGLAS DEFAULT (517 cidades — base BRUDAM)
+// ══════════════════════════════════════════════════════════════════════════════
+const SIGLAS_DEFAULT = {
+  'ABREU E LIMA':'ABL','AGRONOMICA':'AGR','AGUAS DE LINDOIA':'ADL',
+  'AGUAS DE SAO PEDRO':'ASP','AGUAS MORNAS':'AGM','ALEGRETE':'ALG',
+  'ALMIRANTE TAMANDARE':'ATT','ALTAMIRA':'ALT','ALVORADA':'ALV',
+  'AMERICANA':'AME','AMPARO':'AMP','ANANINDEUA':'AND','ANAPOLIS':'APS',
+  'ANGRA DOS REIS':'ADR','ANTONINA':'ANT','APARECIDA DE GOIANIA':'APA',
+  'APIUNA':'API','APUCARANA':'APC','ARACAJU':'AJU','ARACARIGUAMA':'ACG',
+  'ARACATUBA':'ARU','ARACOIABA DA SERRA':'ADS','ARAGUAINA':'ARG',
+  'ARAGUARI':'AGU','ARAPONGAS':'ARP','ARARANGUA':'ARA','ARARAQUARA':'AQA',
+  'ARARAS':'ARR','ARAUCARIA':'ARC','ARAXA':'AAX','ARMACAO DE BUZIOS':'ARM',
+  'ARRAIAL DO CABO':'ADC','ARRAIAS':'ARR','ARTUR NOGUEIRA':'ATN',
+  'ARUJA':'ARJ','ASCURRA':'ASC','ATIBAIA':'ATB','AURORA':'AUR',
+  'BAGE':'BGX','BALNEARIO BARRA DO SUL':'BBS','BALNEARIO CAMBORIU':'BCM',
+  'BALNEARIO GAIVOTA':'BAG','BALNEARIO PICARRAS':'BAP','BALNEARIO RINCAO':'BAR',
+  'BALSA NOVA':'BSN','BANDEIRANTE':'BAD','BARBACENA':'BAB',
+  'BARRA DO PIRAI':'BDP','BARRA DO RIBEIRO':'BDR','BARRA MANSA':'BRM',
+  'BARRA VELHA':'BAV','BARREIRAS':'BRA','BARUERI':'BAR','BAURU':'BAU',
+  'BELEM':'BEL','BELFORD ROXO':'BFR','BELO HORIZONTE':'BHZ',
+  'BENTO GONCALVES':'BEN','BETIM':'BET','BLUMENAU':'BNU','BOA VISTA':'BVB',
+  'BOM DESPACHO':'BDP','BOM JESUS DA LAPA':'BJL','BOM JESUS DO ITABAPOANA':'BJI',
+  'BOMBINHAS':'BOB','BOTUCATU':'BOT','BRAGANCA PAULISTA':'BRP',
+  'BRASILIA':'BSB','BRUMADO':'BDO','BRUSQUE':'BRU','CABO FRIO':'CBF',
+  'CABREUVA':'CBU','CACHOEIRA DO SUL':'CDS','CACHOEIRAS DE MACACU':'CDM',
+  'CACHOEIRINHA':'CHA','CACOAL':'OAL','CACU':'CCU','CAIEIRAS':'CAR',
+  'CAJAMAR':'CJM','CALDAS NOVAS':'CLV','CAMACARI':'SSA','CAMAQUA':'CMQ',
+  'CAMBARA DO SUL':'CBS','CAMBE':'CAB','CAMBORIU':'CAB',
+  'CAMPINA GRANDE':'CPV','CAMPINAS':'CPQ','CAMPO BELO':'CPB',
+  'CAMPO BOM':'CBO','CAMPO GRANDE':'CGR','CAMPO LARGO':'CPL',
+  'CAMPO LIMPO PAULISTA':'CLP','CAMPO MAGRO':'CPM','CAMPO MOURAO':'CAM',
+  'CAMPOS DOS GOYTACAZES':'CAW','CANELA':'CNF','CANGUCU':'CGC',
+  'CANOAS':'CAN','CANTAGALO':'CAN','CAPAO DA CANOA':'CCA','CAPARAO':'CPR',
+  'CAPITOLIO':'CPT','CAPIVARI':'CPV','CARANGOLA':'CRG','CARAPICUIBA':'CAP',
+  'CARATINGA':'CTG','CARAZINHO':'CZO','CARLOS BARBOSA':'CBA',
+  'CARRANCAS':'CRC','CARUARU':'CAU','CASCAVEL':'CAC','CATAGUASES':'CTG',
+  'CATANDUVA':'CTV','CAXIAS DO SUL':'CXJ','CERQUILHO':'CEQ',
+  'CHAPECO':'XAP','CHARQUEADA':'CHQ','CHUI':'CHU','CIANORTE':'CNT',
+  'CIDADE GAUCHA':'CDG','COMENDADOR LEVY GASPARIAN':'CLG',
+  'CONCEICAO DE MACABU':'CDM','CONCHAL':'CCH','CONCORDIA':'CCI',
+  'CONFINS':'CNF','CONGONHAS':'COG','CONSELHEIRO LAFAIETE':'CSL',
+  'CONTAGEM':'CNT','CORDEIRO':'COR','CORDEIROPOLIS':'CDP',
+  'CORNELIO PROCOPIO':'CNP','CORUMBA':'CMG','COSMOPOLIS':'CMP',
+  'COTIA':'COT','CRICIUMA':'CCM','CRUZ ALTA':'CZT','CRUZEIRO DO SUL':'CZS',
+  'CUBATAO':'CUB','CUIABA':'CGB','CURITIBA':'CWB','CURVELO':'CUV',
+  'DIADEMA':'DIA','DIAMANTINA':'DMT','DIVINOPOLIS':'DIV',
+  'DOM PEDRITO':'DPE','DOURADOS':'DOU','DUQUE DE CAXIAS':'DCX',
+  'ELDORADO DO SUL':'ELD','ELIAS FAUSTO':'ELF','EMBU':'EMB',
+  'EMBU-GUACU':'EMG','ENGENHEIRO COELHO':'EGC',
+  'ENGENHEIRO PAULO DE FRONTIN':'EPF','ERECHIM':'ERM',
+  'ESTANCIA VELHA':'EVE','ESTEIO':'EST','EUSEBIO':'EUS',
+  'FARROUPILHA':'FAR','FEIRA DE SANTANA':'FRS','FERNANDO DE NORONHA':'FEN',
+  'FERRAZ DE VASCONCELOS':'FDV','FLORIANOPOLIS':'FLN','FORQUILHINHA':'FQU',
+  'FORTALEZA':'FOR','FOZ DO IGUACU':'IGU','FRANCA':'FRC',
+  'FRANCISCO BELTRAO':'FBE','FRANCISCO MORATO':'FCM','FRANCO DA ROCHA':'FDR',
+  'FREDERICO WESTPHALEN':'FRW','GARIBALDI':'GRB','GAROPABA':'GAR',
+  'GETULIO VARGAS':'GVS','GOIANA':'GOI','GOIANIA':'GYN','GOIOERE':'GOR',
+  'GOVERNADOR CELSO RAMOS':'GCR','GOVERNADOR VALADARES':'GVR',
+  'GRAMADO':'GRM','GRAVATAI':'GRA','GUABIRUBA':'GUB','GUAIBA':'CGB',
+  'GUANAMBI':'GBI','GUAPIMIRIM':'GUP','GUAPORE':'GPE',
+  'GUARAPUAVA':'GRP','GUARAQUECABA':'GQB','GUARATUBA':'GRT',
+  'GUARUJA':'GUA','GUARULHOS':'GRU','HOLAMBRA':'HLB','HORIZONTINA':'HRZ',
+  'HORTOLANDIA':'HTL','IBIRITE':'IBT','IBIRUBA':'IBIR','IBITINGA':'IBI',
+  'ICARA':'ICA','IJUI':'IJU','ILHEUS':'IOS','ILHOTA':'ILH','IMBE':'IMB',
+  'IMBITUBA':'IMT','IMIGRANTE':'IMG','IMPERATRIZ':'IMP',
+  'INDAIATUBA':'IND','IPANEMA':'IPN','IPATINGA':'IPN',
+  'IRACEMAPOLIS':'IRP','IRATI':'IRT','ITABIRA':'ITB','ITABORAI':'ITA',
+  'ITAGUAI':'ITA','ITAJAI':'ITJ','ITANHAEM':'ITN',
+  'ITAPECERICA DA SERRA':'IDS','ITAPEMA':'ITM','ITAPERUNA':'ITP',
+  'ITAPETININGA':'ITP','ITAPEVI':'ITV','ITAPIRA':'ITP','ITAQUI':'ITQ',
+  'ITATIAIA':'ITA','ITATIBA':'ITT','ITU':'ITU','ITUIUTABA':'ITBA',
+  'ITUPEVA':'ITP','ITUVERAVA':'ITV','IVAIPORA':'IVP','IVOTI':'IVT',
+  'JABOATAO DOS GUARARAPES':'JDG','JABOTICABAL':'JBB','JACAREZINHO':'JAC',
+  'JAGUARACU':'JAG','JAGUARIUNA':'JAG','JAGUARUNA':'JAG',
+  'JANAUBA':'JAN','JANDIRA':'JDR','JANUARIA':'JNA','JARAGUA DO SUL':'JAR',
+  'JARDIM OLINDA':'JDO','JARINU':'JRN','JATAI':'JTI','JAU':'JAU',
+  'JECEABA':'JEC','JEQUITINHONHA':'JQT','JI-PARANA':'JPR',
+  'JOACABA':'JCB','JOAO PESSOA':'JPA','JOINVILLE':'JOI','JUARA':'JUA',
+  'JUAZEIRO':'JUA','JUAZEIRO DO NORTE':'JDO','JUINA':'JIA',
+  'JUIZ DE FORA':'JDF','JUMIRIM':'JUM','JUNDIAI':'JUN','JUQUITIBA':'JUQ',
+  'JUSSARA':'JSR','LAGES':'LAJ','LAGOA SANTA':'LGS','LAGUNA':'LAG',
+  'LAJEADO':'LDO','LAURO DE FREITAS':'LDF','LEME':'LEM','LIMEIRA':'LIM',
+  'LINDOIA':'LID','LINS':'LNS','LONDRINA':'LDB','LOUVEIRA':'LOV',
+  'LUIS EDUARDO MAGALHAES':'LEM','MACAE':'MCE','MACAPA':'MCP',
+  'MACEIO':'MCZ','MAFRA':'MAF','MAGE':'MAG','MAIRIPORA':'MRP',
+  'MANAUS':'MAO','MANDIRITUBA':'MDR','MANHUACU':'MNC','MARABA':'MAB',
+  'MARACAJA':'MCJ','MARACANAU':'MRC','MARANGUAPE':'MGP','MARIANA':'MAR',
+  'MARICA':'MAR','MARILIA':'MII','MARINGA':'MGF','MATIAS CARDOSO':'MTC',
+  'MATINHOS':'MTS','MAUA':'MAU','MEDIANEIRA':'MDR','MESQUITA':'MES',
+  'MINACU':'MQH','MIRACEMA':'MIR','MOGI DAS CRUZES':'MDC',
+  'MOGI GUACU':'MGC','MOGI MIRIM':'MGM','MONTE ALEGRE DO SUL':'MAS',
+  'MONTE CARLO':'MOC','MONTE MOR':'MTM','MONTENEGRO':'MTG',
+  'MONTES CLAROS':'MOC','MORRETES':'MRT','MORUNGABA':'MGB',
+  'MURIAE':'MUR','NATAL':'NAT','NAVEGANTES':'NVT','NILOPOLIS':'NIL',
+  'NIQUELANDIA':'NQL','NITEROI':'NIT','NOVA AURORA':'NAR',
+  'NOVA FRIBURGO':'NVF','NOVA IGUACU':'NIG','NOVA LIMA':'NVL',
+  'NOVA ODESSA':'NVO','NOVA TRENTO':'NOT','NOVO HAMBURGO':'NHA',
+  'NOVO SANTO ANTONIO':'SAN','OLINDA':'OLD','OSASCO':'OSC',
+  'OSORIO':'OSO','OURO PRETO':'OUP','PALHOCA':'PLH','PALMAS':'PAM',
+  'PALMAS DE MONTE ALTO':'PMA','PALMEIRA':'PLM',
+  'PALMEIRA DAS MISSOES':'PDM','PALOTINA':'PLO','PANAMBI':'PAN',
+  'PARA DE MINAS':'PAM','PARACAMBI':'PRC','PARANAGUA':'PRN',
+  'PARANAVAI':'PRV','PARATI':'PAR','PAROBE':'PAR','PASSO FUNDO':'PFB',
+  'PASSOS':'PAS','PATO BRANCO':'PTO','PATOS DE MINAS':'PTM',
+  'PATROCINIO':'PTR','PAULINIA':'PLN','PAULO AFONSO':'PAV',
+  'PEDREIRA':'PED','PEDRO LEOPOLDO':'PLE','PELOTAS':'PET','PENHA':'PNH',
+  'PETROLINA':'PNZ','PETROPOLIS':'PET','PIEN':'PIE','PINHAIS':'PNH',
+  'PINHALZINHO':'PNZ','PIRACAIA':'PRC','PIRACICABA':'PIR',
+  'PIRAPORA DO BOM JESUS':'PBJ','PIRAQUARA':'PRQ','PIRATUBA':'PIR',
+  'POCOS DE CALDAS':'PDC','POMERODE':'POM','PONTA GROSSA':'PTA',
+  'PONTA PORA':'PMG','PORTO ALEGRE':'POA','PORTO BELO':'POB',
+  'PORTO NACIONAL':'PNB','PORTO REAL':'POR','PORTO SEGURO':'BPS',
+  'PORTO VELHO':'PVH','PRESIDENTE BERNARDES':'PRB',
+  'PRESIDENTE CASTELO BRANCO':'PCB','PRESIDENTE PRUDENTE':'PPB',
+  'QUARAI':'QUR','QUEIMADOS':'QUE','QUISSAMA':'QUI',
+  'QUIXERAMOBIM':'QUI','RAFARD':'RFD','RECIFE':'REC','REDENCAO':'RDC',
+  'REGISTRO':'REG','RESENDE':'REZ','RIBEIRAO DAS NEVES':'RDN',
+  'RIBEIRAO PIRES':'RRP','RIBEIRAO PRETO':'RAO','RIO BONITO':'RBT',
+  'RIO BRANCO':'RBR','RIO CLARO':'RIC','RIO DAS OSTRAS':'RDO',
+  'RIO DAS PEDRAS':'RDP','RIO DE JANEIRO':'GIG','RIO DO SUL':'RSU',
+  'RIO GRANDE':'RIG','RIO NEGRO':'RIN','RIO PARDO':'RPR',
+  'RIO PARDO DE MINAS':'RPM','RIO VERDE':'RVE','ROLANDIA':'ROL',
+  'RONDONOPOLIS':'ROO','ROSARIO DO SUL':'RDS','SABARA':'SAB',
+  'SALINAS':'SAL','SALTINHO':'STN','SALTO':'SAT',
+  'SALTO DE PIRAPORA':'SDP','SALVADOR':'SSA',
+  'SANTA BARBARA D OESTE':'SBO','SANTA CRUZ DO SUL':'CSU',
+  'SANTA LUZIA DO PARUA':'STL','SANTA MARIA':'RIA',
+  'SANTA MARIA MADALENA':'SMM','SANTA ROSA':'SRA',
+  'SANTANA DE PARNAIBA':'STP','SANTANA DO LIVRAMENTO':'LVB',
+  'SANTAREM':'STM','SANTIAGO':'TIA','SANTIAGO DO SUL':'SDS',
+  'SANTO AMARO DA IMPERATRIZ':'SAI','SANTO ANDRE':'STD',
+  'SANTO ANGELO':'GEL','SANTO ANTONIO DA PATRULHA':'SDP',
+  'SANTO ANTONIO DA PLATINA':'SAP','SANTO ANTONIO DE PADUA':'SAP',
+  'SANTO ANTONIO DE POSSE':'SAP','SANTO ANTONIO DO CAIUA':'SAC',
+  'SANTO ANTONIO DO PARAISO':'SDP','SANTO ANTONIO DO RETIRO':'SAR',
+  'SANTO AUGUSTO':'STA','SANTOS':'SSZ','SAO BENTO DO SUL':'SBS',
+  'SAO BERNARDO DO CAMPO':'SBC','SAO BORJA':'SAB',
+  'SAO CAETANO DO SUL':'SCS','SAO CARLOS':'SAC',
+  'SAO FELIX DO ARAGUAIA':'SXO','SAO FRANCISCO':'SFC',
+  'SAO FRANCISCO DE ASSIS':'SFA','SAO FRANCISCO DE ITABAPOANA':'SFI',
+  'SAO FRANCISCO DO SUL':'SFS','SAO GABRIEL':'SAG','SAO GONCALO':'SGL',
+  'SAO JOAO DA BOA VISTA':'SBV','SAO JOAO DE MERITI':'SJM',
+  'SAO JOSE':'SJO','SAO JOSE DO RIO PRETO':'SJP',
+  'SAO JOSE DOS CAMPOS':'SJK','SAO JOSE DOS PINHAIS':'SPI',
+  'SAO LEOPOLDO':'SLD','SAO LOURENCO DO SUL':'SLS','SAO LUIZ':'SLZ',
+  'SAO MIGUEL DO OESTE':'SMO','SAO PAULO':'SAO',
+  'SAO PEDRO DA ALDEIA':'SPA','SAO ROQUE':'SRQ','SAO VICENTE':'SVT',
+  'SAPIRANGA':'SPG','SAPUCAIA DO SUL':'SAP','SARZEDO':'SAZ',
+  'SCHROEDER':'SCH','SERRA':'SRR','SERRA NEGRA':'SRN',
+  'SETE LAGOAS':'STL','SIDROLANDIA':'SID','SOROCABA':'SOD',
+  'SUMARE':'SUM','SUZANO':'SUZ','TABATINGA':'TBT',
+  'TABOAO DA SERRA':'TDS','TAIOBEIRAS':'TBS','TANGARA':'TAG',
+  'TAQUARA':'TQR','TEFE':'TEF','TELEMACO BORBA':'TEC',
+  'TERESINA':'THE','TERESOPOLIS':'TER','TIGRINHOS':'TIG',
+  'TIJUCAS':'TIJ','TIMBE DO SUL':'TDS','TIMBO':'TBO','TOLEDO':'TLD',
+  'TORRES':'TOR','TRAMANDAI':'TRA','TRES CORACOES':'TRC',
+  'TRES DE MAIO':'TDM','TRIUNFO':'TRI','TUBARAO':'TUB','TUCUMA':'TUZ',
+  'TUCURUI':'TUR','TURVO':'TUR','UBA':'UBA','UBERABA':'UBA',
+  'UBERLANDIA':'UDI','UMUARAMA':'UMU','UNIAO DA VITORIA':'UDV',
+  'URUBICI':'URU','URUGUAIANA':'URG','URUPEMA':'URU','VACARIA':'VAC',
+  'VALENCA':'VAL','VALINHOS':'VAL','VARGINHA':'VRG',
+  'VARZEA PAULISTA':'VZP','VASSOURAS':'VAS','VAZANTE':'VZT',
+  'VENANCIO AIRES':'VEN','VERA CRUZ':'VER','VESPASIANO':'VPS',
+  'VIAMAO':'VIA','VIANA':'VNA','VIDEIRA':'VID','VILA RICA':'VLP',
+  'VILA VELHA':'VIV','VILHENA':'BVH','VINHEDO':'VND','VITORIA':'VIX',
+  'VITORIA DA CONQUISTA':'VDC','VOLTA REDONDA':'VLR','VOTORANTIM':'VOT',
+  'XANXERE':'XRE',
+};
+
+// Cópia mutável das siglas (começa com o default, pode ser atualizada)
+let SIGLAS = Object.assign({}, SIGLAS_DEFAULT);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════════════════
+const NS = 'http://www.portalfiscal.inf.br/nfe';
+let allItems     = [];   // { nf, cod, sku, item, qtd }
+let nfMeta       = {};   // { [nNF]: { dest, cidade, uf } }
+let nfMinutas    = {};   // { [nNF]: string }
+let fileItemsMap = new Map();
+let loadedFiles  = new Set();
+let sortCol = 'nf', sortAsc = true;
+const $ = id => document.getElementById(id);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// XML HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+function gTag(node, tag) {
+  const a = node.getElementsByTagNameNS(NS, tag);
+  return a.length ? a : node.getElementsByTagName(tag);
+}
+function gFirst(node, tag) {
+  const a = gTag(node, tag);
+  return a.length ? a[0].textContent.trim() : '';
+}
+function childText(parent, tag) {
+  if (!parent) return '';
+  const a = parent.getElementsByTagNameNS(NS, tag);
+  if (a.length) return a[0].textContent.trim();
+  const b = parent.getElementsByTagName(tag);
+  return b.length ? b[0].textContent.trim() : '';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARSE NF-e
+// ══════════════════════════════════════════════════════════════════════════════
+function parseNfe(xmlText) {
+  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('XML inválido');
+  const nNF = gFirst(doc, 'nNF');
+  if (!nNF) throw new Error('Campo nNF não encontrado');
+
+  // Destinatário
+  const destEl = gTag(doc, 'dest')[0] || null;
+  let destNome = '', destCidade = '', destUF = '';
+  if (destEl) {
+    destNome   = childText(destEl, 'xNome');
+    const end  = destEl.getElementsByTagNameNS(NS,'enderDest')[0]
+              || destEl.getElementsByTagName('enderDest')[0] || destEl;
+    destCidade = childText(end, 'xMun');
+    destUF     = childText(end, 'UF');
+  }
+  nfMeta[nNF] = { dest: destNome, cidade: destCidade, uf: destUF };
+
+  // Itens
+  const items = [];
+  for (const det of gTag(doc, 'det')) {
+    const prod = det.getElementsByTagNameNS(NS,'prod')[0]
+              || det.getElementsByTagName('prod')[0];
+    if (!prod) continue;
+    const cod  = childText(prod,'cProd');
+    const sku  = childText(prod,'cEAN');
+    const item = childText(prod,'xProd');
+    const qCom = childText(prod,'qCom');
+    if (!cod) continue;
+    const skuClean = /sem gtin/i.test(sku) ? '' : sku;
+    items.push({ nf: nNF, cod, sku: skuClean, item, qtd: parseFloat(qCom)||0 });
+  }
+  return items;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FILE PROCESSING
+// ══════════════════════════════════════════════════════════════════════════════
+async function processFiles(files) {
+  const xmlFiles = [];
+  for (const f of files) {
+    if (f.name.toLowerCase().endsWith('.zip')) {
+      try {
+        const zip = await JSZip.loadAsync(f);
+        for (const [name, entry] of Object.entries(zip.files))
+          if (!entry.dir && name.toLowerCase().endsWith('.xml'))
+            xmlFiles.push({ name, text: await entry.async('string') });
+      } catch(e) { toast('⚠ Erro ao ler ZIP: ' + f.name, true); }
+    } else if (f.name.toLowerCase().endsWith('.xml')) {
+      xmlFiles.push({ name: f.name, text: await f.text() });
+    }
+  }
+
+  let added=0, skipped=0, errors=0;
+  for (const { name, text } of xmlFiles) {
+    if (loadedFiles.has(name)) { skipped++; continue; }
+    try {
+      const items = parseNfe(text);
+      if (!items.length) { errors++; continue; }
+      fileItemsMap.set(name, items);
+      allItems.push(...items);
+      loadedFiles.add(name);
+      // Inicializa minuta para cada NF nova
+      for (const it of items)
+        if (!(it.nf in nfMinutas)) nfMinutas[it.nf] = '';
+      addFileBadge(name);
+      added++;
+    } catch(e) { console.warn(name, e); errors++; }
+  }
+
+  updateStats();
+  renderTable();
+  renderMinutaInputs();
+  renderLabels();
+  const has = allItems.length > 0;
+  $('statsBar').style.display = has ? 'flex' : 'none';
+  $('tabsBar').style.display  = has ? 'flex' : 'none';
+
+  if (added)  toast(`✓ ${added} arquivo(s) carregado(s)${skipped?', '+skipped+' ignorado(s)':''}`, false);
+  if (errors) toast(`⚠ ${errors} arquivo(s) com erro ou formato inválido`, true);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FILE BADGES
+// ══════════════════════════════════════════════════════════════════════════════
+function addFileBadge(name) {
+  const short = name.length > 30 ? '…' + name.slice(-24) : name;
+  const b = document.createElement('div');
+  b.className = 'file-badge'; b.dataset.fname = name;
+  const safe = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  b.innerHTML = `<span title="${name}">📄 ${short}</span>
+    <button class="rm" onclick="removeFile('${safe}')">×</button>`;
+  $('file-list').appendChild(b);
+}
+
+function removeFile(name) {
+  fileItemsMap.delete(name); loadedFiles.delete(name);
+  allItems = []; nfMeta = {}; nfMinutas = {};
+  for (const items of fileItemsMap.values()) {
+    allItems.push(...items);
+    for (const it of items) {
+      nfMeta[it.nf] = nfMeta[it.nf] || { dest:'', cidade:'', uf:'' };
+      if (!(it.nf in nfMinutas)) nfMinutas[it.nf] = '';
+    }
+  }
+  const badge = $('file-list').querySelector(`[data-fname="${CSS.escape(name)}"]`);
+  if (badge) badge.remove();
+  updateStats(); renderTable(); renderMinutaInputs(); renderLabels();
+  const has = allItems.length > 0;
+  $('statsBar').style.display = has ? 'flex' : 'none';
+  $('tabsBar').style.display  = has ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════════════════════════════
+function updateStats() {
+  const nfs  = new Set(allItems.map(i=>i.nf)).size;
+  const skus = new Set(allItems.map(i=>i.sku).filter(Boolean)).size;
+  const qtd  = allItems.reduce((s,i)=>s+i.qtd,0);
+  $('statNfs').textContent   = nfs;
+  $('statItems').textContent = allItems.length;
+  $('statQtd').textContent   = qtd%1===0?qtd:qtd.toFixed(2);
+  $('statSkus').textContent  = skus;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  ['dados','etiquetas','siglas'].forEach(t => {
+    $('tab'+t[0].toUpperCase()+t.slice(1)).style.display = t===tab?'':'none';
+    $('btnTab'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+  });
+  if (tab==='etiquetas') renderLabels();
+  if (tab==='siglas')    renderSiglasTable();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA TABLE
+// ══════════════════════════════════════════════════════════════════════════════
+function filteredItems() {
+  const q = ($('searchBox')||{}).value?.trim().toLowerCase()||'';
+  let items = [...allItems];
+  if (q) items = items.filter(i =>
+    i.nf.toLowerCase().includes(q)||i.cod.toLowerCase().includes(q)||
+    i.sku.toLowerCase().includes(q)||i.item.toLowerCase().includes(q));
+  items.sort((a,b)=>{
+    let av=a[sortCol],bv=b[sortCol];
+    if(sortCol==='qtd') return sortAsc?av-bv:bv-av;
+    av=String(av).toLowerCase();bv=String(bv).toLowerCase();
+    return sortAsc?av.localeCompare(bv):bv.localeCompare(av);
+  });
+  return items;
+}
+
+function renderTable() {
+  const items = filteredItems();
+  const area  = $('tableArea');
+  if (!items.length) {
+    area.innerHTML = allItems.length
+      ?`<div class="empty-state"><div class="icon">🔍</div><p>Nenhum item encontrado.</p></div>`
+      :`<div class="empty-state"><div class="icon">📋</div><p>Nenhum arquivo carregado ainda.</p></div>`;
+    return;
+  }
+  const COLS=['nf','cod','sku','item','qtd'];
+  const LBL={nf:'NF',cod:'CÓD',sku:'SKU',item:'ITEM',qtd:'QTD'};
+  const arr=c=>`<span class="sa">${sortCol===c?(sortAsc?'▲':'▼'):'⇅'}</span>`;
+  const sc=c=>sortCol===c?' sorted':'';
+  let h=`<div class="table-wrap"><table><thead><tr>
+    ${COLS.map(c=>`<th class="${sc(c)}" onclick="setSort('${c}')">${LBL[c]}${arr(c)}</th>`).join('')}
+  </tr></thead><tbody>`;
+  let last=null;
+  for (const i of items) {
+    if (i.nf!==last) {
+      const nfIt=items.filter(x=>x.nf===i.nf);
+      const nfQ=nfIt.reduce((s,x)=>s+x.qtd,0);
+      const m=nfMeta[i.nf]||{};
+      h+=`<tr class="nf-group"><td colspan="5">NF ${i.nf} · ${m.dest||''} · ${m.cidade||''}${m.uf?' ('+m.uf+')':''} · ${nfIt.length} iten(s) · ${nfQ%1===0?nfQ:nfQ.toFixed(2)} un.</td></tr>`;
+      last=i.nf;
+    }
+    h+=`<tr><td class="nf">${i.nf}</td><td class="cod">${esc(i.cod)}</td>
+      <td class="sku">${esc(i.sku)}</td><td class="item">${esc(i.item)}</td>
+      <td class="qtd">${i.qtd%1===0?i.qtd:i.qtd.toFixed(2)}</td></tr>`;
+  }
+  h+='</tbody></table></div>';
+  area.innerHTML=h;
+}
+function setSort(c){sortCol===c?sortAsc=!sortAsc:(sortCol=c,sortAsc=true);renderTable();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TSV / EXCEL
+// ══════════════════════════════════════════════════════════════════════════════
+function buildTSV() {
+  const items=filteredItems();
+  return['NF\tCÓD\tSKU\tITEM\tQTD',
+    ...items.map(i=>[i.nf,i.cod,i.sku,i.item,i.qtd%1===0?i.qtd:i.qtd.toFixed(2)].join('\t'))
+  ].join('\n');
+}
+async function copiarTSV() {
+  const tsv=buildTSV();
+  try { await navigator.clipboard.writeText(tsv); }
+  catch { const ta=document.createElement('textarea');ta.value=tsv;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove(); }
+  toast('✓ TSV copiado!', false);
+}
+function exportarExcel() {
+  const items=filteredItems();
+  const rows=[['NF','CÓD','SKU','ITEM','QTD'],...items.map(i=>[i.nf,i.cod,i.sku,i.item,i.qtd])];
+  const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:14},{wch:18},{wch:40},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'Itens NF-e');
+  XLSX.writeFile(wb,'Itens_NFe.xlsx');
+  toast('✓ Excel exportado!',false);
+}
+function limpar() {
+  if (!allItems.length||!confirm('Limpar todos os dados?')) return;
+  allItems=[];nfMeta={};nfMinutas={};loadedFiles.clear();fileItemsMap.clear();
+  $('file-list').innerHTML='';
+  $('statsBar').style.display='none';$('tabsBar').style.display='none';
+  renderTable();renderMinutaInputs();renderLabels();
+  toast('Dados limpos.',false);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MD IMPORT
+// ══════════════════════════════════════════════════════════════════════════════
+function toggleMdPanel() {
+  const body = $('mdPanelBody');
+  const arrow = $('mdArrow');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function processarMD() {
+  const text = ($('mdPasteArea')||{}).value || '';
+  const lines = text.split('\n');
+  let matched = 0;
+  const nfKeys = Object.keys(nfMinutas);
+  for (const line of lines) {
+    const cols = line.split('\t');
+    if (cols.length < 8) continue;
+    const minuta = (cols[1]||'').trim().replace(/\D/g,'');
+    const nfsDocs = (cols[7]||'').trim();
+    if (!minuta || !nfsDocs) continue;
+    const parts = nfsDocs.split('-');
+    if (parts.length < 2) continue;
+    const nfNums = parts.slice(1).filter(p => p.trim().length >= 4);
+    for (const mdNf of nfNums) {
+      for (const nf of nfKeys) {
+        if (nf === mdNf || mdNf.endsWith(nf) || nf.endsWith(mdNf)) {
+          nfMinutas[nf] = minuta; matched++; break;
+        }
+      }
+    }
+  }
+  renderMinutaInputs(); renderLabels();
+  const res = $('mdResult');
+  if (matched > 0) {
+    res.textContent = `✓ ${matched} nota(s) vinculada(s) automaticamente.`;
+    res.className = 'md-result ok';
+    toast(`✓ ${matched} nota(s) vinculada(s)!`, false);
+  } else {
+    res.textContent = '⚠ Nenhuma nota vinculada. Verifique se os XMLs foram carregados.';
+    res.className = 'md-result warn';
+    toast('⚠ Nenhuma nota vinculada.', true);
+  }
+}
+
+function limparMD() {
+  $('mdPasteArea').value = '';
+  const res = $('mdResult');
+  res.textContent = ''; res.className = 'md-result';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MINUTAS POR NF
+// ══════════════════════════════════════════════════════════════════════════════
+function renderMinutaInputs() {
+  const wrap = $('minutaRows');
+  const nfOrder = [...new Set(allItems.map(i=>i.nf))];
+  if (!nfOrder.length) {
+    wrap.innerHTML=`<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">📥</div><p>Carregue XMLs para preencher as minutas.</p></div>`;
+    return;
+  }
+  wrap.innerHTML = nfOrder.map(nf => {
+    const m   = nfMeta[nf]||{};
+    const val = nfMinutas[nf]||'';
+    const nfItems = allItems.filter(i=>i.nf===nf);
+    const qtd = nfItems.reduce((s,i)=>s+i.qtd,0);
+    return `<div class="minuta-row">
+      <div>
+        <div class="minuta-nf">NF ${nf}</div>
+        <div class="minuta-loc">${nfItems.length} iten(s) · ${qtd%1===0?qtd:qtd.toFixed(2)} un.</div>
+      </div>
+      <div class="minuta-dest" title="${esc(m.dest||'')}">${esc(m.dest||'—')}</div>
+      <div class="minuta-loc">${esc(m.cidade||'')}${m.uf?' / '+m.uf:''}</div>
+      <input class="minuta-input${val?' filled':''}" type="text"
+        placeholder="Nº da Minuta"
+        value="${esc(val)}"
+        oninput="setMinuta('${nf.replace(/'/g,"\\'")}', this)"
+        onkeydown="if(event.key==='Enter'){const rows=document.querySelectorAll('.minuta-input');const idx=Array.from(rows).indexOf(this);if(rows[idx+1])rows[idx+1].focus();}">
+    </div>`;
+  }).join('');
+}
+
+function setMinuta(nf, input) {
+  nfMinutas[nf] = input.value.trim();
+  input.classList.toggle('filled', !!nfMinutas[nf]);
+  // Atualiza etiquetas em tempo real se a aba estiver visível
+  if ($('tabEtiquetas').style.display !== 'none') renderLabels();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SIGLA LOOKUP
+// ══════════════════════════════════════════════════════════════════════════════
+function norm(s) {
+  return String(s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+}
+function getCidadeSigla(cidade) {
+  if (!cidade) return '???';
+  const key = norm(cidade);
+  if (SIGLAS[key]) return SIGLAS[key];
+  for (const k in SIGLAS) if (norm(k)===key) return SIGLAS[k];
+  const pre = key.slice(0,4);
+  for (const k in SIGLAS) if (k.startsWith(pre)) return SIGLAS[k];
+  return cidade.slice(0,3).toUpperCase();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LABEL BUILD
+// ══════════════════════════════════════════════════════════════════════════════
+function buildLabel(p) {
+  // Barcode: NF + MINUTA + COD + volume-produto (3 dígitos)
+  const bcVal = `${p.nf}${p.minuta||''}${p.cod}${String(p.volProd).padStart(3,'0')}`;
+  const bcId  = `bc_${p.nf}_${p.cod.replace(/\W/g,'')}_${p.volProd}`;
+  return `
+<div class="etiqueta" data-bc-id="${bcId}" data-bc-val="${esc(bcVal)}">
+  <div class="et-row1">
+    <div class="et-row1-left">
+      <div class="et-vol-nfe">
+        <span class="lbl">Volume (NFE)</span>
+        <span class="val">${p.volNfe} / ${p.totalNfe}</span>
+      </div>
+      <div class="et-nfe-num">
+        <span class="lbl">NFE:</span>
+        <div class="et-nfe-box">${esc(p.nf)}</div>
+      </div>
+    </div>
+    <div class="et-city"><span class="et-city-text">${esc(p.sigla)}</span></div>
+  </div>
+  <div class="et-row2">
+    <span class="lbl">Destinatário</span>
+    <span class="val">${esc(p.dest)}</span>
+  </div>
+  <div class="et-row3">
+    <div class="et-minuta-r3">
+      <span class="lbl">Minuta</span>
+      <div class="et-nfe-box">${esc(p.minuta||'—')}</div>
+    </div>
+    <div class="et-uf"><span class="lbl">UF</span><span class="val">${esc(p.uf)}</span></div>
+  </div>
+  <div class="et-row4">
+    <div class="et-cod-section">
+      <span class="et-cod-lbl">Cód:</span>
+      <span class="et-cod-val">${esc(p.cod)}</span>
+    </div>
+    <div class="et-sku-section">
+      <span class="et-sku-lbl">SKU:</span>
+      <span class="et-sku-val">${esc(p.sku||'—')}</span>
+    </div>
+  </div>
+  <div class="et-row5"><span>Ítem ${esc(p.item)}</span></div>
+  <div class="et-row6"><svg id="${bcId}"></svg></div>
+  <div class="et-row7">
+    <div class="et-cidade-bot"><span class="lbl">Cidade</span><span class="val">${esc(p.cidade)}</span></div>
+    <div class="et-vol-prod"><span class="lbl">Volume (produto)</span><span class="val">${p.volProd}/${p.totalProd}</span></div>
+  </div>
+</div>`;
+}
+
+function renderLabels() {
+  const grid = $('labelsGrid');
+  if (!allItems.length) {
+    grid.innerHTML=`<div class="empty-state"><div class="icon">🏷</div><p>Carregue XMLs de NF-e para gerar etiquetas.</p></div>`;
+    $('labelCount').textContent='0'; return;
+  }
+  const nfOrder = [...new Set(allItems.map(i=>i.nf))];
+  let html='', total=0;
+  for (const nf of nfOrder) {
+    const nfItems  = allItems.filter(i=>i.nf===nf);
+    const meta     = nfMeta[nf]||{};
+    const totalNfe = nfItems.reduce((s,i)=>s+Math.max(1,Math.floor(i.qtd)),0);
+    const sigla    = getCidadeSigla(meta.cidade||'');
+    const minuta   = nfMinutas[nf]||'';
+    let volNfe=0;
+    for (const item of nfItems) {
+      const totalProd = Math.max(1, Math.floor(item.qtd));
+      for (let vp=1; vp<=totalProd; vp++) {
+        volNfe++;
+        html += buildLabel({ nf, dest:meta.dest||'', cidade:meta.cidade||'',
+          uf:meta.uf||'', sigla, cod:item.cod, sku:item.sku,
+          item:item.item, volNfe, totalNfe, volProd:vp, totalProd, minuta });
+        total++;
+      }
+    }
+  }
+  grid.innerHTML = html;
+  $('labelCount').textContent = total;
+  renderBarcodes(grid);
+}
+
+function renderBarcodes(container) {
+  container.querySelectorAll('[data-bc-id]').forEach(el => {
+    const svg = el.querySelector('svg');
+    const val = el.dataset.bcVal;
+    if (!svg||!val) return;
+    try {
+      JsBarcode(svg, val, { format:'CODE128', width:1.5, height:42, displayValue:false, margin:2 });
+    } catch(e) { console.warn('BC error', val, e); }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRINT
+// ══════════════════════════════════════════════════════════════════════════════
+function printLabels() {
+  if ($('tabEtiquetas').style.display==='none') switchTab('etiquetas');
+  const html = $('labelsGrid').innerHTML;
+  if (!html.includes('etiqueta')) { toast('⚠ Nenhuma etiqueta para imprimir.', true); return; }
+  const cssLabel=`
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#fff;font-family:Arial,sans-serif}
+    .labels-grid{display:block}
+    .etiqueta{width:148mm;height:105mm;border:1.5px solid #000;background:#fff;color:#000;font-family:Arial,sans-serif;display:grid;grid-template-rows:auto auto auto 13mm 7mm 14mm 9mm;overflow:hidden;page-break-after:always;break-after:page}
+    .et-row1{display:grid;grid-template-columns:1fr 40mm;grid-row:1}
+    .et-row1-left{display:grid;grid-template-columns:1fr 42mm;border-bottom:1.5px solid #000}
+    .et-vol-nfe{padding:2.5mm 3mm 2mm;border-right:1.5px solid #000;display:flex;flex-direction:column;justify-content:center}
+    .et-vol-nfe .lbl{font-size:7pt}.et-vol-nfe .val{font-size:16pt;font-weight:700;line-height:1.1}
+    .et-nfe-num{padding:2mm 2.5mm;display:flex;flex-direction:column;justify-content:center}
+    .et-nfe-num .lbl{font-size:7pt;color:#444}
+    .et-nfe-box{background:#000;color:#fff;font-size:22pt;font-weight:900;padding:1mm 2.5mm;text-align:center;margin-top:.5mm;letter-spacing:.5px}
+    .et-city{grid-column:2;grid-row:1/3;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #000}
+    .et-city-text{font-size:28pt;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);text-transform:uppercase}
+    .et-row2{grid-row:2;grid-column:1;padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;border-bottom:1.5px solid #000}
+    .et-row2 .lbl{font-size:7pt;font-weight:700;margin-bottom:.8mm}.et-row2 .val{font-size:9.5pt;font-weight:700;line-height:1.2}
+    .et-row3{grid-row:3;grid-column:1/3;display:grid;grid-template-columns:1fr auto;border-bottom:1.5px solid #000}
+    .et-minuta-r3{padding:2mm 2.5mm;display:flex;flex-direction:column;justify-content:center}
+    .et-minuta-r3 .lbl{font-size:7pt;color:#444;margin-bottom:.5mm}
+    .et-uf{padding:2mm 3mm;border-left:1.5px solid #000;display:flex;flex-direction:column;justify-content:center;min-width:16mm}
+    .et-uf .lbl{font-size:7pt;font-weight:700}.et-uf .val{font-size:13pt;font-weight:700}
+    .et-row4{grid-row:4;grid-column:1/3;background:#000;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:1.5mm 3mm;border-bottom:1.5px solid #000}
+    .et-cod-section{display:flex;flex-direction:column;justify-content:center}
+    .et-cod-lbl{font-size:7pt;color:rgba(255,255,255,.65);line-height:1;margin-bottom:.5mm}
+    .et-cod-val{font-size:22pt;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1}
+    .et-sku-section{display:flex;flex-direction:column;align-items:flex-end;justify-content:center}
+    .et-sku-lbl{font-size:7pt;color:rgba(255,255,255,.65);line-height:1;margin-bottom:.5mm}
+    .et-sku-val{font-family:monospace;font-size:8pt;color:#fff;font-weight:700}
+    .et-row5{grid-row:5;grid-column:1/3;background:#000;color:#fff;display:flex;align-items:center;padding:0 3mm;font-size:8.5pt;font-weight:700;border-bottom:1.5px solid #000}
+    .et-row6{grid-row:6;grid-column:1/3;display:flex;align-items:center;justify-content:center;background:#fff;border-bottom:1.5px solid #000;padding:.5mm 3mm;overflow:hidden}
+    .et-row6 svg{max-width:100%;max-height:15mm}
+    .et-row7{grid-row:7;grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:0 3mm;background:#fff}
+    .et-cidade-bot{display:flex;align-items:center;gap:2.5mm}.et-cidade-bot .lbl{font-size:8pt;color:#333}.et-cidade-bot .val{font-size:10pt;font-weight:700}
+    .et-vol-prod{display:flex;flex-direction:column;align-items:flex-end}.et-vol-prod .lbl{font-size:7pt}.et-vol-prod .val{font-size:14pt;font-weight:700}
+    @page{size:A4 portrait;margin:5mm}`;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Etiquetas NF-e</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+    <style>${cssLabel}<\/style></head><body>
+    <div class="labels-grid">${html}</div>
+    <script>window.onload=function(){setTimeout(function(){
+      document.querySelectorAll('[data-bc-id]').forEach(function(el){
+        var s=el.querySelector('svg'),v=el.dataset.bcVal;
+        if(!s||!v)return;
+        try{JsBarcode(s,v,{format:'CODE128',width:1.5,height:42,displayValue:false,margin:2});}catch(e){}
+      });
+      setTimeout(function(){window.print();},700);
+    },300);};<\/script></body></html>`);
+  win.document.close();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SIGLAS MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+function renderSiglasTable() {
+  const q    = norm(($('siglasSearch')||{}).value||'');
+  const body = $('siglasBody');
+  const entries = Object.entries(SIGLAS)
+    .filter(([c,s]) => !q || norm(c).includes(q) || norm(s).includes(q))
+    .sort(([a],[b]) => a.localeCompare(b));
+  $('siglasCount').textContent = Object.keys(SIGLAS).length;
+  body.innerHTML = entries.map(([cidade, sigla]) => `
+    <tr>
+      <td class="sig-cidade">${esc(cidade)}</td>
+      <td class="sig-code">
+        <input class="sig-edit-input" type="text" value="${esc(sigla)}" maxlength="6"
+          onchange="updateSigla('${cidade.replace(/'/g,"\\'")}', this.value.toUpperCase().trim())"
+          oninput="this.value=this.value.toUpperCase()">
+      </td>
+      <td>
+        <button class="btn-outline btn-sm" onclick="deleteSigla('${cidade.replace(/'/g,"\\'")}')">🗑 Remover</button>
+      </td>
+    </tr>`).join('');
+}
+
+function addSigla() {
+  const cidade = $('addCidade').value.trim().toUpperCase();
+  const sigla  = $('addSigla').value.trim().toUpperCase();
+  if (!cidade||!sigla) { toast('⚠ Preencha cidade e sigla.', true); return; }
+  const key = norm(cidade);
+  SIGLAS[key] = sigla;
+  $('addCidade').value=''; $('addSigla').value='';
+  renderSiglasTable();
+  toast(`✓ ${cidade} → ${sigla} adicionado.`, false);
+}
+
+function updateSigla(cidade, newSigla) {
+  if (!newSigla) { deleteSigla(cidade); return; }
+  const key = norm(cidade);
+  SIGLAS[key] = newSigla;
+  toast(`✓ ${cidade} atualizado para ${newSigla}.`, false);
+}
+
+function deleteSigla(cidade) {
+  const key = norm(cidade);
+  delete SIGLAS[key];
+  renderSiglasTable();
+  toast(`🗑 ${cidade} removido.`, false);
+}
+
+function importarSiglasXlsx() {
+  $('siglasFileInput').click();
+}
+
+function onSiglasFile(input) {
+  const f = input.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb  = XLSX.read(e.target.result, { type:'array' });
+      const ws  = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+      let added=0, updated=0;
+      // Estrutura esperada: col4=IATA, col6=CIDADE (índices 4 e 6)
+      for (let r=1; r<rows.length; r++) {
+        const row   = rows[r];
+        const iata  = String(row[4]||'').trim().toUpperCase();
+        const cidad = String(row[6]||'').trim().toUpperCase();
+        if (!iata || !cidad) continue;
+        const key = norm(cidad);
+        if (SIGLAS[key]) updated++; else added++;
+        SIGLAS[key] = iata;
+      }
+      renderSiglasTable();
+      toast(`✓ Importado: ${added} novo(s), ${updated} atualizado(s).`, false);
+    } catch(err) {
+      console.error(err);
+      toast('⚠ Erro ao ler o arquivo XLSX.', true);
+    }
+  };
+  reader.readAsArrayBuffer(f);
+  input.value='';
+}
+
+function exportarSiglasJson() {
+  const json = JSON.stringify(SIGLAS, null, 2);
+  const blob = new Blob([json], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'siglas_cidades.json';
+  a.click();
+  toast('✓ JSON exportado!', false);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════════════════
+let _tt;
+function toast(msg, isError) {
+  const el=$('toast');
+  el.textContent=msg;
+  el.className='toast show'+(isError?' error':'');
+  clearTimeout(_tt);
+  _tt=setTimeout(()=>el.className='toast',3200);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DRAG & DROP / FILE INPUT
+// ══════════════════════════════════════════════════════════════════════════════
+const dz = $('dropZone');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', e=>{ if(!dz.contains(e.relatedTarget)) dz.classList.remove('drag-over'); });
+dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('drag-over'); if(e.dataTransfer.files.length) processFiles([...e.dataTransfer.files]); });
+$('fileInput').addEventListener('change', e=>{ if(e.target.files.length) processFiles([...e.target.files]); });
+
+// Init siglas count
+document.addEventListener('DOMContentLoaded', ()=>{ $('siglasCount').textContent = Object.keys(SIGLAS).length; });
+</script>
+</body>
+</html>
