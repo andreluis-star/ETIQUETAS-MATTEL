@@ -131,50 +131,79 @@ td.qtd{text-align:right;font-weight:600}
   border:2px solid #000;background:#fff;color:#000;
   font-family:Arial,Helvetica,sans-serif;
   display:grid;
-  grid-template-rows:auto auto auto 13mm 7mm 14mm 9mm;
+  grid-template-columns:1fr 40mm;
+  grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;
   overflow:hidden;flex-shrink:0;
 }
-.et-row1{display:grid;grid-template-columns:1fr 40mm;grid-row:1}
-.et-row1-left{display:grid;grid-template-columns:1fr 42mm;border-bottom:1.5px solid #000}
-.et-vol-nfe{padding:2.5mm 3mm 2mm;border-right:1.5px solid #000;display:flex;flex-direction:column;justify-content:center}
-.et-vol-nfe .lbl{font-size:7pt;font-weight:400}
-.et-vol-nfe .val{font-size:16pt;font-weight:700;line-height:1.1}
-.et-nfe-num{padding:2mm 2.5mm;display:flex;flex-direction:column;justify-content:center}
+/* Row 1: NFE ocupa todo o espaço à esquerda (Volume(NFE) foi para a Row 6) */
+.et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
+.et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
 .et-nfe-num .lbl{font-size:7pt;color:#444}
-.et-nfe-box{background:#000;color:#fff;font-size:22pt;font-weight:900;padding:1mm 2.5mm;text-align:center;margin-top:0.5mm;letter-spacing:.5px}
-.et-city{grid-column:2;grid-row:1/3;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #000}
-.et-city-text{font-size:28pt;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);text-transform:uppercase}
+.et-nfe-box{background:#000;color:#fff;font-size:37.4pt;font-weight:900;padding:1mm 2.5mm;text-align:center;margin-top:0.5mm;letter-spacing:.5px}
+/* Volume (NFE) — agora ao lado esquerdo da Minuta, na Row 6 */
+.et-vol-nfe{padding:2.5mm 3mm 2mm;border-right:1.5px solid #fff;background:#000;color:#fff;display:flex;flex-direction:column;justify-content:center}
+.et-vol-nfe .lbl{font-size:9pt;font-weight:400}
+.et-vol-nfe .val{font-size:20.8pt;font-weight:700;line-height:1.1}
+/* Sigla: filho direto do grid externo — extremidade direita, do teto até sobre o campo Cód (linhas 1 a 4), letra maior */
+.et-city{grid-column:2;grid-row:1/5;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #000}
+.et-city-text{font-size:44pt;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);text-transform:uppercase}
 .et-row2{grid-row:2;grid-column:1;padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;border-bottom:1.5px solid #000}
 .et-row2 .lbl{font-size:7pt;font-weight:700;margin-bottom:.8mm}
 .et-row2 .val{font-size:9.5pt;font-weight:700;line-height:1.2}
-.et-row3{grid-row:3;grid-column:1/3;display:grid;grid-template-columns:1fr auto;border-bottom:1.5px solid #000}
-/* Row 3: Minuta (estilo NFE box) + UF */
-.et-minuta-r3{padding:2mm 2.5mm;display:flex;flex-direction:column;justify-content:center}
-.et-minuta-r3 .lbl{font-size:7pt;color:#444;margin-bottom:.5mm}
-.et-uf{padding:2mm 3mm;border-left:1.5px solid #000;display:flex;flex-direction:column;justify-content:center;min-width:16mm}
-.et-uf .lbl{font-size:7pt;font-weight:700}
-.et-uf .val{font-size:13pt;font-weight:700}
-/* Row 7: Cidade (onde era Minuta) */
+/* Row 3: apenas código de barras — termina antes da Sigla (não invade a coluna da cidade); UF removida daqui */
+.et-row3{grid-row:3;grid-column:1;display:flex;align-items:center;justify-content:center;border-bottom:1.5px solid #000;padding:1mm 2mm;overflow:hidden}
+.et-row3 svg{max-width:100%;max-height:12mm}
+/* Row 7: Cidade + UF ao lado direito da Cidade */
+.et-cidade-uf-group{display:flex;align-items:center}
 .et-cidade-bot{display:flex;align-items:center;gap:2.5mm}
 .et-cidade-bot .lbl{font-size:8pt;color:#333}
 .et-cidade-bot .val{font-size:10pt;font-weight:700}
-.et-row4{grid-row:4;grid-column:1/3;background:#000;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:1.5mm 3mm;border-bottom:1.5px solid #000}
+.et-uf-inline{display:flex;align-items:center;gap:1.5mm;margin-left:3mm;padding-left:3mm;border-left:1px solid #999}
+.et-uf-inline .lbl{font-size:8pt;color:#333;font-weight:700}
+.et-uf-inline .val{font-size:11pt;font-weight:700}
+/* Row 4: agora termina antes da Sigla (que passa a ocupar também esta linha) */
+.et-row4{grid-row:4;grid-column:1;background:#000;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:1.5mm 3mm;border-bottom:1.5px solid #000}
 .et-cod-section{display:flex;flex-direction:column;justify-content:center}
 .et-cod-lbl{font-size:7pt;color:rgba(255,255,255,.65);line-height:1;margin-bottom:.5mm}
-.et-cod-val{font-size:22pt;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1}
+.et-cod-val{font-size:44pt;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1}
 .et-sku-section{display:flex;flex-direction:column;align-items:flex-end;justify-content:center}
 .et-sku-lbl{font-size:7pt;color:rgba(255,255,255,.65);line-height:1;margin-bottom:.5mm}
 .et-sku-val{font-family:monospace;font-size:8pt;color:#fff;font-weight:700}
 .et-row5{grid-row:5;grid-column:1/3;background:#000;color:#fff;display:flex;align-items:center;padding:0 3mm;font-size:8.5pt;font-weight:700;border-bottom:1.5px solid #000}
-.et-row6{grid-row:6;grid-column:1/3;display:flex;align-items:center;justify-content:center;background:#fff;border-bottom:1.5px solid #000;padding:.5mm 3mm;overflow:hidden}
-.et-row6 svg{max-width:100%;max-height:15mm}
+/* Row 6: Volume (NFE) à esquerda + Minuta (trocada de lugar com o código de barras) — letra +30% */
+.et-row6{grid-row:6;grid-column:1/3;display:grid;grid-template-columns:40mm 1fr;background:#fff;border-bottom:1.5px solid #000;overflow:hidden}
+.et-minuta-r6{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:1mm 3mm;text-align:center}
+.et-minuta-r6 .lbl{font-size:7pt;color:#444;margin-bottom:.5mm;text-align:center;width:100%}
+.et-minuta-box{background:#000;color:#fff;font-size:28.6pt;font-weight:900;padding:1mm 5mm;text-align:center;letter-spacing:.5px;margin:0 auto}
 .et-row7{grid-row:7;grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:0 3mm;background:#fff}
-.et-minuta{display:flex;align-items:center;gap:3mm}
-.et-minuta .lbl{font-size:8pt}
-.et-minuta .val{font-size:16pt;font-weight:700;letter-spacing:.5px}
 .et-vol-prod{display:flex;flex-direction:column;align-items:flex-end}
 .et-vol-prod .lbl{font-size:7pt}
 .et-vol-prod .val{font-size:14pt;font-weight:700}
+
+/* ── RESUMO TAB ────────────────────────────────────────────────────────────── */
+.resumo-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.resumo-subtabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:3px}
+.resumo-print-opts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.resumo-print-opts label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 12px;font-size:13px;outline:none}
+select:focus{border-color:var(--accent)}
+.resumo-nf-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
+.resumo-nf-head{background:var(--surface2);padding:10px 16px;border-bottom:1px solid var(--border)}
+.resumo-nf-head h3{font-size:13px;font-weight:700;color:var(--text)}
+.resumo-nf-head span{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+.resumo-nf-block table{width:100%}
+td.nfs-list{white-space:normal;max-width:360px;font-size:12px;color:var(--muted)}
+
+/* ── FOLHA ROSTO TAB ──────────────────────────────────────────────────────── */
+.rosto-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.rosto-toolbar p{font-size:12px;color:var(--muted);max-width:520px}
+.rosto-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
+.rosto-card-head{background:var(--surface2);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border)}
+.rosto-minuta-tag{font-size:14px;font-weight:800;color:#fff;background:#111;padding:4px 12px;border-radius:6px;letter-spacing:.5px}
+.rosto-minuta-tag.sem{background:var(--surface2);color:var(--muted);border:1px dashed var(--border)}
+.rosto-card-head span{font-size:11px;color:var(--muted)}
+.rosto-card-body{padding:14px 16px;font-size:13px;color:var(--text)}
+.rosto-card table{width:100%}
 
 /* ── SIGLAS TAB ────────────────────────────────────────────────────────────── */
 .siglas-header{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
@@ -245,7 +274,9 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
   <div class="tabs-row" id="tabsBar" style="display:none">
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('dados')"     id="btnTabDados">📋 Dados</button>
+      <button class="tab-btn"        onclick="switchTab('resumo')"    id="btnTabResumo">📊 Resumo</button>
       <button class="tab-btn"        onclick="switchTab('etiquetas')" id="btnTabEtiquetas">🏷 Etiquetas</button>
+      <button class="tab-btn"        onclick="switchTab('rosto')"     id="btnTabRosto">📄 Folha Rosto</button>
       <button class="tab-btn"        onclick="switchTab('siglas')"    id="btnTabSiglas">🗂 Siglas</button>
     </div>
     <button class="btn-purple" onclick="switchTab('etiquetas');setTimeout(printLabels,250)">🖨 Imprimir Etiquetas</button>
@@ -262,6 +293,30 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
     <div id="tableArea">
       <div class="empty-state"><div class="icon">📋</div>
         <p>Nenhum arquivo carregado ainda.<br>Arraste XMLs de NF-e acima para começar.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: RESUMO ───────────────────────────────────────────────────────── -->
+  <div id="tabResumo" style="display:none">
+    <div class="resumo-toolbar">
+      <div class="resumo-subtabs">
+        <button class="tab-btn active" id="btnResumoSku"  onclick="switchResumoView('sku')">Por SKU</button>
+        <button class="tab-btn"        id="btnResumoNota" onclick="switchResumoView('nota')">Por Nota</button>
+      </div>
+      <div class="resumo-print-opts">
+        <label>Orientação:
+          <select id="resumoOrientacao">
+            <option value="portrait">Retrato</option>
+            <option value="landscape">Paisagem</option>
+          </select>
+        </label>
+        <button class="btn-purple" onclick="printResumo()">🖨 Imprimir Resumo (A4)</button>
+      </div>
+    </div>
+    <div id="resumoContent">
+      <div class="empty-state"><div class="icon">📊</div>
+        <p>Carregue XMLs para ver o resumo por SKU ou por Nota.</p>
       </div>
     </div>
   </div>
@@ -308,6 +363,19 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
     <div class="labels-grid" id="labelsGrid">
       <div class="empty-state"><div class="icon">🏷</div>
         <p>Carregue XMLs de NF-e para gerar etiquetas.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: FOLHA ROSTO ─────────────────────────────────────────────────── -->
+  <div id="tabRosto" style="display:none">
+    <div class="rosto-toolbar">
+      <p>Uma página por Minuta, com letra gigante para identificação de longe. Notas sem minuta preenchida aparecem agrupadas separadamente.</p>
+      <button class="btn-purple" onclick="printRosto()">🖨 Imprimir Folha Rosto (A4 Paisagem)</button>
+    </div>
+    <div id="rostoContent">
+      <div class="empty-state"><div class="icon">📄</div>
+        <p>Carregue XMLs e preencha as minutas para gerar a folha rosto.</p>
       </div>
     </div>
   </div>
@@ -634,6 +702,8 @@ async function processFiles(files) {
   renderTable();
   renderMinutaInputs();
   renderLabels();
+  renderResumo();
+  renderRosto();
   const has = allItems.length > 0;
   $('statsBar').style.display = has ? 'flex' : 'none';
   $('tabsBar').style.display  = has ? 'flex' : 'none';
@@ -667,7 +737,7 @@ function removeFile(name) {
   }
   const badge = $('file-list').querySelector(`[data-fname="${CSS.escape(name)}"]`);
   if (badge) badge.remove();
-  updateStats(); renderTable(); renderMinutaInputs(); renderLabels();
+  updateStats(); renderTable(); renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
   const has = allItems.length > 0;
   $('statsBar').style.display = has ? 'flex' : 'none';
   $('tabsBar').style.display  = has ? 'flex' : 'none';
@@ -690,11 +760,13 @@ function updateStats() {
 // TABS
 // ══════════════════════════════════════════════════════════════════════════════
 function switchTab(tab) {
-  ['dados','etiquetas','siglas'].forEach(t => {
+  ['dados','resumo','etiquetas','rosto','siglas'].forEach(t => {
     $('tab'+t[0].toUpperCase()+t.slice(1)).style.display = t===tab?'':'none';
     $('btnTab'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
   });
+  if (tab==='resumo')    renderResumo();
   if (tab==='etiquetas') renderLabels();
+  if (tab==='rosto')     renderRosto();
   if (tab==='siglas')    renderSiglasTable();
 }
 
@@ -780,7 +852,7 @@ function limpar() {
   allItems=[];nfMeta={};nfMinutas={};loadedFiles.clear();fileItemsMap.clear();
   $('file-list').innerHTML='';
   $('statsBar').style.display='none';$('tabsBar').style.display='none';
-  renderTable();renderMinutaInputs();renderLabels();
+  renderTable();renderMinutaInputs();renderLabels();renderResumo();renderRosto();
   toast('Dados limpos.',false);
 }
 
@@ -817,7 +889,7 @@ function processarMD() {
       }
     }
   }
-  renderMinutaInputs(); renderLabels();
+  renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
   const res = $('mdResult');
   if (matched > 0) {
     res.textContent = `✓ ${matched} nota(s) vinculada(s) automaticamente.`;
@@ -870,8 +942,256 @@ function renderMinutaInputs() {
 function setMinuta(nf, input) {
   nfMinutas[nf] = input.value.trim();
   input.classList.toggle('filled', !!nfMinutas[nf]);
-  // Atualiza etiquetas em tempo real se a aba estiver visível
+  // Atualiza etiquetas/resumo/rosto em tempo real se a aba estiver visível
   if ($('tabEtiquetas').style.display !== 'none') renderLabels();
+  if ($('tabResumo').style.display !== 'none') renderResumo();
+  if ($('tabRosto').style.display !== 'none') renderRosto();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RESUMO (por SKU / por Nota)
+// ══════════════════════════════════════════════════════════════════════════════
+let resumoView = 'sku';
+
+function switchResumoView(v) {
+  resumoView = v;
+  $('btnResumoSku').classList.toggle('active', v==='sku');
+  $('btnResumoNota').classList.toggle('active', v==='nota');
+  renderResumo();
+}
+
+function skuSummaryData() {
+  const map = new Map();
+  for (const it of allItems) {
+    const key = (it.sku||'') + '|' + it.cod;
+    if (!map.has(key)) map.set(key, { sku: it.sku, cod: it.cod, item: it.item, nfs: new Map(), total: 0 });
+    const e = map.get(key);
+    e.nfs.set(it.nf, (e.nfs.get(it.nf)||0) + it.qtd);
+    e.total += it.qtd;
+  }
+  return [...map.values()].sort((a,b) => (a.sku||a.cod).localeCompare(b.sku||b.cod));
+}
+
+function notaSummaryData() {
+  const map = new Map();
+  for (const it of allItems) {
+    if (!map.has(it.nf)) map.set(it.nf, { nf: it.nf, meta: nfMeta[it.nf]||{}, minuta: nfMinutas[it.nf]||'', items: [], total: 0 });
+    const e = map.get(it.nf);
+    e.items.push(it);
+    e.total += it.qtd;
+  }
+  return [...map.values()].sort((a,b) => a.nf.localeCompare(b.nf));
+}
+
+// Linhas da tabela "Por SKU/Código": repete o CÓD para cada NF (uma linha por NF),
+// com os valores daquela nota e uma coluna somada (rowspan) com o total do CÓD.
+function buildCodTableRows(data) {
+  let rows = '';
+  for (const d of data) {
+    const nfEntries = [...d.nfs.entries()];
+    const n = nfEntries.length;
+    nfEntries.forEach(([nf,q], idx) => {
+      rows += `<tr><td class="cod">${esc(d.cod)}</td><td class="item">${esc(d.item)}</td>
+        <td class="nf">${esc(nf)}</td><td class="qtd">${q%1===0?q:q.toFixed(2)}</td>`;
+      if (idx===0) rows += `<td class="qtd" rowspan="${n}">${d.total%1===0?d.total:d.total.toFixed(2)}</td>`;
+      rows += '</tr>';
+    });
+  }
+  return rows;
+}
+
+function renderResumo() {
+  const el = $('resumoContent');
+  if (!allItems.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📊</div><p>Carregue XMLs para ver o resumo por SKU ou por Nota.</p></div>`;
+    return;
+  }
+  if (resumoView === 'sku') {
+    const data = skuSummaryData();
+    let h = `<div class="table-wrap"><table><thead><tr>
+      <th>Código</th><th>Descrição</th><th>NF</th><th>Qtd</th><th>Qtd Total</th>
+    </tr></thead><tbody>${buildCodTableRows(data)}</tbody></table></div>`;
+    el.innerHTML = h;
+  } else {
+    const data = notaSummaryData();
+    let h = '';
+    for (const d of data) {
+      h += `<div class="resumo-nf-block"><div class="resumo-nf-head">
+        <h3>NF ${esc(d.nf)}${d.minuta ? ' · Minuta '+esc(d.minuta) : ''}</h3>
+        <span>${esc(d.meta.dest||'')} · ${esc(d.meta.cidade||'')}${d.meta.uf?' / '+esc(d.meta.uf):''} · ${d.items.length} iten(s) · ${d.total%1===0?d.total:d.total.toFixed(2)} un.</span>
+      </div><table><thead><tr><th>Código</th><th>Descrição</th><th>Qtd</th></tr></thead><tbody>`;
+      for (const it of d.items) {
+        h += `<tr><td class="cod">${esc(it.cod)}</td>
+          <td class="item">${esc(it.item)}</td><td class="qtd">${it.qtd%1===0?it.qtd:it.qtd.toFixed(2)}</td></tr>`;
+      }
+      h += '</tbody></table></div>';
+    }
+    el.innerHTML = h;
+  }
+}
+
+function printResumo() {
+  if (!allItems.length) { toast('⚠ Nenhum dado para imprimir.', true); return; }
+  const orient = ($('resumoOrientacao')||{}).value || 'portrait';
+  const title = resumoView === 'sku' ? 'Resumo por SKU' : 'Resumo por Nota Fiscal';
+  let body = `<h1>${title}</h1>`;
+  if (resumoView === 'sku') {
+    const data = skuSummaryData();
+    body += `<table><thead><tr><th>Código</th><th>Descrição</th><th>NF</th><th>Qtd</th><th>Qtd Total</th></tr></thead>
+      <tbody>${buildCodTableRows(data)}</tbody></table>`;
+  } else {
+    const data = notaSummaryData();
+    for (const d of data) {
+      body += `<div class="nf-page"><h2>NF ${esc(d.nf)}${d.minuta ? ' · Minuta '+esc(d.minuta) : ''}</h2>
+        <p class="meta">${esc(d.meta.dest||'')} · ${esc(d.meta.cidade||'')}${d.meta.uf?' / '+esc(d.meta.uf):''} · ${d.items.length} iten(s) · ${d.total%1===0?d.total:d.total.toFixed(2)} un.</p>
+        <table><thead><tr><th>Código</th><th>Descrição</th><th>Qtd</th></tr></thead><tbody>`;
+      for (const it of d.items) {
+        body += `<tr><td>${esc(it.cod)}</td><td>${esc(it.item)}</td><td>${it.qtd%1===0?it.qtd:it.qtd.toFixed(2)}</td></tr>`;
+      }
+      body += '</tbody></table></div>';
+    }
+  }
+  const css = `
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;color:#111;padding:10mm}
+    h1{font-size:16pt;margin-bottom:6mm}
+    h2{font-size:12pt;margin:0 0 2mm;padding-top:0}
+    p.meta{font-size:9pt;color:#555;margin-bottom:2mm}
+    table{width:100%;border-collapse:collapse;margin-bottom:4mm;font-size:9pt}
+    th,td{border:1px solid #999;padding:1.5mm 2.5mm;text-align:left}
+    th{background:#eee;font-size:8pt;text-transform:uppercase}
+    thead{display:table-header-group}
+    /* Cada Nota Fiscal começa em uma nova página impressa */
+    .nf-page{padding-top:6mm}
+    .nf-page + .nf-page{page-break-before:always;break-before:page}
+    tr{page-break-inside:avoid}
+    @page{size:A4 ${orient};margin:12mm}`;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+    <style>${css}</style></head><body>${body}
+    <script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FOLHA ROSTO (resumo por Minuta — identificação de palete)
+// ══════════════════════════════════════════════════════════════════════════════
+function rostoData() {
+  const map = new Map(); // minuta -> { minuta, nfs:[{nf,dest,cidade,uf,qtd}] }
+  for (const nf of [...new Set(allItems.map(i=>i.nf))]) {
+    const minuta = nfMinutas[nf] || '';
+    if (!map.has(minuta)) map.set(minuta, { minuta, nfs: [] });
+    const meta  = nfMeta[nf] || {};
+    const items = allItems.filter(i=>i.nf===nf);
+    const qtd   = items.reduce((s,i)=>s+i.qtd,0);
+    map.get(minuta).nfs.push({ nf, dest: meta.dest||'', cidade: meta.cidade||'', uf: meta.uf||'', qtd });
+  }
+  return [...map.values()].sort((a,b) => {
+    if (!a.minuta && b.minuta) return 1;
+    if (a.minuta && !b.minuta) return -1;
+    return a.minuta.localeCompare(b.minuta, undefined, { numeric: true });
+  });
+}
+
+function renderRosto() {
+  const el = $('rostoContent');
+  if (!allItems.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📄</div><p>Carregue XMLs e preencha as minutas para gerar a folha rosto.</p></div>`;
+    return;
+  }
+  const groups = rostoData();
+  let h = '';
+  for (const g of groups) {
+    const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
+    h += `<div class="rosto-card"><div class="rosto-card-head">
+      <div class="rosto-minuta-tag${g.minuta?'':' sem'}">${g.minuta ? 'Minuta '+esc(g.minuta) : 'Sem Minuta'}</div>
+      <span>${g.nfs.length} nota(s) · ${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)} un.</span>
+    </div>`;
+    if (g.nfs.length === 1) {
+      const n = g.nfs[0];
+      h += `<div class="rosto-card-body"><b>NF ${esc(n.nf)}</b> — ${esc(n.dest)||'—'} · ${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''} · ${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)} un.</div>`;
+    } else {
+      h += `<table><thead><tr><th>NF</th><th>Cliente</th><th>Cidade/UF</th><th>Qtd</th></tr></thead><tbody>`;
+      for (const n of g.nfs) {
+        h += `<tr><td class="nf">${esc(n.nf)}</td><td class="item">${esc(n.dest)||'—'}</td>
+          <td>${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</td><td class="qtd">${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)}</td></tr>`;
+      }
+      h += '</tbody></table>';
+    }
+    h += '</div>';
+  }
+  el.innerHTML = h;
+}
+
+function printRosto() {
+  if (!allItems.length) { toast('⚠ Nenhum dado para imprimir.', true); return; }
+  const groups = rostoData();
+  let pages = '';
+  for (const g of groups) {
+    const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
+    const single = g.nfs.length === 1;
+    const minutaLabel = g.minuta ? esc(g.minuta) : 'SEM MINUTA';
+    let mid = '';
+    if (single) {
+      const n = g.nfs[0];
+      mid = `
+        <div class="rp-nf"><span class="rp-nf-lbl">NF</span><span class="rp-nf-val">${esc(n.nf)}</span></div>
+        <div class="rp-info">
+          <div class="rp-info-item"><span class="rp-info-lbl">Cliente</span><span class="rp-info-val rp-info-val-text">${esc(n.dest)||'—'}</span></div>
+          <div class="rp-info-item"><span class="rp-info-lbl">Cidade / UF</span><span class="rp-info-val">${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</span></div>
+          <div class="rp-info-item"><span class="rp-info-lbl">Quantidade</span><span class="rp-info-val">${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)}</span></div>
+        </div>`;
+    } else {
+      mid = `
+        <div class="rp-nf-multi">${g.nfs.map(n=>`<span class="rp-nf-chip">NF ${esc(n.nf)}</span>`).join('')}</div>
+        <div class="rp-info">
+          <div class="rp-info-item"><span class="rp-info-lbl">Total de Notas</span><span class="rp-info-val">${g.nfs.length}</span></div>
+          <div class="rp-info-item"><span class="rp-info-lbl">Quantidade Total</span><span class="rp-info-val">${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)}</span></div>
+        </div>
+        <table class="rp-table"><thead><tr><th>NF</th><th>Cliente</th><th>Cidade/UF</th><th>Qtd</th></tr></thead><tbody>
+          ${g.nfs.map(n=>`<tr><td>${esc(n.nf)}</td><td>${esc(n.dest)||'—'}</td><td>${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</td><td>${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)}</td></tr>`).join('')}
+        </tbody></table>`;
+    }
+    pages += `<div class="rosto-page">
+      <div class="rp-minuta"><span class="rp-minuta-lbl">MINUTA</span><span class="rp-minuta-val">${minutaLabel}</span></div>
+      ${mid}
+      <div class="rp-paletes"><span class="rp-paletes-lbl">PALETES</span><span class="rp-paletes-val">&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+    </div>`;
+  }
+  const css = `
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;color:#000}
+    /* Uma página por minuta — só quebra ANTES de páginas seguintes (nunca gera página em branco extra) */
+    .rosto-page{width:297mm;min-height:210mm;padding:8mm;display:flex;flex-direction:column}
+    .rosto-page + .rosto-page{page-break-before:always;break-before:page}
+    .rp-minuta{background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5mm;border-radius:4mm;margin-bottom:5mm}
+    .rp-minuta-lbl{font-size:20pt;letter-spacing:6px;font-weight:700}
+    .rp-minuta-val{font-size:100pt;font-weight:900;line-height:1.05}
+    /* Notas Fiscais (logo abaixo da Minuta) — letra +60% */
+    .rp-nf{background:#000;color:#fff;display:flex;align-items:center;justify-content:center;gap:8mm;padding:4mm;border-radius:4mm;margin-bottom:5mm}
+    .rp-nf-lbl{font-size:16pt;font-weight:700}
+    .rp-nf-val{font-size:96pt;font-weight:900}
+    .rp-nf-multi{display:flex;flex-wrap:wrap;gap:4mm;justify-content:center;margin-bottom:5mm}
+    .rp-nf-chip{background:#000;color:#fff;font-size:35.2pt;font-weight:900;padding:3mm 6mm;border-radius:3mm}
+    .rp-info{display:flex;justify-content:center;gap:14mm;margin-bottom:5mm;flex-wrap:wrap}
+    .rp-info-item{text-align:center;max-width:110mm}
+    .rp-info-lbl{display:block;font-size:13pt;color:#000;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+    .rp-info-val{display:block;font-size:30pt;font-weight:900}
+    .rp-info-val-text{font-size:22pt}
+    .rp-table{width:100%;border-collapse:collapse;font-size:12pt;margin-top:2mm}
+    .rp-table th,.rp-table td{border:1px solid #999;padding:2mm 3mm;text-align:left;color:#000}
+    .rp-table th{background:#eee;text-transform:uppercase;font-size:10pt}
+    .rp-paletes{margin-top:auto;border-top:3px solid #000;padding-top:5mm;display:flex;align-items:center;justify-content:center;gap:8mm}
+    .rp-paletes-lbl{font-size:18pt;font-weight:700;letter-spacing:2px}
+    .rp-paletes-val{font-size:50pt;font-weight:900;letter-spacing:6px}
+    @page{size:A4 landscape;margin:0}`;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Folha Rosto</title>
+    <style>${css}</style></head><body>${pages}
+    <script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script>
+    </body></html>`);
+  win.document.close();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -900,29 +1220,17 @@ function buildLabel(p) {
   return `
 <div class="etiqueta" data-bc-id="${bcId}" data-bc-val="${esc(bcVal)}">
   <div class="et-row1">
-    <div class="et-row1-left">
-      <div class="et-vol-nfe">
-        <span class="lbl">Volume (NFE)</span>
-        <span class="val">${p.volNfe} / ${p.totalNfe}</span>
-      </div>
-      <div class="et-nfe-num">
-        <span class="lbl">NFE:</span>
-        <div class="et-nfe-box">${esc(p.nf)}</div>
-      </div>
+    <div class="et-nfe-num">
+      <span class="lbl">NFE:</span>
+      <div class="et-nfe-box">${esc(p.nf)}</div>
     </div>
-    <div class="et-city"><span class="et-city-text">${esc(p.sigla)}</span></div>
   </div>
+  <div class="et-city"><span class="et-city-text">${esc(p.sigla)}</span></div>
   <div class="et-row2">
     <span class="lbl">Destinatário</span>
     <span class="val">${esc(p.dest)}</span>
   </div>
-  <div class="et-row3">
-    <div class="et-minuta-r3">
-      <span class="lbl">Minuta</span>
-      <div class="et-nfe-box">${esc(p.minuta||'—')}</div>
-    </div>
-    <div class="et-uf"><span class="lbl">UF</span><span class="val">${esc(p.uf)}</span></div>
-  </div>
+  <div class="et-row3"><svg id="${bcId}"></svg></div>
   <div class="et-row4">
     <div class="et-cod-section">
       <span class="et-cod-lbl">Cód:</span>
@@ -934,9 +1242,21 @@ function buildLabel(p) {
     </div>
   </div>
   <div class="et-row5"><span>Ítem ${esc(p.item)}</span></div>
-  <div class="et-row6"><svg id="${bcId}"></svg></div>
+  <div class="et-row6">
+    <div class="et-vol-nfe">
+      <span class="lbl">Volume (NFE)</span>
+      <span class="val">${p.volNfe} / ${p.totalNfe}</span>
+    </div>
+    <div class="et-minuta-r6">
+      <span class="lbl">Minuta</span>
+      <div class="et-minuta-box">${esc(p.minuta||'—')}</div>
+    </div>
+  </div>
   <div class="et-row7">
-    <div class="et-cidade-bot"><span class="lbl">Cidade</span><span class="val">${esc(p.cidade)}</span></div>
+    <div class="et-cidade-uf-group">
+      <div class="et-cidade-bot"><span class="lbl">Cidade</span><span class="val">${esc(p.cidade)}</span></div>
+      <div class="et-uf-inline"><span class="lbl">UF</span><span class="val">${esc(p.uf)}</span></div>
+    </div>
     <div class="et-vol-prod"><span class="lbl">Volume (produto)</span><span class="val">${p.volProd}/${p.totalProd}</span></div>
   </div>
 </div>`;
@@ -995,35 +1315,36 @@ function printLabels() {
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:#fff;font-family:Arial,sans-serif}
     .labels-grid{display:block}
-    .etiqueta{width:148mm;height:105mm;border:1.5px solid #000;background:#fff;color:#000;font-family:Arial,sans-serif;display:grid;grid-template-rows:auto auto auto 13mm 7mm 14mm 9mm;overflow:hidden;page-break-after:always;break-after:page}
-    .et-row1{display:grid;grid-template-columns:1fr 40mm;grid-row:1}
-    .et-row1-left{display:grid;grid-template-columns:1fr 42mm;border-bottom:1.5px solid #000}
-    .et-vol-nfe{padding:2.5mm 3mm 2mm;border-right:1.5px solid #000;display:flex;flex-direction:column;justify-content:center}
-    .et-vol-nfe .lbl{font-size:7pt}.et-vol-nfe .val{font-size:16pt;font-weight:700;line-height:1.1}
-    .et-nfe-num{padding:2mm 2.5mm;display:flex;flex-direction:column;justify-content:center}
+    .etiqueta{width:148mm;height:105mm;border:1.5px solid #000;background:#fff;color:#000;font-family:Arial,sans-serif;display:grid;grid-template-columns:1fr 40mm;grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;overflow:hidden;page-break-after:always;break-after:page}
+    .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
+    .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
     .et-nfe-num .lbl{font-size:7pt;color:#444}
-    .et-nfe-box{background:#000;color:#fff;font-size:22pt;font-weight:900;padding:1mm 2.5mm;text-align:center;margin-top:.5mm;letter-spacing:.5px}
-    .et-city{grid-column:2;grid-row:1/3;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #000}
-    .et-city-text{font-size:28pt;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);text-transform:uppercase}
+    .et-vol-nfe{padding:2.5mm 3mm 2mm;border-right:1.5px solid #fff;background:#000;color:#fff;display:flex;flex-direction:column;justify-content:center}
+    .et-vol-nfe .lbl{font-size:9pt}.et-vol-nfe .val{font-size:20.8pt;font-weight:700;line-height:1.1}
+    .et-nfe-box{background:#000;color:#fff;font-size:37.4pt;font-weight:900;padding:1mm 2.5mm;text-align:center;margin-top:.5mm;letter-spacing:.5px}
+    .et-city{grid-column:2;grid-row:1/5;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #000}
+    .et-city-text{font-size:44pt;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);text-transform:uppercase}
     .et-row2{grid-row:2;grid-column:1;padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;border-bottom:1.5px solid #000}
     .et-row2 .lbl{font-size:7pt;font-weight:700;margin-bottom:.8mm}.et-row2 .val{font-size:9.5pt;font-weight:700;line-height:1.2}
-    .et-row3{grid-row:3;grid-column:1/3;display:grid;grid-template-columns:1fr auto;border-bottom:1.5px solid #000}
-    .et-minuta-r3{padding:2mm 2.5mm;display:flex;flex-direction:column;justify-content:center}
-    .et-minuta-r3 .lbl{font-size:7pt;color:#444;margin-bottom:.5mm}
-    .et-uf{padding:2mm 3mm;border-left:1.5px solid #000;display:flex;flex-direction:column;justify-content:center;min-width:16mm}
-    .et-uf .lbl{font-size:7pt;font-weight:700}.et-uf .val{font-size:13pt;font-weight:700}
-    .et-row4{grid-row:4;grid-column:1/3;background:#000;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:1.5mm 3mm;border-bottom:1.5px solid #000}
+    .et-row3{grid-row:3;grid-column:1;display:flex;align-items:center;justify-content:center;border-bottom:1.5px solid #000;padding:1mm 2mm;overflow:hidden}
+    .et-row3 svg{max-width:100%;max-height:12mm}
+    .et-row4{grid-row:4;grid-column:1;background:#000;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:1.5mm 3mm;border-bottom:1.5px solid #000}
     .et-cod-section{display:flex;flex-direction:column;justify-content:center}
     .et-cod-lbl{font-size:7pt;color:rgba(255,255,255,.65);line-height:1;margin-bottom:.5mm}
-    .et-cod-val{font-size:22pt;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1}
+    .et-cod-val{font-size:44pt;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1}
     .et-sku-section{display:flex;flex-direction:column;align-items:flex-end;justify-content:center}
     .et-sku-lbl{font-size:7pt;color:rgba(255,255,255,.65);line-height:1;margin-bottom:.5mm}
     .et-sku-val{font-family:monospace;font-size:8pt;color:#fff;font-weight:700}
     .et-row5{grid-row:5;grid-column:1/3;background:#000;color:#fff;display:flex;align-items:center;padding:0 3mm;font-size:8.5pt;font-weight:700;border-bottom:1.5px solid #000}
-    .et-row6{grid-row:6;grid-column:1/3;display:flex;align-items:center;justify-content:center;background:#fff;border-bottom:1.5px solid #000;padding:.5mm 3mm;overflow:hidden}
-    .et-row6 svg{max-width:100%;max-height:15mm}
+    .et-row6{grid-row:6;grid-column:1/3;display:grid;grid-template-columns:40mm 1fr;background:#fff;border-bottom:1.5px solid #000;overflow:hidden}
+    .et-minuta-r6{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:1mm 3mm;text-align:center}
+    .et-minuta-r6 .lbl{font-size:7pt;color:#444;margin-bottom:.5mm;text-align:center;width:100%}
+    .et-minuta-box{background:#000;color:#fff;font-size:28.6pt;font-weight:900;padding:1mm 5mm;text-align:center;letter-spacing:.5px;margin:0 auto}
     .et-row7{grid-row:7;grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:0 3mm;background:#fff}
+    .et-cidade-uf-group{display:flex;align-items:center}
     .et-cidade-bot{display:flex;align-items:center;gap:2.5mm}.et-cidade-bot .lbl{font-size:8pt;color:#333}.et-cidade-bot .val{font-size:10pt;font-weight:700}
+    .et-uf-inline{display:flex;align-items:center;gap:1.5mm;margin-left:3mm;padding-left:3mm;border-left:1px solid #999}
+    .et-uf-inline .lbl{font-size:8pt;color:#333;font-weight:700}.et-uf-inline .val{font-size:11pt;font-weight:700}
     .et-vol-prod{display:flex;flex-direction:column;align-items:flex-end}.et-vol-prod .lbl{font-size:7pt}.et-vol-prod .val{font-size:14pt;font-weight:700}
     @page{size:A4 portrait;margin:5mm}`;
   const win = window.open('','_blank');
