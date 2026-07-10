@@ -122,6 +122,8 @@ td.qtd{text-align:right;font-weight:600}
 .label-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .label-count-badge{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--muted)}
 .label-count-badge b{color:var(--accent);font-size:14px}
+.label-sort-toggle{display:flex;align-items:center;gap:8px}
+.label-sort-lbl{font-size:12px;color:var(--muted)}
 
 /* ── LABEL ─────────────────────────────────────────────────────────────────── */
 .labels-grid{display:flex;flex-wrap:wrap;gap:14px}
@@ -356,6 +358,13 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
     <!-- Label actions -->
     <div class="label-actions">
       <div class="label-count-badge">Total de etiquetas: <b id="labelCount">0</b></div>
+      <div class="label-sort-toggle">
+        <span class="label-sort-lbl">Ordenar por:</span>
+        <div class="tabs">
+          <button class="tab-btn active" id="btnSortNf"  onclick="setLabelSort('nf')">Nota Fiscal</button>
+          <button class="tab-btn"        id="btnSortCod" onclick="setLabelSort('cod')">Código (SKU)</button>
+        </div>
+      </div>
       <button class="btn-purple" onclick="printLabels()">🖨 Imprimir Etiquetas</button>
     </div>
 
@@ -1265,14 +1274,24 @@ function buildLabel(p) {
 </div>`;
 }
 
-function renderLabels() {
-  const grid = $('labelsGrid');
-  if (!allItems.length) {
-    grid.innerHTML=`<div class="empty-state"><div class="icon">🏷</div><p>Carregue XMLs de NF-e para gerar etiquetas.</p></div>`;
-    $('labelCount').textContent='0'; return;
-  }
+// ══════════════════════════════════════════════════════════════════════════════
+// ORDENAÇÃO DAS ETIQUETAS (por Nota Fiscal ou por Código/SKU)
+// ══════════════════════════════════════════════════════════════════════════════
+let labelSortMode = 'nf'; // 'nf' | 'cod'
+
+function setLabelSort(mode) {
+  labelSortMode = mode;
+  $('btnSortNf').classList.toggle('active', mode==='nf');
+  $('btnSortCod').classList.toggle('active', mode==='cod');
+  renderLabels();
+}
+
+// Monta a lista de parâmetros de cada etiqueta, mantendo a numeração de
+// Volume(NFE)/Volume(produto) sempre calculada a partir do agrupamento por NF —
+// a ordenação escolhida só decide a SEQUÊNCIA de impressão, não a numeração.
+function buildLabelParams() {
   const nfOrder = [...new Set(allItems.map(i=>i.nf))];
-  let html='', total=0;
+  const labels = [];
   for (const nf of nfOrder) {
     const nfItems  = allItems.filter(i=>i.nf===nf);
     const meta     = nfMeta[nf]||{};
@@ -1284,15 +1303,34 @@ function renderLabels() {
       const totalProd = Math.max(1, Math.floor(item.qtd));
       for (let vp=1; vp<=totalProd; vp++) {
         volNfe++;
-        html += buildLabel({ nf, dest:meta.dest||'', cidade:meta.cidade||'',
+        labels.push({ nf, dest:meta.dest||'', cidade:meta.cidade||'',
           uf:meta.uf||'', sigla, cod:item.cod, sku:item.sku,
           item:item.item, volNfe, totalNfe, volProd:vp, totalProd, minuta });
-        total++;
       }
     }
   }
+  if (labelSortMode === 'cod') {
+    labels.sort((a,b) => {
+      const c = String(a.cod).localeCompare(String(b.cod), undefined, { numeric:true, sensitivity:'base' });
+      if (c !== 0) return c;
+      const n = String(a.nf).localeCompare(String(b.nf), undefined, { numeric:true });
+      if (n !== 0) return n;
+      return a.volProd - b.volProd;
+    });
+  }
+  return labels;
+}
+
+function renderLabels() {
+  const grid = $('labelsGrid');
+  if (!allItems.length) {
+    grid.innerHTML=`<div class="empty-state"><div class="icon">🏷</div><p>Carregue XMLs de NF-e para gerar etiquetas.</p></div>`;
+    $('labelCount').textContent='0'; return;
+  }
+  const labels = buildLabelParams();
+  const html = labels.map(buildLabel).join('');
   grid.innerHTML = html;
-  $('labelCount').textContent = total;
+  $('labelCount').textContent = labels.length;
   renderBarcodes(grid);
 }
 
