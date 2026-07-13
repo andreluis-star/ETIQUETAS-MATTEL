@@ -878,18 +878,30 @@ function toggleMdPanel() {
 
 function processarMD() {
   const text = ($('mdPasteArea')||{}).value || '';
-  const lines = text.split('\n');
+  // Suporta quebras de linha \r\n e \n
+  const lines = text.split(/\r?\n/);
   let matched = 0;
   const nfKeys = Object.keys(nfMinutas);
   for (const line of lines) {
+    if (!line.trim()) continue;
     const cols = line.split('\t');
-    if (cols.length < 8) continue;
-    const minuta = (cols[1]||'').trim().replace(/\D/g,'');
-    const nfsDocs = (cols[7]||'').trim();
+    if (cols.length < 9) continue;
+
+    // Layout: MD(0) CTE(1) COLETA(2) AWB(3) HOUSE(4) CIA TRANSF.(5) DATA(6)
+    //         DATA COLETA(7) NFS/DOC-S(8) ...
+    const minuta = (cols[0]||'').trim().replace(/\D/g,'');
+    const nfsDocs = (cols[8]||'').trim();
     if (!minuta || !nfsDocs) continue;
-    const parts = nfsDocs.split('-');
-    if (parts.length < 2) continue;
-    const nfNums = parts.slice(1).filter(p => p.trim().length >= 4);
+
+    // NFS/DOC-S vem como: '37407, 37408, 1764 (separado por vírgula,
+    // às vezes com aspa simples de texto do Excel na frente)
+    const nfNums = nfsDocs
+      .replace(/^'/, '')
+      .split(',')
+      .map(p => p.trim().replace(/\D/g,''))
+      .filter(p => p.length >= 4);
+    if (!nfNums.length) continue;
+
     for (const mdNf of nfNums) {
       for (const nf of nfKeys) {
         if (nf === mdNf || mdNf.endsWith(nf) || nf.endsWith(mdNf)) {
