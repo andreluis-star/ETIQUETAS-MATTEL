@@ -355,6 +355,20 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .reset-link{font-size:11.5px; color:var(--muted); text-decoration:underline; cursor:pointer; background:none; border:none; padding:0;}
 #tabCargas .top-actions{display:flex; justify-content:flex-end; margin-bottom:8px;}
 #tabCargas .casos-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
+#tabCargas .sync-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
+#tabCargas .sync-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+#tabCargas .sync-card h2{font-size:14px; margin:0; color:var(--navy);}
+#tabCargas .sync-status{display:inline-block; font-size:11px; border-radius:12px; padding:2px 10px; font-weight:700; margin-left:6px; vertical-align:middle; background:var(--line); color:var(--muted);}
+#tabCargas .sync-status.on{background:var(--green-bg); color:var(--green);}
+#tabCargas .sync-status.syncing{background:var(--amber-bg); color:var(--amber);}
+#tabCargas .sync-status.err{background:var(--red-bg); color:var(--red);}
+#tabCargas .sync-toggle-cfg{background:var(--bg); border:1px solid var(--line); color:var(--navy); border-radius:7px; padding:5px 12px; font-size:12px; font-weight:600;}
+#tabCargas .sync-field{margin:12px 0;}
+#tabCargas .sync-field label{display:block; font-size:12px; font-weight:700; color:var(--navy); margin-bottom:4px;}
+#tabCargas .sync-field input{width:100%; border:1px solid var(--line); border-radius:7px; padding:8px 10px; font-size:13px; color:var(--text); background:#FAFBFC; font-family:Consolas, monospace;}
+#tabCargas .sync-hint{display:block; font-size:11px; color:var(--muted); margin-top:4px; line-height:1.5;}
+#tabCargas .sync-hint code{background:var(--bg); padding:1px 5px; border-radius:4px; font-size:10.5px;}
+#tabCargas .sync-actions{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center;}
 #tabCargas .casos-card h2{font-size:14px; margin:0 0 4px; color:var(--navy);}
 #tabCargas .caso-atual{
     display:inline-block; font-size:11.5px; background:var(--orange-light); color:var(--orange);
@@ -387,14 +401,14 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .sep-select.sep-aguardando{background:var(--red-bg); color:var(--red);}
 #tabCargas .sep-select.sep-emprocesso{background:var(--amber-bg); color:var(--amber);}
 #tabCargas .sep-select.sep-separada{background:var(--blue-bg); color:var(--blue-dark);}
-#tabCargas .sep-select.sep-expedido{background:var(--orange-light); color:var(--orange);}
+#tabCargas .sep-select.sep-expedido{background:var(--green-bg); color:var(--green);}
 #tabCargas .sep-mini{
     display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; vertical-align:middle;
   }
 #tabCargas .sep-mini.r{background:var(--red);}
 #tabCargas .sep-mini.y{background:#E0A700;}
 #tabCargas .sep-mini.b{background:var(--blue-dark);}
-#tabCargas .sep-mini.o{background:var(--orange);}
+#tabCargas .sep-mini.o{background:var(--green);}
 #tabCargas .prazo-pill{
     display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap;
   }
@@ -418,7 +432,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .sep-bar .seg.b{background:var(--blue-dark);}
 #tabCargas .sep-bar .seg.y{background:#E0A700;}
 #tabCargas .sep-bar .seg.r{background:var(--red);}
-#tabCargas .sep-bar .seg.o{background:var(--orange);}
+#tabCargas .sep-bar .seg.o{background:var(--green);}
 #tabCargas .print-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
 #tabCargas .print-card h2{font-size:14px; margin:0 0 10px; color:var(--navy);}
 #tabCargas .print-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
@@ -453,7 +467,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #printArea .st.r{background:#FBEAE8; color:#C0392B;}
 #printArea .st.y{background:#FFF4DF; color:#B5790A;}
 #printArea .st.b{background:#E4ECFA; color:#123A7A;}
-#printArea .st.o{background:#FFEFE3; color:#E8611A;}
+#printArea .st.o{background:#E7F6EE; color:#1E8E5A;}
 #printArea .pr-resumo{
     font-size:10px; color:#333; margin-bottom:10px; border:1px solid #DDD; border-radius:4px; padding:6px 8px;
     background:#F7F8FA;
@@ -682,6 +696,34 @@ body *{visibility:hidden;}
 <div class="stripe"></div>
 
 <div class="wrap">
+
+  <div class="sync-card" id="syncCard">
+    <div class="sync-head">
+      <h2>🔄 Sincronização em equipe <span class="sync-status" id="syncStatus">desligada</span></h2>
+      <button class="sync-toggle-cfg" id="syncToggleCfg" type="button">⚙ configurar</button>
+    </div>
+    <div class="sub" style="font-size:12px; color:var(--muted); margin-bottom:4px;">
+      Compartilhe os dados (processos, minutas e casos) entre o time usando um Gist secreto do GitHub. Cada pessoa cola o próprio token — ele fica salvo só neste navegador e nunca é publicado no site.
+    </div>
+    <div id="syncConfig" style="display:none;">
+      <div class="sync-field">
+        <label>ID do Gist compartilhado</label>
+        <input type="text" id="syncGistId" placeholder="ex.: 3f9a2b1c8d... (todos usam o mesmo)">
+        <span class="sync-hint">Crie uma vez um Gist <b>secreto</b> em gist.github.com com um arquivo chamado <code>cargas-db.json</code> e cole aqui o ID (o trecho final da URL). Todos do time colam o mesmo ID.</span>
+      </div>
+      <div class="sync-field">
+        <label>Seu token pessoal do GitHub</label>
+        <input type="password" id="syncToken" placeholder="ghp_... (fica salvo só neste navegador)" autocomplete="off">
+        <span class="sync-hint">Em github.com → Settings → Developer settings → <b>Tokens (classic)</b> → Generate new token, marque apenas o escopo <code>gist</code>. Cole o token aqui.</span>
+      </div>
+      <div class="sync-actions">
+        <button class="btn-navy" id="syncSaveBtn" type="button">✔ Ativar sincronização</button>
+        <button class="btn-ghost-alt" id="syncCreateGistBtn" type="button" style="background:#fff; color:var(--navy); border:1px solid var(--line);">➕ Criar Gist automaticamente</button>
+        <button class="btn-ghost-alt" id="syncDisableBtn" type="button" style="background:#fff; color:var(--red); border:1px solid #EFC7C2; display:none;">Desligar</button>
+        <span class="msg" id="syncMsg"></span>
+      </div>
+    </div>
+  </div>
 
   <div class="casos-card">
     <h2>Casos salvos <span class="caso-atual" id="casoAtualTag">caso atual: sem nome</span></h2>
@@ -2018,15 +2060,182 @@ function switchSection(section) {
 (function(){
 'use strict';
 
-// Polyfill de window.storage baseado em localStorage: esta ferramenta foi
-// originalmente construída como um artifact do Claude (usa a API
-// window.storage de armazenamento persistente). Aqui ela roda como página
-// HTML comum, então simulamos a mesma API por cima do localStorage do
-// navegador — mantendo o app 100% funcional fora do ambiente de artifacts.
-// Se window.storage já existir de verdade (rodando dentro de um artifact),
-// o polyfill não é aplicado e a API nativa é usada normalmente.
+// ══════════════════════════════════════════════════════════════════════════
+// CAMADA DE ARMAZENAMENTO + SINCRONIZAÇÃO EM EQUIPE (GitHub Gist)
+// ──────────────────────────────────────────────────────────────────────────
+// A ferramenta usa a API window.storage (get/set/delete/list). Aqui montamos
+// uma implementação que:
+//   1. Mantém um cache local em localStorage → respostas instantâneas, o app
+//      nunca trava esperando a rede.
+//   2. Espelha esse cache num Gist SECRETO do GitHub → base compartilhada
+//      entre o time. Carrega ao abrir, envia ao gravar (com "debounce"),
+//      e faz polling periódico para trazer alterações dos outros.
+// O token de cada pessoa e o ID do Gist ficam SÓ neste navegador
+// (localStorage), nunca no código publicado.
+// Se window.storage já existir de verdade (rodando dentro de um artifact do
+// Claude), respeitamos a API nativa e não fazemos nada disso.
+// ══════════════════════════════════════════════════════════════════════════
+
+const NS = 'crg:';                       // prefixo do cache local de dados
+const CFG_TOKEN = 'crg-sync:token';      // token pessoal do GitHub (por navegador)
+const CFG_GIST  = 'crg-sync:gistId';     // ID do Gist compartilhado
+const GIST_FILE = 'cargas-db.json';      // nome do arquivo dentro do Gist
+const GIST_API  = 'https://api.github.com/gists/';
+const POLL_MS   = 8000;                  // intervalo de checagem de mudanças
+const PUSH_DEBOUNCE_MS = 1500;           // agrupa gravações antes de enviar
+
+const Sync = {
+  token: localStorage.getItem(CFG_TOKEN) || '',
+  gistId: localStorage.getItem(CFG_GIST) || '',
+  enabled: false,
+  pushTimer: null,
+  pollTimer: null,
+  lastRemoteRaw: null,     // último conteúdo bruto conhecido do Gist (p/ detectar mudança)
+  onRemoteUpdate: null,    // callback quando dados remotos mudam (recarrega a tela)
+  statusEl: null,
+
+  isConfigured(){ return !!(this.token && this.gistId); },
+
+  setStatus(kind, text){
+    if(!this.statusEl) this.statusEl = document.getElementById('syncStatus');
+    if(!this.statusEl) return;
+    this.statusEl.textContent = text;
+    this.statusEl.className = 'sync-status' + (kind ? ' '+kind : '');
+  },
+
+  // Junta todas as chaves de dados do cache local num único objeto p/ o Gist
+  snapshotLocal(){
+    const obj = {};
+    Object.keys(localStorage).forEach(k=>{
+      if(k.startsWith(NS)) obj[k.slice(NS.length)] = localStorage.getItem(k);
+    });
+    return obj;
+  },
+
+  // Aplica um objeto vindo do Gist no cache local (sobrescreve as chaves de dados)
+  applyToLocal(obj){
+    // remove chaves de dados atuais e regrava com o remoto
+    Object.keys(localStorage).forEach(k=>{ if(k.startsWith(NS)) localStorage.removeItem(k); });
+    Object.entries(obj||{}).forEach(([k,v])=>{
+      localStorage.setItem(NS+k, typeof v==='string' ? v : JSON.stringify(v));
+    });
+  },
+
+  async pull(){
+    if(!this.isConfigured()) return false;
+    this.setStatus('syncing','sincronizando…');
+    try{
+      const res = await fetch(GIST_API + this.gistId, {
+        headers: {
+          'Authorization': 'Bearer ' + this.token,
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+        cache: 'no-store'
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const gist = await res.json();
+      const file = gist.files && gist.files[GIST_FILE];
+      if(!file){ this.setStatus('on','conectado (vazio)'); this.lastRemoteRaw='{}'; return false; }
+      let raw = file.content;
+      // Arquivos grandes vêm truncados; nesse caso buscamos o raw_url completo
+      if(file.truncated && file.raw_url){
+        const r2 = await fetch(file.raw_url, {cache:'no-store'});
+        raw = await r2.text();
+      }
+      const changed = raw !== this.lastRemoteRaw;
+      this.lastRemoteRaw = raw;
+      if(changed){
+        let parsed = {};
+        try{ parsed = JSON.parse(raw); }catch(e){ parsed = {}; }
+        this.applyToLocal(parsed);
+        if(this.onRemoteUpdate) this.onRemoteUpdate();
+      }
+      this.setStatus('on','conectado');
+      return changed;
+    }catch(e){
+      this.setStatus('err','erro ao sincronizar');
+      console.warn('[sync] pull falhou:', e.message);
+      return false;
+    }
+  },
+
+  // Envia o estado local atual para o Gist (agrupando chamadas próximas)
+  schedulePush(){
+    if(!this.isConfigured()) return;
+    clearTimeout(this.pushTimer);
+    this.pushTimer = setTimeout(()=>this.push(), PUSH_DEBOUNCE_MS);
+  },
+
+  async push(){
+    if(!this.isConfigured()) return;
+    this.setStatus('syncing','salvando…');
+    const raw = JSON.stringify(this.snapshotLocal());
+    try{
+      const res = await fetch(GIST_API + this.gistId, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': 'Bearer ' + this.token,
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ files: { [GIST_FILE]: { content: raw } } })
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      this.lastRemoteRaw = raw;
+      this.setStatus('on','conectado');
+    }catch(e){
+      this.setStatus('err','erro ao salvar');
+      console.warn('[sync] push falhou:', e.message);
+    }
+  },
+
+  start(){
+    if(!this.isConfigured()){ this.enabled=false; this.setStatus('', 'desligada'); return; }
+    this.enabled = true;
+    this.setStatus('syncing','conectando…');
+    // carrega o remoto e depois inicia o polling
+    this.pull().then(()=>{
+      clearInterval(this.pollTimer);
+      this.pollTimer = setInterval(()=>{ if(!document.hidden) this.pull(); }, POLL_MS);
+    });
+  },
+
+  stop(){
+    this.enabled = false;
+    clearInterval(this.pollTimer);
+    clearTimeout(this.pushTimer);
+    this.setStatus('', 'desligada');
+  },
+
+  // Cria um Gist secreto novo já com o arquivo de dados e devolve o ID
+  async createGist(){
+    if(!this.token) throw new Error('Cole seu token do GitHub primeiro.');
+    const raw = JSON.stringify(this.snapshotLocal());
+    const res = await fetch(GIST_API.slice(0,-1), {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + this.token,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        description: 'Acompanhamento de Cargas — base compartilhada (não editar à mão)',
+        public: false,
+        files: { [GIST_FILE]: { content: raw || '{}' } }
+      })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status+' ao criar Gist');
+    const gist = await res.json();
+    return gist.id;
+  }
+};
+
+// window.storage: cache local instantâneo + agendamento de envio ao Gist.
+// Só é instalado se não houver um window.storage nativo (ambiente de artifact).
 if (!window.storage) {
-  const NS = 'crg:';
   window.storage = {
     async get(key) {
       const raw = localStorage.getItem(NS + key);
@@ -2035,10 +2244,12 @@ if (!window.storage) {
     },
     async set(key, value) {
       localStorage.setItem(NS + key, value);
+      Sync.schedulePush();   // grava local na hora, envia ao Gist em background
       return { key, value, shared: false };
     },
     async delete(key) {
       localStorage.removeItem(NS + key);
+      Sync.schedulePush();
       return { key, deleted: true, shared: false };
     },
     async list(prefix) {
@@ -2801,6 +3012,90 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
   document.getElementById('printArea').innerHTML = html;
   window.print();
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// UI DE SINCRONIZAÇÃO
+// ══════════════════════════════════════════════════════════════════════════
+(function initSyncUI(){
+  const $id = id => document.getElementById(id);
+  const cfgBox = $id('syncConfig');
+  const gistInput = $id('syncGistId');
+  const tokenInput = $id('syncToken');
+  const msg = $id('syncMsg');
+  const disableBtn = $id('syncDisableBtn');
+
+  // pré-preenche com o que já estiver salvo neste navegador
+  gistInput.value = Sync.gistId || '';
+  tokenInput.value = Sync.token || '';
+
+  // Quando o Gist remoto muda (outra pessoa editou), recarrega índices e tela.
+  // O caso atual em uso é preservado se ainda existir.
+  Sync.onRemoteUpdate = async function(){
+    await loadData();  // loadData já chama rebuildIndexes + renderAll
+  };
+
+  function showMsg(text, err){
+    msg.textContent = text;
+    msg.className = 'msg' + (err ? ' err' : '');
+  }
+  function reflectState(){
+    disableBtn.style.display = Sync.enabled ? 'inline-block' : 'none';
+  }
+
+  $id('syncToggleCfg').addEventListener('click', ()=>{
+    cfgBox.style.display = cfgBox.style.display==='none' ? 'block' : 'none';
+  });
+
+  $id('syncSaveBtn').addEventListener('click', ()=>{
+    const gid = gistInput.value.trim();
+    const tok = tokenInput.value.trim();
+    if(!tok){ showMsg('Cole seu token do GitHub.', true); return; }
+    if(!gid){ showMsg('Informe o ID do Gist (ou clique em "Criar Gist automaticamente").', true); return; }
+    Sync.token = tok; Sync.gistId = gid;
+    localStorage.setItem(CFG_TOKEN, tok);
+    localStorage.setItem(CFG_GIST, gid);
+    showMsg('Ativado. Sincronizando…', false);
+    Sync.start();
+    reflectState();
+  });
+
+  $id('syncCreateGistBtn').addEventListener('click', async ()=>{
+    const tok = tokenInput.value.trim();
+    if(!tok){ showMsg('Cole seu token do GitHub primeiro.', true); return; }
+    Sync.token = tok;
+    localStorage.setItem(CFG_TOKEN, tok);
+    showMsg('Criando Gist…', false);
+    try{
+      const id = await Sync.createGist();
+      Sync.gistId = id;
+      gistInput.value = id;
+      localStorage.setItem(CFG_GIST, id);
+      showMsg('Gist criado! ID: '+id+'  — compartilhe esse ID com o time. Sincronizando…', false);
+      Sync.start();
+      reflectState();
+    }catch(e){
+      showMsg('Falha ao criar Gist: '+e.message+' (verifique se o token tem escopo "gist").', true);
+    }
+  });
+
+  disableBtn.addEventListener('click', ()=>{
+    Sync.stop();
+    localStorage.removeItem(CFG_TOKEN);
+    localStorage.removeItem(CFG_GIST);
+    Sync.token=''; Sync.gistId='';
+    tokenInput.value=''; 
+    showMsg('Sincronização desligada. Os dados continuam salvos localmente neste navegador.', false);
+    reflectState();
+  });
+
+  // Se já estava configurado (token+gist salvos), liga automaticamente ao abrir
+  if(Sync.isConfigured()){
+    Sync.start();
+    reflectState();
+  } else {
+    Sync.setStatus('', 'desligada');
+  }
+})();
 
 loadData();
 
