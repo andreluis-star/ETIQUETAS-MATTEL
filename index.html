@@ -249,13 +249,230 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 .toast.error{background:var(--red)}
 
 /* Print */
+/* Nota: a impressão de Etiquetas/Resumo/Folha Rosto é feita em janelas popup
+   próprias (window.open + document.write), então não depende de regras
+   @media print nesta página. A impressão nativa da aba "Acompanhamento de
+   Cargas" (window.print() direto nesta página) usa suas próprias regras,
+   declaradas mais abaixo, junto com o restante do CSS escopado em #tabCargas. */
+
+/* ── Alternância entre Conversor de NF-e e Acompanhamento de Cargas ─────────── */
+.app-switch{display:flex;gap:8px;padding:10px 26px;background:var(--surface);border-bottom:1px solid var(--border)}
+.app-switch-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.app-switch-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.app-switch-btn:hover:not(.active){color:var(--text);border-color:var(--accent)}
+
+/* ══════════════════════════════════════════════════════════════════
+   ACOMPANHAMENTO DE CARGAS — CSS escopado sob #tabCargas (evita conflito
+   com o restante do app, que usa nomes de classe/tag genéricos como
+   button, table, select etc.)
+   ══════════════════════════════════════════════════════════════════ */
+#tabCargas{
+    --navy:#1A3A6E;
+    --navy-dark:#122A50;
+    --orange:#E8611A;
+    --orange-light:#FFEFE3;
+    --bg:#F3F5F8;
+    --card:#FFFFFF;
+    --line:#E1E6ED;
+    --text:#1F2733;
+    --muted:#6B7686;
+    --green:#1E8E5A;
+    --green-bg:#E7F6EE;
+    --amber:#B5790A;
+    --amber-bg:#FFF4DF;
+  }
+#tabCargas *{box-sizing:border-box;}
+#tabCargas{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+  }
+#tabCargas header{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);
+    color:#fff; padding:22px 28px; display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:12px;
+  }
+#tabCargas header h1{margin:0; font-size:20px; letter-spacing:.3px;}
+#tabCargas header .tag{font-size:12px; opacity:.78; font-weight:400; margin-top:2px;}
+#tabCargas header .brand{display:flex; flex-direction:column;}
+#tabCargas .stripe{height:4px; background:var(--orange);}
+#tabCargas .wrap{max-width:1180px; margin:0 auto; padding:22px 20px 60px;}
+#tabCargas .grid-top{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;}
+#tabCargas .card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px;}
+#tabCargas .card h2{font-size:14px; margin:0 0 4px; color:var(--navy);}
+#tabCargas .card .sub{font-size:12px; color:var(--muted); margin-bottom:10px;}
+#tabCargas textarea{
+    width:100%; min-height:110px; resize:vertical; border:1px solid var(--line); border-radius:8px;
+    padding:10px; font-family:Consolas, monospace; font-size:12px; color:var(--text); background:#FAFBFC;
+  }
+#tabCargas .row-btns{display:flex; gap:8px; margin-top:10px; align-items:center; flex-wrap:wrap;}
+#tabCargas button{
+    border:none; border-radius:7px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer;
+    transition:filter .15s;
+  }
+#tabCargas button:hover{filter:brightness(0.95);}
+#tabCargas .btn-primary{background:var(--orange); color:#fff;}
+#tabCargas .msg{font-size:12px; color:var(--green); margin-left:4px;}
+#tabCargas .msg.err{color:#C0392B;}
+#tabCargas .cal-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px;}
+#tabCargas .cal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+#tabCargas .cal-header .month-label{font-size:17px; font-weight:700; color:var(--navy); text-transform:capitalize;}
+#tabCargas .nav-btn{background:var(--bg); border:1px solid var(--line); color:var(--navy); width:32px; height:32px; border-radius:7px; font-size:15px;}
+#tabCargas .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+#tabCargas .dow{font-size:11px; text-align:center; color:var(--muted); font-weight:600; padding-bottom:4px;}
+#tabCargas .day-cell{
+    min-height:78px; border:1px solid var(--line); border-radius:8px; padding:6px; background:#FCFDFE;
+    display:flex; flex-direction:column; gap:4px;
+  }
+#tabCargas .day-cell.empty{background:transparent; border:none;}
+#tabCargas .day-cell.today{outline:2px solid var(--navy);}
+#tabCargas .day-cell .dnum{font-size:11px; color:var(--muted); font-weight:600;}
+#tabCargas .day-cell.has-data{cursor:pointer; background:#fff;}
+#tabCargas .day-cell.has-data:hover{border-color:var(--orange);}
+#tabCargas .day-cell.selected{background:var(--orange-light); border-color:var(--orange);}
+#tabCargas .badge{
+    font-size:10.5px; background:var(--navy); color:#fff; border-radius:5px; padding:2px 6px; display:inline-block; width:fit-content;
+  }
+#tabCargas .badge.partial{background:var(--amber-bg); color:var(--amber);}
+#tabCargas .badge.done{background:var(--green-bg); color:var(--green);}
+#tabCargas .nfcount{font-size:10px; color:var(--muted);}
+#tabCargas .detail-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px;}
+#tabCargas .detail-card h3{margin:0 0 12px; color:var(--navy); font-size:15px;}
+#tabCargas .proc-item{
+    border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:8px; cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+#tabCargas .proc-item:hover{border-color:var(--orange);}
+#tabCargas .proc-item .codigo{font-weight:700; font-size:13px; color:var(--navy);}
+#tabCargas .proc-item .stats{font-size:11.5px; color:var(--muted);}
+#tabCargas .proc-item.expanded{border-color:var(--orange); background:#FFFBF7;}
+#tabCargas table{width:100%; border-collapse:collapse; margin-top:10px; font-size:12.5px;}
+#tabCargas th, #tabCargas td{border-bottom:1px solid var(--line); padding:7px 8px; text-align:left; vertical-align:top;}
+#tabCargas th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.3px;}
+#tabCargas tr:last-child td{border-bottom:none;}
+#tabCargas .status-pill{display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap;}
+#tabCargas .status-pill.pending{background:var(--amber-bg); color:var(--amber);}
+#tabCargas .status-pill.ok{background:var(--green-bg); color:var(--green);}
+#tabCargas .reset-link{font-size:11.5px; color:var(--muted); text-decoration:underline; cursor:pointer; background:none; border:none; padding:0;}
+#tabCargas .top-actions{display:flex; justify-content:flex-end; margin-bottom:8px;}
+#tabCargas .casos-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
+#tabCargas .casos-card h2{font-size:14px; margin:0 0 4px; color:var(--navy);}
+#tabCargas .caso-atual{
+    display:inline-block; font-size:11.5px; background:var(--orange-light); color:var(--orange);
+    border-radius:12px; padding:2px 10px; font-weight:700; margin-left:8px; vertical-align:middle;
+  }
+#tabCargas .save-row{display:flex; gap:8px; margin:10px 0 14px; flex-wrap:wrap; align-items:center;}
+#tabCargas .save-row input{
+    flex:1; min-width:200px; border:1px solid var(--line); border-radius:7px; padding:8px 10px;
+    font-size:13px; color:var(--text); background:#FAFBFC;
+  }
+#tabCargas .btn-navy{background:var(--navy); color:#fff;}
+#tabCargas .caso-item{
+    border:1px solid var(--line); border-radius:8px; padding:9px 12px; margin-bottom:7px;
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+#tabCargas .caso-item.active{border-color:var(--orange); background:#FFFBF7;}
+#tabCargas .caso-item .caso-nome{font-weight:700; font-size:13px; color:var(--navy);}
+#tabCargas .caso-item .caso-info{font-size:11.5px; color:var(--muted);}
+#tabCargas .caso-item .caso-acoes{display:flex; gap:6px;}
+#tabCargas .btn-sm{padding:5px 10px; font-size:12px;}
+#tabCargas .btn-danger{background:#fff; color:#C0392B; border:1px solid #EFC7C2;}
+#tabCargas{
+    --red:#C0392B; --red-bg:#FBEAE8;
+    --blue-dark:#123A7A; --blue-bg:#E4ECFA;
+  }
+#tabCargas .sep-select{
+    border:none; border-radius:12px; padding:4px 10px; font-size:11px; font-weight:700;
+    cursor:pointer; appearance:none; -webkit-appearance:none; text-align:center;
+  }
+#tabCargas .sep-select.sep-aguardando{background:var(--red-bg); color:var(--red);}
+#tabCargas .sep-select.sep-emprocesso{background:var(--amber-bg); color:var(--amber);}
+#tabCargas .sep-select.sep-separada{background:var(--blue-bg); color:var(--blue-dark);}
+#tabCargas .sep-select.sep-expedido{background:var(--orange-light); color:var(--orange);}
+#tabCargas .sep-mini{
+    display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; vertical-align:middle;
+  }
+#tabCargas .sep-mini.r{background:var(--red);}
+#tabCargas .sep-mini.y{background:#E0A700;}
+#tabCargas .sep-mini.b{background:var(--blue-dark);}
+#tabCargas .sep-mini.o{background:var(--orange);}
+#tabCargas .prazo-pill{
+    display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap;
+  }
+#tabCargas .prazo-pill.ok{background:var(--green-bg); color:var(--green);}
+#tabCargas .prazo-pill.hoje{background:var(--amber-bg); color:var(--amber);}
+#tabCargas .prazo-pill.vencido{background:var(--red-bg); color:var(--red);}
+#tabCargas .prazo-pill.concluido{background:var(--blue-bg); color:var(--blue-dark);}
+#tabCargas .prazos-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
+#tabCargas .prazos-card h2{font-size:14px; margin:0 0 10px; color:var(--navy);}
+#tabCargas .prazo-item{
+    border:1px solid var(--line); border-radius:8px; padding:9px 12px; margin-bottom:7px; cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+#tabCargas .prazo-item:hover{border-color:var(--orange);}
+#tabCargas .prazo-item .p-cod{font-weight:700; font-size:13px; color:var(--navy);}
+#tabCargas .prazo-item .p-info{font-size:11.5px; color:var(--muted);}
+#tabCargas .sep-bar{
+    height:7px; border-radius:4px; background:var(--line); overflow:hidden; width:130px; display:flex;
+  }
+#tabCargas .sep-bar .seg{height:100%;}
+#tabCargas .sep-bar .seg.b{background:var(--blue-dark);}
+#tabCargas .sep-bar .seg.y{background:#E0A700;}
+#tabCargas .sep-bar .seg.r{background:var(--red);}
+#tabCargas .sep-bar .seg.o{background:var(--orange);}
+#tabCargas .print-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
+#tabCargas .print-card h2{font-size:14px; margin:0 0 10px; color:var(--navy);}
+#tabCargas .print-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+#tabCargas .print-row select, #tabCargas .print-row input[type="date"]{
+    border:1px solid var(--line); border-radius:7px; padding:7px 10px; font-size:13px; background:#FAFBFC; color:var(--text);
+  }
+#tabCargas .print-row label{font-size:12.5px; color:var(--muted); font-weight:600;}
+#printArea{display:none;}
+#printArea .pr-header{
+    border-bottom:3px solid #1A3A6E; padding-bottom:8px; margin-bottom:14px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+  }
+#printArea .pr-header h1{font-size:17px; margin:0; color:#1A3A6E;}
+#printArea .pr-header .pr-sub{font-size:10.5px; color:#555;}
+#printArea .pr-dia{
+    background:#1A3A6E; color:#fff; font-size:13px; font-weight:700; padding:5px 10px; border-radius:4px;
+    margin:14px 0 8px; page-break-after:avoid;
+  }
+#printArea .pr-proc{
+    border:1px solid #BBB; border-radius:5px; padding:8px 10px; margin-bottom:10px; page-break-inside:avoid;
+  }
+#printArea .pr-proc-head{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;
+    border-bottom:1px solid #DDD; padding-bottom:5px; margin-bottom:6px;
+  }
+#printArea .pr-proc-head .cod{font-size:13px; font-weight:800; color:#1A3A6E;}
+#printArea .pr-proc-head .meta{font-size:10px; color:#444;}
+#printArea table{width:100%; border-collapse:collapse; font-size:9.5px;}
+#printArea th, #printArea td{border:1px solid #CCC; padding:3px 5px; text-align:left; vertical-align:top;}
+#printArea th{background:#EEF1F6; color:#1A3A6E; font-size:8.5px; text-transform:uppercase;}
+#printArea .st{font-weight:700; padding:1px 5px; border-radius:3px; font-size:8.5px; white-space:nowrap;}
+#printArea .st.r{background:#FBEAE8; color:#C0392B;}
+#printArea .st.y{background:#FFF4DF; color:#B5790A;}
+#printArea .st.b{background:#E4ECFA; color:#123A7A;}
+#printArea .st.o{background:#FFEFE3; color:#E8611A;}
+#printArea .pr-resumo{
+    font-size:10px; color:#333; margin-bottom:10px; border:1px solid #DDD; border-radius:4px; padding:6px 8px;
+    background:#F7F8FA;
+  }
+#printArea .pr-assin{
+    margin-top:26px; display:flex; gap:40px;
+  }
+#printArea .pr-assin div{flex:1; border-top:1px solid #666; padding-top:4px; font-size:10px; text-align:center; color:#444;}
+
 @media print{
-  body,header,.container,.tabs-row,.toolbar,.stats-bar,#file-list,.drop-zone,#tabDados,#tabEtiquetas .minuta-panel,#tabEtiquetas .label-actions{display:none!important}
-  #tabEtiquetas{display:block!important;padding:0!important;margin:0!important}
-  .labels-grid{display:block}
-  .etiqueta{width:148mm;height:105mm;page-break-after:always;break-after:page;margin:0}
-  @page{size:A4 portrait;margin:5mm}
+body *{visibility:hidden;}
+#printArea, #printArea *{visibility:visible;}
+#printArea{
+      display:block !important; position:absolute; left:0; top:0; width:100%;
+      background:#fff; color:#000; font-size:11px;
+    }
+@page{margin:12mm;}
 }
+
 </style>
 </head>
 <body>
@@ -268,7 +485,12 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
   </div>
 </header>
 
-<div class="container">
+<div class="app-switch">
+  <button class="app-switch-btn active" id="btnSectionNfe"    onclick="switchSection('nfe')">📄 Conversor de NF-e</button>
+  <button class="app-switch-btn"        id="btnSectionCargas" onclick="switchSection('cargas')">🚚 Acompanhamento de Cargas</button>
+</div>
+
+<div class="container" id="appNfe">
 
   <!-- Drop Zone -->
   <label class="drop-zone" id="dropZone" for="fileInput">
@@ -443,6 +665,138 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
   </div>
 
 </div><!-- /container -->
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ACOMPANHAMENTO DE CARGAS — ferramenta independente (coletas, minutas,
+     calendário, prazos de separação e relatórios), escopada em #tabCargas
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="tabCargas" style="display:none">
+
+<header>
+  <div class="brand">
+    <h1>Acompanhamento de Cargas</h1>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo</div>
+  </div>
+  <div class="tag" id="summaryTag">—</div>
+</header>
+<div class="stripe"></div>
+
+<div class="wrap">
+
+  <div class="casos-card">
+    <h2>Casos salvos <span class="caso-atual" id="casoAtualTag">caso atual: sem nome</span></h2>
+    <div class="sub" style="font-size:12px; color:var(--muted); margin-bottom:4px;">
+      Salve o trabalho atual com um nome (ex.: "Mattel semana 29") e monte um histórico. Você pode reabrir qualquer caso depois.
+    </div>
+    <div class="save-row">
+      <input type="text" id="casoNomeInput" placeholder="Nome do caso (ex.: Mattel 15/07)">
+      <button class="btn-navy" id="salvarCasoBtn">💾 Salvar caso atual</button>
+      <button class="btn-ghost-alt" id="novoCasoBtn" style="background:#fff; color:var(--navy); border:1px solid var(--line);">➕ Novo caso em branco</button>
+      <span class="msg" id="casoMsg"></span>
+    </div>
+    <div id="casosList"></div>
+  </div>
+
+  <div class="top-actions">
+    <button class="reset-link" id="resetBtn">limpar todos os dados</button>
+  </div>
+
+  <div class="grid-top">
+    <div class="card">
+      <h2>Adicionar Coletas</h2>
+      <div class="sub">Cole as linhas no formato "Coleta Mattel dd/mm - CÓDIGO - NFs ..."</div>
+      <textarea id="coletasInput" placeholder="Cole aqui o texto das coletas..."></textarea>
+      <div class="row-btns">
+        <button class="btn-primary" id="processarColetas">Processar coletas</button>
+        <span class="msg" id="coletasMsg"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Adicionar Minutas</h2>
+      <div class="sub">Cole a tabela de minutas direto da planilha (colunas separadas por tab)</div>
+      <textarea id="minutasInput" placeholder="Cole aqui a tabela de minutas..."></textarea>
+      <div class="row-btns">
+        <button class="btn-primary" id="processarMinutas">Processar minutas</button>
+        <span class="msg" id="minutasMsg"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cal-card">
+    <div class="cal-header">
+      <button class="nav-btn" id="prevMonth">‹</button>
+      <div class="month-label" id="monthLabel">—</div>
+      <button class="nav-btn" id="nextMonth">›</button>
+    </div>
+    <div class="cal-grid" id="dowRow"></div>
+    <div class="cal-grid" id="calGrid" style="margin-top:6px;"></div>
+  </div>
+
+  <div class="print-card">
+    <h2>🖨️ Impressão de Relatórios</h2>
+    <div class="print-row">
+      <label>Tipo:</label>
+      <select id="printTipo">
+        <option value="geral">Geral (tudo)</option>
+        <option value="dia">Por dia</option>
+        <option value="periodo">Por período</option>
+        <option value="processo">Por processo</option>
+      </select>
+      <span id="printDiaWrap" style="display:none;">
+        <label>Dia:</label>
+        <input type="date" id="printDia">
+      </span>
+      <span id="printPeriodoWrap" style="display:none;">
+        <label>De:</label>
+        <input type="date" id="printDe">
+        <label>Até:</label>
+        <input type="date" id="printAte">
+      </span>
+      <span id="printProcWrap" style="display:none;">
+        <label>Processo:</label>
+        <select id="printProc"></select>
+      </span>
+      <button class="btn-primary" id="printBtn">Imprimir</button>
+      <span class="msg" id="printMsg"></span>
+    </div>
+  </div>
+
+  <div class="prazos-card" id="prazosCard" style="display:none;">
+    <h2>⏱️ Prazos de Separação <span style="font-weight:400; color:var(--muted); font-size:12px;">(coleta + 2 dias úteis de trabalho interno)</span></h2>
+    <div id="prazosList"></div>
+  </div>
+
+  <div class="detail-card" id="dayDetail" style="display:none;">
+    <h3 id="dayDetailTitle">Processos do dia</h3>
+    <div id="procList"></div>
+  </div>
+
+  <div class="detail-card" id="procDetail" style="display:none;">
+    <h3 id="procDetailTitle">Notas fiscais do processo</h3>
+    <div id="procPrazoInfo" style="margin-bottom:6px;"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>NF</th>
+          <th>Separação</th>
+          <th>Minuta</th>
+          <th>CTE</th>
+          <th>Destinatário</th>
+          <th>Cidade</th>
+          <th>Ocorrência</th>
+          <th>Data status</th>
+        </tr>
+      </thead>
+      <tbody id="nfTableBody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<div id="printArea"></div>
+
+</div><!-- /tabCargas -->
+
 <div class="toast" id="toast"></div>
 <div id="labelBatchModal" class="lb-modal-wrap" style="display:none"></div>
 
@@ -1642,6 +1996,816 @@ $('fileInput').addEventListener('change', e=>{ if(e.target.files.length) process
 
 // Init siglas count
 document.addEventListener('DOMContentLoaded', ()=>{ $('siglasCount').textContent = Object.keys(SIGLAS).length; });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ALTERNÂNCIA DE SEÇÃO: Conversor de NF-e  ⇄  Acompanhamento de Cargas
+// ══════════════════════════════════════════════════════════════════════════════
+function switchSection(section) {
+  const isCargas = section === 'cargas';
+  $('appNfe').style.display     = isCargas ? 'none'  : 'block';
+  $('tabCargas').style.display  = isCargas ? 'block' : 'none';
+  $('btnSectionNfe').classList.toggle('active', !isCargas);
+  $('btnSectionCargas').classList.toggle('active', isCargas);
+}
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ACOMPANHAMENTO DE CARGAS — script isolado em IIFE própria, para não
+     colidir com nomes de função/variável do script principal acima
+     (ambos têm, por ex., suas próprias funções internas com nomes comuns).
+     ══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+// Polyfill de window.storage baseado em localStorage: esta ferramenta foi
+// originalmente construída como um artifact do Claude (usa a API
+// window.storage de armazenamento persistente). Aqui ela roda como página
+// HTML comum, então simulamos a mesma API por cima do localStorage do
+// navegador — mantendo o app 100% funcional fora do ambiente de artifacts.
+// Se window.storage já existir de verdade (rodando dentro de um artifact),
+// o polyfill não é aplicado e a API nativa é usada normalmente.
+if (!window.storage) {
+  const NS = 'crg:';
+  window.storage = {
+    async get(key) {
+      const raw = localStorage.getItem(NS + key);
+      if (raw === null) throw new Error('key not found: ' + key);
+      return { key, value: raw, shared: false };
+    },
+    async set(key, value) {
+      localStorage.setItem(NS + key, value);
+      return { key, value, shared: false };
+    },
+    async delete(key) {
+      localStorage.removeItem(NS + key);
+      return { key, deleted: true, shared: false };
+    },
+    async list(prefix) {
+      const p = NS + (prefix || '');
+      const keys = Object.keys(localStorage).filter(k => k.startsWith(p)).map(k => k.slice(NS.length));
+      return { keys, prefix, shared: false };
+    }
+  };
+}
+
+
+let processos = {};   // codigo -> {codigo, dia, mes, ano, nfs:[...]}
+let minutas = {};     // id -> {...}
+let nfToMinuta = {};
+
+let casos = {};          // nome -> {savedAt, processos, minutas}
+let casoAtual = null;    // nome do caso aberto (ou null = sem nome)
+
+let curYear = 2026, curMonth = 7;
+let selectedDateKey = null;
+let selectedProcesso = null;
+
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const DOW = ["dom","seg","ter","qua","qui","sex","sáb"];
+
+// --- Separação interna ---
+const SEP_STATUS = {
+  AGUARDANDO: {label:'AGUARDANDO PROCESSO', cls:'sep-aguardando'},
+  EM_PROCESSO:{label:'EM PROCESSO',         cls:'sep-emprocesso'},
+  SEPARADA:   {label:'SEPARADA',            cls:'sep-separada'},
+  EXPEDIDO:   {label:'EXPEDIDO',            cls:'sep-expedido'}
+};
+
+function getSepStatus(proc, nf){
+  if(!proc.statusNfs) proc.statusNfs = {};
+  return proc.statusNfs[nf] || 'AGUARDANDO';
+}
+
+function sepCounts(proc){
+  const c = {AGUARDANDO:0, EM_PROCESSO:0, SEPARADA:0, EXPEDIDO:0};
+  proc.nfs.forEach(nf=>{ c[getSepStatus(proc,nf)]++; });
+  return c;
+}
+
+// Prazo = data da coleta + 2 dias
+function prazoDate(proc){
+  return new Date(proc.ano, proc.mes-1, proc.dia + 2);
+}
+function fmtDate(d){
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+// Retorna {cls,label} para o pill de prazo do processo
+function prazoInfo(proc){
+  const c = sepCounts(proc);
+  const total = proc.nfs.length;
+  const prazo = prazoDate(proc);
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const pz = new Date(prazo); pz.setHours(0,0,0,0);
+
+  if((c.SEPARADA + c.EXPEDIDO) === total && total > 0){
+    return {cls:'concluido', label:`✔ separado — prazo ${fmtDate(prazo)}`};
+  }
+  if(hoje > pz)  return {cls:'vencido', label:`⚠ VENCIDO — prazo era ${fmtDate(prazo)}`};
+  if(hoje.getTime() === pz.getTime()) return {cls:'hoje', label:`⏳ VENCE HOJE (${fmtDate(prazo)})`};
+  return {cls:'ok', label:`prazo ${fmtDate(prazo)}`};
+}
+
+async function loadData(){
+  try{
+    const p = await window.storage.get('processos-data', false);
+    processos = p ? JSON.parse(p.value) : {};
+  }catch(e){ processos = {}; }
+  try{
+    const m = await window.storage.get('minutas-data', false);
+    minutas = m ? JSON.parse(m.value) : {};
+  }catch(e){ minutas = {}; }
+  try{
+    const c = await window.storage.get('casos-historico', false);
+    casos = c ? JSON.parse(c.value) : {};
+  }catch(e){ casos = {}; }
+  try{
+    const ca = await window.storage.get('caso-atual-nome', false);
+    casoAtual = ca ? JSON.parse(ca.value) : null;
+  }catch(e){ casoAtual = null; }
+  rebuildIndexes();
+  renderAll();
+}
+
+async function saveCasos(){
+  await window.storage.set('casos-historico', JSON.stringify(casos), false);
+}
+async function saveCasoAtualNome(){
+  await window.storage.set('caso-atual-nome', JSON.stringify(casoAtual), false);
+}
+
+async function saveProcessos(){
+  await window.storage.set('processos-data', JSON.stringify(processos), false);
+}
+async function saveMinutas(){
+  await window.storage.set('minutas-data', JSON.stringify(minutas), false);
+}
+
+function rebuildIndexes(){
+  nfToMinuta = {};
+  Object.values(minutas).forEach(m=>{
+    m.nfs.forEach(nf=>{ nfToMinuta[nf]=m; });
+  });
+}
+
+// ---------- PARSE COLETAS ----------
+function parseColetas(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  let added = 0;
+  lines.forEach(line=>{
+    const codigoMatch = line.match(/\d{6}[A-Z]{4,}/);
+    if(!codigoMatch) return;
+    const codigo = codigoMatch[0];
+    const dataMatch = line.match(/(\d{2})\/(\d{2})/);
+    if(!dataMatch) return;
+    const dia = Number(dataMatch[1]);
+    const mes = Number(dataMatch[2]);
+    const rest = line.slice(codigoMatch.index + codigo.length);
+    const nfs = (rest.match(/\d{3,}/g) || []);
+    if(nfs.length === 0) return;
+
+    if(!processos[codigo]){
+      processos[codigo] = {codigo, dia, mes, ano: curYear, nfs: []};
+    } else {
+      processos[codigo].dia = dia;
+      processos[codigo].mes = mes;
+    }
+    const set = new Set(processos[codigo].nfs);
+    nfs.forEach(nf=>set.add(nf));
+    processos[codigo].nfs = Array.from(set);
+    added++;
+  });
+  return added;
+}
+
+// ---------- PARSE MINUTAS ----------
+function parseMinutas(text){
+  const lines = text.split('\n').map(l=>l.replace(/\r$/,'')).filter(l=>l.trim().length>0);
+  let added = 0;
+  lines.forEach(line=>{
+    const cols = line.split('\t');
+    const id = (cols[0]||'').trim();
+    if(!/^\d+$/.test(id)) return; // skip header / invalid rows
+    const nfsRaw = (cols[8]||'').replace(/^'/,'');
+    const nfs = nfsRaw.split(',').map(s=>s.trim()).filter(s=>/^\d+$/.test(s));
+    if(nfs.length===0) return;
+
+    minutas[id] = {
+      id,
+      cte: (cols[1]||'').trim(),
+      coleta: (cols[2]||'').trim(),
+      dataEmissao: (cols[6]||'').trim(),
+      dataColeta: (cols[7]||'').trim(),
+      nfs,
+      valor: (cols[9]||'').trim(),
+      volumes: (cols[10]||'').trim(),
+      peso: (cols[11]||'').trim(),
+      remetente: (cols[12]||'').trim(),
+      cidadeOrigem: (cols[13]||'').trim(),
+      destinatario: (cols[14]||'').trim(),
+      cidadeDestino: (cols[15]||'').trim(),
+      trecho: (cols[16]||'').trim(),
+      prevEntrega: (cols[17]||'').trim(),
+      respEntrega: (cols[18]||'').trim(),
+      ocorrencia: (cols[20]||'').trim(),
+      dataStatus: (cols[21]||'').trim()
+    };
+    added++;
+  });
+  return added;
+}
+
+// ---------- RENDER ----------
+function renderAll(){
+  renderSummary();
+  renderCasos();
+  renderPrazos();
+  renderCalendar();
+  if(selectedDateKey) renderDayDetail(selectedDateKey);
+  if(selectedProcesso) renderProcDetail(selectedProcesso);
+}
+
+function renderPrazos(){
+  const card = document.getElementById('prazosCard');
+  const list = document.getElementById('prazosList');
+  const pendentes = Object.values(processos).filter(p=>{
+    const c = sepCounts(p);
+    return (c.SEPARADA + c.EXPEDIDO) < p.nfs.length; // ainda não 100% separado/expedido
+  });
+  if(pendentes.length===0){
+    if(Object.keys(processos).length===0){ card.style.display='none'; return; }
+    card.style.display='block';
+    list.innerHTML = '<div style="font-size:12.5px; color:var(--green); font-weight:600; padding:4px 0;">✔ Todos os processos estão separados. Nenhuma pendência.</div>';
+    return;
+  }
+  card.style.display='block';
+  // ordena por prazo mais urgente
+  pendentes.sort((a,b)=>prazoDate(a) - prazoDate(b));
+  list.innerHTML='';
+  pendentes.forEach(p=>{
+    const c = sepCounts(p);
+    const total = p.nfs.length;
+    const info = prazoInfo(p);
+    const pctO = total? (c.EXPEDIDO/total*100):0;
+    const pctB = total? (c.SEPARADA/total*100):0;
+    const pctY = total? (c.EM_PROCESSO/total*100):0;
+    const pctR = total? (c.AGUARDANDO/total*100):0;
+    const div = document.createElement('div');
+    div.className='prazo-item';
+    div.innerHTML = `
+      <div>
+        <div class="p-cod">${p.codigo}</div>
+        <div class="p-info">coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')} ·
+          <span class="sep-mini o"></span>${c.EXPEDIDO}
+          <span class="sep-mini b" style="margin-left:6px;"></span>${c.SEPARADA}
+          <span class="sep-mini y" style="margin-left:6px;"></span>${c.EM_PROCESSO}
+          <span class="sep-mini r" style="margin-left:6px;"></span>${c.AGUARDANDO}
+          &nbsp;de ${total} NFs</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div class="sep-bar">
+          <div class="seg o" style="width:${pctO}%"></div>
+          <div class="seg b" style="width:${pctB}%"></div>
+          <div class="seg y" style="width:${pctY}%"></div>
+          <div class="seg r" style="width:${pctR}%"></div>
+        </div>
+        <span class="prazo-pill ${info.cls}">${info.label}</span>
+      </div>`;
+    div.addEventListener('click', ()=>{
+      selectedDateKey = dateKey(p.dia, p.mes, p.ano);
+      selectedProcesso = p.codigo;
+      curMonth = p.mes; curYear = p.ano;
+      renderAll();
+      document.getElementById('procDetail').scrollIntoView({behavior:'smooth', block:'nearest'});
+    });
+    list.appendChild(div);
+  });
+}
+
+function renderCasos(){
+  document.getElementById('casoAtualTag').textContent =
+    casoAtual ? `caso atual: ${casoAtual}` : 'caso atual: sem nome';
+
+  const list = document.getElementById('casosList');
+  const nomes = Object.keys(casos).sort((a,b)=>{
+    return (casos[b].savedAt||'').localeCompare(casos[a].savedAt||'');
+  });
+  if(nomes.length===0){
+    list.innerHTML = '<div style="font-size:12px; color:var(--muted); padding:4px 0;">Nenhum caso salvo ainda.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  nomes.forEach(nome=>{
+    const c = casos[nome];
+    const nProc = Object.keys(c.processos||{}).length;
+    const nNfs = new Set(Object.values(c.processos||{}).flatMap(p=>p.nfs)).size;
+    const dt = c.savedAt ? new Date(c.savedAt) : null;
+    const dtStr = dt ? dt.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    const div = document.createElement('div');
+    div.className = 'caso-item' + (casoAtual===nome ? ' active':'');
+    div.innerHTML = `
+      <div>
+        <div class="caso-nome">${nome}</div>
+        <div class="caso-info">${nProc} processos · ${nNfs} NFs · salvo em ${dtStr}</div>
+      </div>
+      <div class="caso-acoes">
+        <button class="btn-navy btn-sm" data-acao="abrir" data-nome="${nome}">Abrir</button>
+        <button class="btn-danger btn-sm" data-acao="excluir" data-nome="${nome}">Excluir</button>
+      </div>`;
+    list.appendChild(div);
+  });
+
+  list.querySelectorAll('button[data-acao]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const nome = btn.getAttribute('data-nome');
+      const acao = btn.getAttribute('data-acao');
+      if(acao==='abrir'){
+        if(!confirm(`Abrir o caso "${nome}"? O trabalho atual não salvo será substituído.\n\nDica: salve o caso atual antes, se quiser mantê-lo.`)) return;
+        const c = casos[nome];
+        processos = JSON.parse(JSON.stringify(c.processos||{}));
+        minutas = JSON.parse(JSON.stringify(c.minutas||{}));
+        casoAtual = nome;
+        selectedDateKey=null; selectedProcesso=null;
+        document.getElementById('dayDetail').style.display='none';
+        document.getElementById('procDetail').style.display='none';
+        rebuildIndexes();
+        try{
+          await saveProcessos(); await saveMinutas(); await saveCasoAtualNome();
+        }catch(err){}
+        renderAll();
+      } else if(acao==='excluir'){
+        if(!confirm(`Excluir o caso "${nome}" do histórico? Essa ação não pode ser desfeita.`)) return;
+        delete casos[nome];
+        if(casoAtual===nome){ casoAtual=null; try{ await saveCasoAtualNome(); }catch(err){} }
+        try{ await saveCasos(); }catch(err){}
+        renderAll();
+      }
+    });
+  });
+}
+
+function renderSummary(){
+  const totalProc = Object.keys(processos).length;
+  const allNfs = new Set(Object.values(processos).flatMap(p=>p.nfs));
+  const comMinuta = [...allNfs].filter(nf=>nfToMinuta[nf]).length;
+  document.getElementById('summaryTag').textContent =
+    totalProc === 0 ? 'nenhum dado carregado' :
+    `${totalProc} processos · ${allNfs.size} NFs · ${comMinuta} com minuta`;
+}
+
+function dateKey(dia,mes,ano){
+  return `${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+}
+
+function renderCalendar(){
+  document.getElementById('monthLabel').textContent = `${MESES[curMonth-1]} de ${curYear}`;
+  document.getElementById('dowRow').innerHTML = DOW.map(d=>`<div class="dow">${d}</div>`).join('');
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(curYear, curMonth-1, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(curYear, curMonth, 0).getDate();
+
+  const byDay = {};
+  Object.values(processos).forEach(p=>{
+    if(p.mes===curMonth && p.ano===curYear){
+      (byDay[p.dia] = byDay[p.dia] || []).push(p);
+    }
+  });
+
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear()===curYear && (today.getMonth()+1)===curMonth;
+
+  for(let i=0;i<startWeekday;i++){
+    const cell = document.createElement('div');
+    cell.className = 'day-cell empty';
+    grid.appendChild(cell);
+  }
+
+  for(let d=1; d<=daysInMonth; d++){
+    const cell = document.createElement('div');
+    const key = dateKey(d,curMonth,curYear);
+    const procsForDay = byDay[d] || [];
+    let cls = 'day-cell';
+    if(procsForDay.length>0) cls += ' has-data';
+    if(isCurrentMonth && today.getDate()===d) cls += ' today';
+    if(selectedDateKey===key) cls += ' selected';
+    cell.className = cls;
+
+    let inner = `<div class="dnum">${d}</div>`;
+    if(procsForDay.length>0){
+      const nfsSet = new Set(procsForDay.flatMap(p=>p.nfs));
+      const totalNfs = nfsSet.size;
+      const comMinuta = [...nfsSet].filter(nf=>nfToMinuta[nf]).length;
+      let sep = {AGUARDANDO:0, EM_PROCESSO:0, SEPARADA:0, EXPEDIDO:0};
+      procsForDay.forEach(p=>{
+        const c = sepCounts(p);
+        sep.AGUARDANDO+=c.AGUARDANDO; sep.EM_PROCESSO+=c.EM_PROCESSO; sep.SEPARADA+=c.SEPARADA; sep.EXPEDIDO+=c.EXPEDIDO;
+      });
+      let badgeClass = 'badge';
+      if(comMinuta>0 && comMinuta<totalNfs) badgeClass += ' partial';
+      else if(comMinuta===totalNfs && totalNfs>0) badgeClass += ' done';
+      inner += `<span class="${badgeClass}">${procsForDay.length} proc.</span>`;
+      inner += `<span class="nfcount">${totalNfs} NFs · ${comMinuta} c/ minuta</span>`;
+      inner += `<span class="nfcount"><span class="sep-mini o"></span>${sep.EXPEDIDO} <span class="sep-mini b" style="margin-left:4px;"></span>${sep.SEPARADA} <span class="sep-mini y" style="margin-left:4px;"></span>${sep.EM_PROCESSO} <span class="sep-mini r" style="margin-left:4px;"></span>${sep.AGUARDANDO}</span>`;
+    }
+    cell.innerHTML = inner;
+    if(procsForDay.length>0){
+      cell.addEventListener('click', ()=>{
+        selectedDateKey = key;
+        selectedProcesso = null;
+        document.getElementById('procDetail').style.display='none';
+        renderAll();
+        document.getElementById('dayDetail').scrollIntoView({behavior:'smooth', block:'nearest'});
+      });
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function renderDayDetail(key){
+  const parts = key.split('-').map(Number);
+  const ano = parts[0], mes = parts[1], dia = parts[2];
+  const procsForDay = Object.values(processos).filter(p=>p.dia===dia && p.mes===mes && p.ano===ano);
+  const box = document.getElementById('dayDetail');
+  if(procsForDay.length===0){ box.style.display='none'; return; }
+  box.style.display='block';
+  document.getElementById('dayDetailTitle').textContent =
+    `Processos de ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}`;
+
+  const list = document.getElementById('procList');
+  list.innerHTML = '';
+  procsForDay.sort((a,b)=>a.codigo.localeCompare(b.codigo)).forEach(p=>{
+    const comMinuta = p.nfs.filter(nf=>nfToMinuta[nf]).length;
+    const c = sepCounts(p);
+    const info = prazoInfo(p);
+    const div = document.createElement('div');
+    div.className = 'proc-item' + (selectedProcesso===p.codigo ? ' expanded':'');
+    div.innerHTML = `<span class="codigo">${p.codigo}</span>
+      <span class="stats">
+        ${p.nfs.length} NFs · ${comMinuta}/${p.nfs.length} c/ minuta ·
+        <span class="sep-mini o"></span>${c.EXPEDIDO}
+        <span class="sep-mini b" style="margin-left:4px;"></span>${c.SEPARADA}
+        <span class="sep-mini y" style="margin-left:4px;"></span>${c.EM_PROCESSO}
+        <span class="sep-mini r" style="margin-left:4px;"></span>${c.AGUARDANDO}
+      </span>
+      <span class="prazo-pill ${info.cls}">${info.label}</span>`;
+    div.addEventListener('click', ()=>{
+      selectedProcesso = p.codigo;
+      renderAll();
+      document.getElementById('procDetail').scrollIntoView({behavior:'smooth', block:'nearest'});
+    });
+    list.appendChild(div);
+  });
+}
+
+function renderProcDetail(codigo){
+  const p = processos[codigo];
+  const box = document.getElementById('procDetail');
+  if(!p){ box.style.display='none'; return; }
+  box.style.display='block';
+  document.getElementById('procDetailTitle').textContent = `Processo ${codigo} — ${p.nfs.length} NFs`;
+
+  const info = prazoInfo(p);
+  const c = sepCounts(p);
+  document.getElementById('procPrazoInfo').innerHTML =
+    `<span class="prazo-pill ${info.cls}">${info.label}</span>
+     <span style="font-size:12px; color:var(--muted); margin-left:10px;">
+       coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano} ·
+       <span class="sep-mini o"></span>${c.EXPEDIDO} expedidas
+       <span class="sep-mini b" style="margin-left:6px;"></span>${c.SEPARADA} separadas
+       <span class="sep-mini y" style="margin-left:6px;"></span>${c.EM_PROCESSO} em processo
+       <span class="sep-mini r" style="margin-left:6px;"></span>${c.AGUARDANDO} aguardando
+     </span>`;
+
+  const tbody = document.getElementById('nfTableBody');
+  tbody.innerHTML='';
+  const sortedNfs = [...p.nfs].sort((a,b)=>Number(a)-Number(b));
+  sortedNfs.forEach(nf=>{
+    const m = nfToMinuta[nf];
+    const st = getSepStatus(p, nf);
+    const sepCell = `<select class="sep-select ${SEP_STATUS[st].cls}" data-nf="${nf}">
+        <option value="AGUARDANDO" ${st==='AGUARDANDO'?'selected':''}>AGUARDANDO PROCESSO</option>
+        <option value="EM_PROCESSO" ${st==='EM_PROCESSO'?'selected':''}>EM PROCESSO</option>
+        <option value="SEPARADA" ${st==='SEPARADA'?'selected':''}>SEPARADA</option>
+        <option value="EXPEDIDO" ${st==='EXPEDIDO'?'selected':''}>EXPEDIDO</option>
+      </select>`;
+    const tr = document.createElement('tr');
+    if(m){
+      tr.innerHTML = `<td><strong>${nf}</strong></td>
+        <td>${sepCell}</td>
+        <td><span class="status-pill ok">com minuta</span></td>
+        <td>${m.cte||'—'}</td>
+        <td>${m.destinatario||'—'}</td>
+        <td>${m.cidadeDestino||'—'}</td>
+        <td>${m.ocorrencia||'—'}</td>
+        <td>${m.dataStatus||'—'}</td>`;
+    } else {
+      tr.innerHTML = `<td><strong>${nf}</strong></td>
+        <td>${sepCell}</td>
+        <td><span class="status-pill pending">aguardando minuta</span></td>
+        <td colspan="5" style="color:var(--muted);">—</td>`;
+    }
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('select.sep-select').forEach(sel=>{
+    sel.addEventListener('change', async ()=>{
+      const nf = sel.getAttribute('data-nf');
+      if(!p.statusNfs) p.statusNfs = {};
+      p.statusNfs[nf] = sel.value;
+      try{ await saveProcessos(); }catch(e){}
+      renderAll(); // atualiza cores, contadores, prazos e calendário
+    });
+  });
+}
+
+// ---------- EVENTS ----------
+document.getElementById('processarColetas').addEventListener('click', async ()=>{
+  const txt = document.getElementById('coletasInput').value;
+  const msg = document.getElementById('coletasMsg');
+  if(!txt.trim()){ msg.textContent='Cole algo antes de processar.'; msg.className='msg err'; return; }
+  const n = parseColetas(txt);
+  if(n===0){ msg.textContent='Nenhuma linha reconhecida.'; msg.className='msg err'; return; }
+  rebuildIndexes();
+  try{
+    await saveProcessos();
+    msg.textContent = `${n} linha(s) processada(s) e salvas.`;
+    msg.className='msg';
+    document.getElementById('coletasInput').value='';
+    renderAll();
+  }catch(e){
+    msg.textContent='Processado, mas houve erro ao salvar.'; msg.className='msg err';
+    renderAll();
+  }
+});
+
+document.getElementById('processarMinutas').addEventListener('click', async ()=>{
+  const txt = document.getElementById('minutasInput').value;
+  const msg = document.getElementById('minutasMsg');
+  if(!txt.trim()){ msg.textContent='Cole algo antes de processar.'; msg.className='msg err'; return; }
+  const n = parseMinutas(txt);
+  if(n===0){ msg.textContent='Nenhuma linha reconhecida.'; msg.className='msg err'; return; }
+  rebuildIndexes();
+  try{
+    await saveMinutas();
+    msg.textContent = `${n} minuta(s) processada(s) e salvas.`;
+    msg.className='msg';
+    document.getElementById('minutasInput').value='';
+    renderAll();
+  }catch(e){
+    msg.textContent='Processado, mas houve erro ao salvar.'; msg.className='msg err';
+    renderAll();
+  }
+});
+
+document.getElementById('prevMonth').addEventListener('click', ()=>{
+  curMonth--; if(curMonth<1){curMonth=12; curYear--;}
+  selectedDateKey=null; selectedProcesso=null;
+  document.getElementById('dayDetail').style.display='none';
+  document.getElementById('procDetail').style.display='none';
+  renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', ()=>{
+  curMonth++; if(curMonth>12){curMonth=1; curYear++;}
+  selectedDateKey=null; selectedProcesso=null;
+  document.getElementById('dayDetail').style.display='none';
+  document.getElementById('procDetail').style.display='none';
+  renderCalendar();
+});
+
+document.getElementById('salvarCasoBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('casoNomeInput');
+  const msg = document.getElementById('casoMsg');
+  let nome = input.value.trim();
+  if(!nome && casoAtual) nome = casoAtual; // re-salvar no caso aberto
+  if(!nome){ msg.textContent='Dê um nome ao caso.'; msg.className='msg err'; return; }
+  if(Object.keys(processos).length===0){
+    msg.textContent='Não há dados para salvar.'; msg.className='msg err'; return;
+  }
+  if(casos[nome] && nome!==casoAtual){
+    if(!confirm(`Já existe um caso chamado "${nome}". Sobrescrever?`)) return;
+  }
+  casos[nome] = {
+    savedAt: new Date().toISOString(),
+    processos: JSON.parse(JSON.stringify(processos)),
+    minutas: JSON.parse(JSON.stringify(minutas))
+  };
+  casoAtual = nome;
+  try{
+    await saveCasos(); await saveCasoAtualNome();
+    msg.textContent = `Caso "${nome}" salvo no histórico.`;
+    msg.className='msg';
+    input.value='';
+    renderAll();
+  }catch(e){
+    msg.textContent='Erro ao salvar o caso.'; msg.className='msg err';
+  }
+});
+
+document.getElementById('novoCasoBtn').addEventListener('click', async ()=>{
+  if(Object.keys(processos).length>0){
+    if(!confirm('Começar um caso novo em branco?\n\nO trabalho atual será limpo da tela (os casos já salvos no histórico permanecem). Se ainda não salvou o atual, cancele e salve primeiro.')) return;
+  }
+  processos = {}; minutas = {}; casoAtual = null;
+  selectedDateKey=null; selectedProcesso=null;
+  document.getElementById('dayDetail').style.display='none';
+  document.getElementById('procDetail').style.display='none';
+  rebuildIndexes();
+  try{
+    await saveProcessos(); await saveMinutas(); await saveCasoAtualNome();
+  }catch(e){}
+  renderAll();
+});
+
+document.getElementById('resetBtn').addEventListener('click', async ()=>{
+  if(!confirm('ATENÇÃO: isso apaga TUDO — o trabalho atual E todos os casos salvos no histórico. Essa ação não pode ser desfeita. Confirma?')) return;
+  processos = {}; minutas = {}; casos = {}; casoAtual = null;
+  selectedDateKey=null; selectedProcesso=null;
+  document.getElementById('dayDetail').style.display='none';
+  document.getElementById('procDetail').style.display='none';
+  try{
+    await window.storage.set('processos-data', JSON.stringify(processos), false);
+    await window.storage.set('minutas-data', JSON.stringify(minutas), false);
+    await window.storage.set('casos-historico', JSON.stringify(casos), false);
+    await window.storage.set('caso-atual-nome', JSON.stringify(casoAtual), false);
+  }catch(e){}
+  rebuildIndexes();
+  renderAll();
+});
+
+// ---------- IMPRESSÃO ----------
+const SEP_PRINT = {
+  AGUARDANDO: {label:'AGUARDANDO', cls:'r'},
+  EM_PROCESSO:{label:'EM PROCESSO', cls:'y'},
+  SEPARADA:   {label:'SEPARADA', cls:'b'},
+  EXPEDIDO:   {label:'EXPEDIDO', cls:'o'}
+};
+
+function procDateObj(p){ return new Date(p.ano, p.mes-1, p.dia); }
+
+function buildPrintHTML(procsFiltrados, tituloFiltro){
+  if(procsFiltrados.length===0) return null;
+
+  // agrupar por data
+  const porData = {};
+  procsFiltrados.forEach(p=>{
+    const k = dateKey(p.dia,p.mes,p.ano);
+    (porData[k] = porData[k] || []).push(p);
+  });
+  const datas = Object.keys(porData).sort();
+
+  // resumo geral
+  let tProc=0, tNfs=0, tMin=0, tSep={AGUARDANDO:0,EM_PROCESSO:0,SEPARADA:0,EXPEDIDO:0};
+  procsFiltrados.forEach(p=>{
+    tProc++;
+    tNfs += p.nfs.length;
+    tMin += p.nfs.filter(nf=>nfToMinuta[nf]).length;
+    const c = sepCounts(p);
+    tSep.AGUARDANDO+=c.AGUARDANDO; tSep.EM_PROCESSO+=c.EM_PROCESSO; tSep.SEPARADA+=c.SEPARADA; tSep.EXPEDIDO+=c.EXPEDIDO;
+  });
+
+  const agora = new Date();
+  const agoraStr = agora.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  let html = `
+    <div class="pr-header">
+      <div>
+        <h1>Acompanhamento de Cargas — Mattel</h1>
+        <div class="pr-sub">${tituloFiltro}${casoAtual ? ' · Caso: '+casoAtual : ''}</div>
+      </div>
+      <div class="pr-sub">Emitido em ${agoraStr}</div>
+    </div>
+    <div class="pr-resumo">
+      <strong>Resumo:</strong> ${tProc} processo(s) · ${tNfs} NF(s) · ${tMin} com minuta ·
+      Separação: ${tSep.EXPEDIDO} expedidas / ${tSep.SEPARADA} separadas / ${tSep.EM_PROCESSO} em processo / ${tSep.AGUARDANDO} aguardando
+    </div>`;
+
+  datas.forEach(dk=>{
+    const parts = dk.split('-');
+    html += `<div class="pr-dia">Coleta em ${parts[2]}/${parts[1]}/${parts[0]}</div>`;
+    porData[dk].sort((a,b)=>a.codigo.localeCompare(b.codigo)).forEach(p=>{
+      const c = sepCounts(p);
+      const info = prazoInfo(p);
+      const prazo = fmtDate(prazoDate(p));
+      html += `
+      <div class="pr-proc">
+        <div class="pr-proc-head">
+          <span class="cod">${p.codigo}</span>
+          <span class="meta">
+            ${p.nfs.length} NFs · Prazo de separação: <strong>${prazo}</strong> ·
+            Situação: ${c.EXPEDIDO} exp. / ${c.SEPARADA} sep. / ${c.EM_PROCESSO} em proc. / ${c.AGUARDANDO} aguard.
+            ${info.cls==='vencido' ? ' · <strong style="color:#C0392B;">PRAZO VENCIDO</strong>' : ''}
+            ${info.cls==='hoje' ? ' · <strong style="color:#B5790A;">VENCE HOJE</strong>' : ''}
+            ${info.cls==='concluido' ? ' · <strong style="color:#123A7A;">CONCLUÍDO</strong>' : ''}
+          </span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>NF</th><th>Separação</th><th>Minuta</th><th>CTE</th><th>Destinatário</th>
+              <th>Cidade destino</th><th>Vol.</th><th>Peso</th><th>Prev. entrega</th><th>Ocorrência</th>
+            </tr>
+          </thead>
+          <tbody>`;
+      const sortedNfs = [...p.nfs].sort((a,b)=>Number(a)-Number(b));
+      sortedNfs.forEach(nf=>{
+        const st = SEP_PRINT[getSepStatus(p,nf)];
+        const m = nfToMinuta[nf];
+        html += `<tr>
+          <td><strong>${nf}</strong></td>
+          <td><span class="st ${st.cls}">${st.label}</span></td>
+          <td>${m ? (m.id||'sim') : '—'}</td>
+          <td>${m ? (m.cte||'—') : '—'}</td>
+          <td>${m ? (m.destinatario||'—') : '—'}</td>
+          <td>${m ? (m.cidadeDestino||'—') : '—'}</td>
+          <td>${m ? (m.volumes||'—') : '—'}</td>
+          <td>${m ? (m.peso||'—') : '—'}</td>
+          <td>${m ? (m.prevEntrega||'—') : '—'}</td>
+          <td>${m ? (m.ocorrencia||'—') : '—'}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+    });
+  });
+
+  html += `
+    <div class="pr-assin">
+      <div>Responsável pela separação</div>
+      <div>Conferente</div>
+      <div>Coordenação de Logística</div>
+    </div>`;
+  return html;
+}
+
+function atualizarPrintProcSelect(){
+  const sel = document.getElementById('printProc');
+  const codigos = Object.keys(processos).sort();
+  sel.innerHTML = codigos.map(c=>{
+    const p = processos[c];
+    return `<option value="${c}">${c} (${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')})</option>`;
+  }).join('');
+}
+
+document.getElementById('printTipo').addEventListener('change', ()=>{
+  const t = document.getElementById('printTipo').value;
+  document.getElementById('printDiaWrap').style.display = t==='dia' ? 'inline' : 'none';
+  document.getElementById('printPeriodoWrap').style.display = t==='periodo' ? 'inline' : 'none';
+  document.getElementById('printProcWrap').style.display = t==='processo' ? 'inline' : 'none';
+  if(t==='processo') atualizarPrintProcSelect();
+});
+
+document.getElementById('printBtn').addEventListener('click', ()=>{
+  const t = document.getElementById('printTipo').value;
+  const msg = document.getElementById('printMsg');
+  msg.textContent='';
+  let filtrados = [];
+  let titulo = '';
+
+  if(t==='geral'){
+    filtrados = Object.values(processos);
+    titulo = 'Relatório Geral — todos os processos';
+  }
+  else if(t==='dia'){
+    const v = document.getElementById('printDia').value;
+    if(!v){ msg.textContent='Selecione o dia.'; msg.className='msg err'; return; }
+    const [ano,mes,dia] = v.split('-').map(Number);
+    filtrados = Object.values(processos).filter(p=>p.dia===dia && p.mes===mes && p.ano===ano);
+    titulo = `Relatório do dia ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}`;
+  }
+  else if(t==='periodo'){
+    const de = document.getElementById('printDe').value;
+    const ate = document.getElementById('printAte').value;
+    if(!de || !ate){ msg.textContent='Preencha as duas datas.'; msg.className='msg err'; return; }
+    const dDe = new Date(de+'T00:00:00');
+    const dAte = new Date(ate+'T23:59:59');
+    if(dDe > dAte){ msg.textContent='Data inicial maior que a final.'; msg.className='msg err'; return; }
+    filtrados = Object.values(processos).filter(p=>{
+      const d = procDateObj(p);
+      return d >= dDe && d <= dAte;
+    });
+    const f = s=>{const [a,m,d]=s.split('-'); return `${d}/${m}/${a}`;};
+    titulo = `Relatório do período ${f(de)} a ${f(ate)}`;
+  }
+  else if(t==='processo'){
+    const cod = document.getElementById('printProc').value;
+    if(!cod){ msg.textContent='Nenhum processo disponível.'; msg.className='msg err'; return; }
+    filtrados = processos[cod] ? [processos[cod]] : [];
+    titulo = `Relatório do processo ${cod}`;
+  }
+
+  const html = buildPrintHTML(filtrados, titulo);
+  if(!html){ msg.textContent='Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
+  document.getElementById('printArea').innerHTML = html;
+  window.print();
+});
+
+loadData();
+
+
+})();
 </script>
 </body>
 </html>
