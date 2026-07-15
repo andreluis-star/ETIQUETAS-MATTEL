@@ -356,6 +356,22 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .top-actions{display:flex; justify-content:flex-end; margin-bottom:8px;}
 #tabCargas .casos-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
 #tabCargas .sync-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
+#tabCargas .access-bar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 18px; margin-bottom:12px;}
+#tabCargas .access-info{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+#tabCargas .access-badge{display:inline-block; font-size:12px; font-weight:700; border-radius:12px; padding:4px 12px; background:var(--amber-bg); color:var(--amber); white-space:nowrap;}
+#tabCargas .access-badge.edit{background:var(--green-bg); color:var(--green);}
+#tabCargas .access-desc{font-size:12px; color:var(--muted);}
+#tabCargas .access-actions{display:flex; align-items:center; gap:8px;}
+#tabCargas .access-cfg-btn{background:var(--bg); border:1px solid var(--line); color:var(--navy); width:32px; height:32px; border-radius:7px; font-size:14px;}
+#tabCargas .access-cfg{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-bottom:20px;}
+#tabCargas .access-cfg-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+#tabCargas .access-cfg-row input{flex:1; min-width:200px; border:1px solid var(--line); border-radius:7px; padding:8px 10px; font-size:13px; background:#FAFBFC; color:var(--text);}
+/* Estado somente-leitura: esconde/atenua os controles de edição */
+#tabCargas.readonly .grid-top,
+#tabCargas.readonly .save-row,
+#tabCargas.readonly .top-actions{opacity:.5; pointer-events:none;}
+#tabCargas.readonly .sep-select{pointer-events:none; opacity:.7;}
+#tabCargas.readonly .caso-acoes{opacity:.5; pointer-events:none;}
 #tabCargas .sync-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
 #tabCargas .sync-card h2{font-size:14px; margin:0; color:var(--navy);}
 #tabCargas .sync-status{display:inline-block; font-size:11px; border-radius:12px; padding:2px 10px; font-weight:700; margin-left:6px; vertical-align:middle; background:var(--line); color:var(--muted);}
@@ -696,6 +712,28 @@ body *{visibility:hidden;}
 <div class="stripe"></div>
 
 <div class="wrap">
+
+  <div class="access-bar" id="accessBar">
+    <div class="access-info">
+      <span class="access-badge" id="accessBadge">🔒 Somente leitura</span>
+      <span class="access-desc" id="accessDesc">Você pode visualizar tudo. Para cadastrar ou alterar, desbloqueie a edição.</span>
+    </div>
+    <div class="access-actions">
+      <button class="btn-navy" id="unlockBtn" type="button">🔓 Desbloquear edição</button>
+      <button class="btn-ghost-alt" id="lockBtn" type="button" style="background:#fff; color:var(--navy); border:1px solid var(--line); display:none;">🔒 Bloquear</button>
+      <button class="access-cfg-btn" id="accessCfgBtn" type="button">⚙</button>
+    </div>
+  </div>
+  <div class="access-cfg" id="accessCfg" style="display:none;">
+    <div class="sub" style="font-size:12px; color:var(--muted); margin-bottom:8px;">
+      Defina a senha que libera a edição. Ela é compartilhada com a base sincronizada, então todos usam a mesma. <b>Atenção:</b> esta é uma trava contra alterações acidentais — num site estático ela não é uma barreira de segurança forte contra alguém tecnicamente determinado.
+    </div>
+    <div class="access-cfg-row">
+      <input type="password" id="accessNewPass" placeholder="Nova senha de edição" autocomplete="new-password">
+      <button class="btn-navy" id="accessSetPassBtn" type="button">Definir senha</button>
+      <span class="msg" id="accessCfgMsg"></span>
+    </div>
+  </div>
 
   <div class="sync-card" id="syncCard">
     <div class="sync-head">
@@ -2233,6 +2271,64 @@ const Sync = {
   }
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// CONTROLE DE ACESSO (modo leitura x edição por senha)
+// ──────────────────────────────────────────────────────────────────────────
+// Por padrão o app abre em SOMENTE LEITURA. A edição é liberada com uma senha
+// compartilhada, guardada junto com a base sincronizada (chave 'edit-pass-hash'
+// dentro do próprio storage → vai para o Gist e vale para todos).
+// A senha é guardada como hash simples — não é criptografia forte, apenas
+// evita que fique legível em texto puro. Como já conversado, num site estático
+// isto é uma trava contra alterações acidentais, não uma barreira de segurança
+// robusta. Se nenhuma senha foi definida ainda, a edição fica liberada para
+// que o primeiro responsável configure tudo (e então defina a senha).
+// ══════════════════════════════════════════════════════════════════════════
+const Access = {
+  unlocked: false,       // este navegador está com edição liberada?
+  onChange: null,        // callback p/ atualizar UI
+
+  // hash simples e determinístico (FNV-1a) — suficiente para o propósito de trava
+  hash(str){
+    let h = 0x811c9dc5;
+    for(let i=0;i<str.length;i++){
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return (h>>>0).toString(16);
+  },
+
+  storedHash(){ return localStorage.getItem(NS+'edit-pass-hash'); },
+
+  hasPassword(){ return !!this.storedHash(); },
+
+  // Define/atualiza a senha (só permitido quando já está em modo edição,
+  // ou quando ainda não existe senha nenhuma)
+  setPassword(plain){
+    const h = this.hash(plain);
+    localStorage.setItem(NS+'edit-pass-hash', h);
+    Sync.schedulePush();     // propaga a senha para a base compartilhada
+    this.unlocked = true;    // quem define a senha já fica com edição liberada
+    if(this.onChange) this.onChange();
+  },
+
+  tryUnlock(plain){
+    // se ainda não há senha definida, qualquer entrada libera (bootstrap)
+    if(!this.hasPassword()){ this.unlocked = true; if(this.onChange) this.onChange(); return true; }
+    if(this.hash(plain) === this.storedHash()){
+      this.unlocked = true;
+      if(this.onChange) this.onChange();
+      return true;
+    }
+    return false;
+  },
+
+  lock(){ this.unlocked = false; if(this.onChange) this.onChange(); },
+
+  // Modo de fato: se não há senha definida ainda, tratamos como "liberado"
+  // para permitir a configuração inicial; caso contrário, depende do unlock.
+  canEdit(){ return !this.hasPassword() || this.unlocked; }
+};
+
 // window.storage: cache local instantâneo + agendamento de envio ao Gist.
 // Só é instalado se não houver um window.storage nativo (ambiente de artifact).
 if (!window.storage) {
@@ -2434,6 +2530,10 @@ function renderAll(){
   renderCalendar();
   if(selectedDateKey) renderDayDetail(selectedDateKey);
   if(selectedProcesso) renderProcDetail(selectedProcesso);
+  // Reaplica o modo de acesso: selects de status e botões de casos são
+  // recriados aqui e nascem habilitados; em modo leitura precisam voltar
+  // a ficar desabilitados.
+  if(typeof applyAccessMode === 'function') applyAccessMode();
 }
 
 function renderPrazos(){
@@ -2528,6 +2628,7 @@ function renderCasos(){
 
   list.querySelectorAll('button[data-acao]').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
+      if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); return; }
       const nome = btn.getAttribute('data-nome');
       const acao = btn.getAttribute('data-acao');
       if(acao==='abrir'){
@@ -2724,6 +2825,11 @@ function renderProcDetail(codigo){
 
   tbody.querySelectorAll('select.sep-select').forEach(sel=>{
     sel.addEventListener('change', async ()=>{
+      if(!Access.canEdit()){
+        alert('🔒 Edição bloqueada. Desbloqueie com a senha.');
+        renderProcDetail(codigo); // restaura o valor anterior no select
+        return;
+      }
       const nf = sel.getAttribute('data-nf');
       if(!p.statusNfs) p.statusNfs = {};
       p.statusNfs[nf] = sel.value;
@@ -2735,6 +2841,7 @@ function renderProcDetail(codigo){
 
 // ---------- EVENTS ----------
 document.getElementById('processarColetas').addEventListener('click', async ()=>{
+  if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha antes de cadastrar.'); return; }
   const txt = document.getElementById('coletasInput').value;
   const msg = document.getElementById('coletasMsg');
   if(!txt.trim()){ msg.textContent='Cole algo antes de processar.'; msg.className='msg err'; return; }
@@ -2754,6 +2861,7 @@ document.getElementById('processarColetas').addEventListener('click', async ()=>
 });
 
 document.getElementById('processarMinutas').addEventListener('click', async ()=>{
+  if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha antes de cadastrar.'); return; }
   const txt = document.getElementById('minutasInput').value;
   const msg = document.getElementById('minutasMsg');
   if(!txt.trim()){ msg.textContent='Cole algo antes de processar.'; msg.className='msg err'; return; }
@@ -2788,6 +2896,7 @@ document.getElementById('nextMonth').addEventListener('click', ()=>{
 });
 
 document.getElementById('salvarCasoBtn').addEventListener('click', async ()=>{
+  if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); return; }
   const input = document.getElementById('casoNomeInput');
   const msg = document.getElementById('casoMsg');
   let nome = input.value.trim();
@@ -2817,6 +2926,7 @@ document.getElementById('salvarCasoBtn').addEventListener('click', async ()=>{
 });
 
 document.getElementById('novoCasoBtn').addEventListener('click', async ()=>{
+  if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); return; }
   if(Object.keys(processos).length>0){
     if(!confirm('Começar um caso novo em branco?\n\nO trabalho atual será limpo da tela (os casos já salvos no histórico permanecem). Se ainda não salvou o atual, cancele e salve primeiro.')) return;
   }
@@ -2832,6 +2942,7 @@ document.getElementById('novoCasoBtn').addEventListener('click', async ()=>{
 });
 
 document.getElementById('resetBtn').addEventListener('click', async ()=>{
+  if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); return; }
   if(!confirm('ATENÇÃO: isso apaga TUDO — o trabalho atual E todos os casos salvos no histórico. Essa ação não pode ser desfeita. Confirma?')) return;
   processos = {}; minutas = {}; casos = {}; casoAtual = null;
   selectedDateKey=null; selectedProcesso=null;
@@ -3031,7 +3142,8 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
   // Quando o Gist remoto muda (outra pessoa editou), recarrega índices e tela.
   // O caso atual em uso é preservado se ainda existir.
   Sync.onRemoteUpdate = async function(){
-    await loadData();  // loadData já chama rebuildIndexes + renderAll
+    await loadData();       // loadData já chama rebuildIndexes + renderAll
+    applyAccessMode();      // a senha pode ter chegado do remoto → reaplica trava
   };
 
   function showMsg(text, err){
@@ -3095,6 +3207,97 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
   } else {
     Sync.setStatus('', 'desligada');
   }
+})();
+
+// ══════════════════════════════════════════════════════════════════════════
+// UI DE CONTROLE DE ACESSO (leitura x edição)
+// ══════════════════════════════════════════════════════════════════════════
+// Aplica o modo atual à interface: em somente-leitura, marca o container com a
+// classe .readonly (que atenua/bloqueia os controles via CSS) e desabilita
+// diretamente os campos de entrada e selects para reforçar.
+function applyAccessMode(){
+  const tab = document.getElementById('tabCargas');
+  const canEdit = Access.canEdit();
+  if(tab) tab.classList.toggle('readonly', !canEdit);
+
+  // desabilita/reabilita campos e botões de edição diretamente
+  ['coletasInput','minutasInput','casoNomeInput','processarColetas',
+   'processarMinutas','salvarCasoBtn','novoCasoBtn','resetBtn'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.disabled = !canEdit;
+  });
+  document.querySelectorAll('#tabCargas select.sep-select').forEach(s=>{ s.disabled = !canEdit; });
+  document.querySelectorAll('#tabCargas .caso-acoes button').forEach(b=>{ b.disabled = !canEdit; });
+
+  // atualiza badge e botões da barra de acesso
+  const badge = document.getElementById('accessBadge');
+  const desc  = document.getElementById('accessDesc');
+  const unlockBtn = document.getElementById('unlockBtn');
+  const lockBtn = document.getElementById('lockBtn');
+  if(badge){
+    if(canEdit){
+      badge.textContent = '✏️ Edição liberada';
+      badge.className = 'access-badge edit';
+      desc.textContent = Access.hasPassword()
+        ? 'Você pode cadastrar e alterar. Bloqueie ao terminar para proteger a base.'
+        : 'Nenhuma senha definida ainda. Defina uma senha (⚙) para proteger a base.';
+      unlockBtn.style.display = 'none';
+      lockBtn.style.display = Access.hasPassword() ? 'inline-block' : 'none';
+    } else {
+      badge.textContent = '🔒 Somente leitura';
+      badge.className = 'access-badge';
+      desc.textContent = 'Você pode visualizar tudo. Para cadastrar ou alterar, desbloqueie a edição.';
+      unlockBtn.style.display = 'inline-block';
+      lockBtn.style.display = 'none';
+    }
+  }
+}
+
+(function initAccessUI(){
+  const $id = id => document.getElementById(id);
+  Access.onChange = applyAccessMode;
+
+  $id('unlockBtn').addEventListener('click', ()=>{
+    if(!Access.hasPassword()){
+      // sem senha ainda: libera direto e sugere definir uma
+      Access.tryUnlock('');
+      return;
+    }
+    const p = prompt('Senha de edição:');
+    if(p === null) return;
+    if(!Access.tryUnlock(p)){
+      alert('Senha incorreta.');
+    }
+  });
+
+  $id('lockBtn').addEventListener('click', ()=>{ Access.lock(); });
+
+  $id('accessCfgBtn').addEventListener('click', ()=>{
+    const box = $id('accessCfg');
+    box.style.display = box.style.display==='none' ? 'block' : 'none';
+  });
+
+  $id('accessSetPassBtn').addEventListener('click', ()=>{
+    const msg = $id('accessCfgMsg');
+    // só permite definir/trocar senha em modo edição (ou quando ainda não há senha)
+    if(Access.hasPassword() && !Access.unlocked){
+      msg.textContent = 'Desbloqueie a edição antes de trocar a senha.';
+      msg.className = 'msg err';
+      return;
+    }
+    const val = $id('accessNewPass').value;
+    if(!val || val.length < 3){
+      msg.textContent = 'Use uma senha com pelo menos 3 caracteres.';
+      msg.className = 'msg err';
+      return;
+    }
+    Access.setPassword(val);
+    $id('accessNewPass').value = '';
+    msg.textContent = 'Senha definida e sincronizada. A edição está liberada neste navegador.';
+    msg.className = 'msg';
+  });
+
+  applyAccessMode();
 })();
 
 loadData();
