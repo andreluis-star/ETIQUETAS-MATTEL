@@ -414,20 +414,33 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
     --blue-dark:#123A7A; --blue-bg:#E4ECFA;
   }
 #tabCargas .sep-select{
-    border:none; border-radius:12px; padding:4px 10px; font-size:11px; font-weight:700;
+    border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:5px 12px; font-size:12px; font-weight:700;
     cursor:pointer; appearance:none; -webkit-appearance:none; text-align:center;
   }
-#tabCargas .sep-select.sep-aguardando{background:var(--red-bg); color:var(--red);}
-#tabCargas .sep-select.sep-emprocesso{background:var(--amber-bg); color:var(--amber);}
-#tabCargas .sep-select.sep-separada{background:var(--blue-bg); color:var(--blue-dark);}
-#tabCargas .sep-select.sep-expedido{background:var(--green-bg); color:var(--green);}
-#tabCargas .sep-mini{
-    display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; vertical-align:middle;
+/* cores do select de status do processo */
+#tabCargas .sep-select.st-naocoletada{background:#FFFFFF; color:#333; border-color:#bbb;}
+#tabCargas .sep-select.st-naoproc{background:#C0392B; color:#fff;}
+#tabCargas .sep-select.st-separando{background:#E0A700; color:#333;}
+#tabCargas .sep-select.st-aguardexp{background:#123A7A; color:#fff;}
+#tabCargas .sep-select.st-expedida{background:#1E8E5A; color:#fff;}
+
+/* bolinhas grandes com a quantidade de processos por status, no calendário */
+#tabCargas .status-dots{display:flex; flex-wrap:wrap; gap:3px; margin-top:4px;}
+#tabCargas .sdot{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:20px; height:20px; padding:0 4px; border-radius:10px;
+    font-size:12px; font-weight:800; border:1px solid rgba(0,0,0,.22);
+    box-sizing:border-box; line-height:1;
   }
-#tabCargas .sep-mini.r{background:var(--red);}
-#tabCargas .sep-mini.y{background:#E0A700;}
-#tabCargas .sep-mini.b{background:var(--blue-dark);}
-#tabCargas .sep-mini.o{background:var(--green);}
+
+/* legenda de cores no topo do calendário */
+#tabCargas .status-legend{display:flex; flex-wrap:wrap; gap:10px 14px; margin:0 0 12px; padding:8px 10px; background:var(--bg); border:1px solid var(--line); border-radius:8px;}
+#tabCargas .leg-item{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:var(--navy);}
+#tabCargas .leg-dot{display:inline-block; width:13px; height:13px; border-radius:50%; border:1px solid rgba(0,0,0,.25);}
+
+/* tag de status colorida (listas de processos) */
+#tabCargas .status-tag{display:inline-block; padding:2px 9px; border-radius:11px; font-size:10.5px; font-weight:800; border:1px solid rgba(0,0,0,.18); white-space:nowrap; margin-left:6px;}
+
 #tabCargas .prazo-pill{
     display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap;
   }
@@ -444,14 +457,6 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .prazo-item:hover{border-color:var(--orange);}
 #tabCargas .prazo-item .p-cod{font-weight:700; font-size:13px; color:var(--navy);}
 #tabCargas .prazo-item .p-info{font-size:11.5px; color:var(--muted);}
-#tabCargas .sep-bar{
-    height:7px; border-radius:4px; background:var(--line); overflow:hidden; width:130px; display:flex;
-  }
-#tabCargas .sep-bar .seg{height:100%;}
-#tabCargas .sep-bar .seg.b{background:var(--blue-dark);}
-#tabCargas .sep-bar .seg.y{background:#E0A700;}
-#tabCargas .sep-bar .seg.r{background:var(--red);}
-#tabCargas .sep-bar .seg.o{background:var(--green);}
 #tabCargas .print-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
 #tabCargas .print-card h2{font-size:14px; margin:0 0 10px; color:var(--navy);}
 #tabCargas .print-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
@@ -479,14 +484,10 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
   }
 #printArea .pr-proc-head .cod{font-size:13px; font-weight:800; color:#1A3A6E;}
 #printArea .pr-proc-head .meta{font-size:10px; color:#444;}
+#printArea .st-print{font-weight:800; padding:2px 8px; border-radius:10px; font-size:9px; white-space:nowrap; border:1px solid rgba(0,0,0,.25); text-transform:uppercase;}
 #printArea table{width:100%; border-collapse:collapse; font-size:9.5px;}
 #printArea th, #printArea td{border:1px solid #CCC; padding:3px 5px; text-align:left; vertical-align:top;}
 #printArea th{background:#EEF1F6; color:#1A3A6E; font-size:8.5px; text-transform:uppercase;}
-#printArea .st{font-weight:700; padding:1px 5px; border-radius:3px; font-size:8.5px; white-space:nowrap;}
-#printArea .st.r{background:#FBEAE8; color:#C0392B;}
-#printArea .st.y{background:#FFF4DF; color:#B5790A;}
-#printArea .st.b{background:#E4ECFA; color:#123A7A;}
-#printArea .st.o{background:#E7F6EE; color:#1E8E5A;}
 #printArea .pr-resumo{
     font-size:10px; color:#333; margin-bottom:10px; border:1px solid #DDD; border-radius:4px; padding:6px 8px;
     background:#F7F8FA;
@@ -738,6 +739,7 @@ body *{visibility:hidden;}
     </div>
   </div>
 
+  <div id="configSections">
   <div class="sync-card" id="syncCard">
     <div class="sync-head">
       <h2>🔄 Sincronização em equipe <span class="sync-status" id="syncStatus">desligada</span></h2>
@@ -784,7 +786,17 @@ body *{visibility:hidden;}
         <span class="msg" id="minutasMsg"></span>
       </div>
     </div>
+    <div class="card">
+      <h2>Atualizar Previsão de Embarque</h2>
+      <div class="sub">Cole as linhas de embarque (formato "Embarque- Mattel do Brasil Ltda(dd/mm) ... ") — vincula o agendamento ao processo pelo número da minuta/NF.</div>
+      <textarea id="embarqueInput" placeholder="Cole aqui as linhas de embarque..."></textarea>
+      <div class="row-btns">
+        <button class="btn-primary" id="processarEmbarque">Atualizar previsão</button>
+        <span class="msg" id="embarqueMsg"></span>
+      </div>
+    </div>
   </div>
+  </div><!-- /configSections -->
 
   <div class="cal-card">
     <div class="cal-header">
@@ -792,6 +804,7 @@ body *{visibility:hidden;}
       <div class="month-label" id="monthLabel">—</div>
       <button class="nav-btn" id="nextMonth">›</button>
     </div>
+    <div class="status-legend" id="statusLegend"></div>
     <div class="cal-grid" id="dowRow"></div>
     <div class="cal-grid" id="calGrid" style="margin-top:6px;"></div>
   </div>
@@ -820,6 +833,10 @@ body *{visibility:hidden;}
         <label>Processo:</label>
         <select id="printProc"></select>
       </span>
+      <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+        <input type="checkbox" id="printHideExp" style="width:auto;">
+        Ocultar processos expedidos
+      </label>
       <button class="btn-primary" id="printBtn">Imprimir</button>
       <span class="msg" id="printMsg"></span>
     </div>
@@ -842,11 +859,11 @@ body *{visibility:hidden;}
       <thead>
         <tr>
           <th>NF</th>
-          <th>Separação</th>
           <th>Minuta</th>
           <th>CTE</th>
           <th>Destinatário</th>
           <th>Cidade</th>
+          <th>Prev. embarque</th>
           <th>Ocorrência</th>
           <th>Data status</th>
         </tr>
@@ -2327,22 +2344,39 @@ let selectedProcesso = null;
 const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 const DOW = ["dom","seg","ter","qua","qui","sex","sáb"];
 
-// --- Separação interna ---
+// --- Status do PROCESSO (um status por processo, não por nota) ---
+// Cada status tem: label, classe CSS, cor (para bolinha do calendário/impressão)
 const SEP_STATUS = {
-  AGUARDANDO: {label:'AGUARDANDO PROCESSO', cls:'sep-aguardando'},
-  EM_PROCESSO:{label:'EM PROCESSO',         cls:'sep-emprocesso'},
-  SEPARADA:   {label:'SEPARADA',            cls:'sep-separada'},
-  EXPEDIDO:   {label:'EXPEDIDO',            cls:'sep-expedido'}
+  NAO_COLETADA:   {label:'NÃO COLETADA',   cls:'st-naocoletada',  cor:'#FFFFFF', txt:'#333', key:'w'},
+  NAO_PROCESSADA: {label:'NÃO PROCESSADA', cls:'st-naoproc',      cor:'#C0392B', txt:'#fff', key:'r'},
+  SEPARANDO:      {label:'SEPARANDO',      cls:'st-separando',    cor:'#E0A700', txt:'#333', key:'y'},
+  AGUARDANDO_EXP: {label:'AGUARDANDO EXP', cls:'st-aguardexp',    cor:'#123A7A', txt:'#fff', key:'b'},
+  EXPEDIDA:       {label:'EXPEDIDA',       cls:'st-expedida',     cor:'#1E8E5A', txt:'#fff', key:'g'}
 };
+const SEP_ORDER = ['NAO_COLETADA','NAO_PROCESSADA','SEPARANDO','AGUARDANDO_EXP','EXPEDIDA'];
+const DEFAULT_STATUS = 'NAO_COLETADA';
 
-function getSepStatus(proc, nf){
-  if(!proc.statusNfs) proc.statusNfs = {};
-  return proc.statusNfs[nf] || 'AGUARDANDO';
+// Status do processo (com migração dos status antigos por-NF, se existirem)
+function getProcStatus(proc){
+  if(proc.status && SEP_STATUS[proc.status]) return proc.status;
+  // migração: se veio de versão antiga com statusNfs por nota, deriva um status
+  if(proc.statusNfs && Object.keys(proc.statusNfs).length){
+    const vals = Object.values(proc.statusNfs);
+    const allExp = vals.every(v=>v==='EXPEDIDO');
+    if(allExp) return 'EXPEDIDA';
+  }
+  return DEFAULT_STATUS;
 }
 
-function sepCounts(proc){
-  const c = {AGUARDANDO:0, EM_PROCESSO:0, SEPARADA:0, EXPEDIDO:0};
-  proc.nfs.forEach(nf=>{ c[getSepStatus(proc,nf)]++; });
+function setProcStatus(proc, status){
+  proc.status = status;
+  if(proc.statusNfs) delete proc.statusNfs; // limpa modelo antigo
+}
+
+// Conta processos por status dentro de uma lista
+function statusCountsList(procs){
+  const c = {NAO_COLETADA:0, NAO_PROCESSADA:0, SEPARANDO:0, AGUARDANDO_EXP:0, EXPEDIDA:0};
+  procs.forEach(p=>{ c[getProcStatus(p)]++; });
   return c;
 }
 
@@ -2353,16 +2387,15 @@ function prazoDate(proc){
 function fmtDate(d){
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
-// Retorna {cls,label} para o pill de prazo do processo
+// Retorna {cls,label} para o pill de prazo do processo (baseado no status do processo)
 function prazoInfo(proc){
-  const c = sepCounts(proc);
-  const total = proc.nfs.length;
+  const st = getProcStatus(proc);
   const prazo = prazoDate(proc);
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const pz = new Date(prazo); pz.setHours(0,0,0,0);
 
-  if((c.SEPARADA + c.EXPEDIDO) === total && total > 0){
-    return {cls:'concluido', label:`✔ separado — prazo ${fmtDate(prazo)}`};
+  if(st === 'EXPEDIDA'){
+    return {cls:'concluido', label:`✔ expedida — prazo ${fmtDate(prazo)}`};
   }
   if(hoje > pz)  return {cls:'vencido', label:`⚠ VENCIDO — prazo era ${fmtDate(prazo)}`};
   if(hoje.getTime() === pz.getTime()) return {cls:'hoje', label:`⏳ VENCE HOJE (${fmtDate(prazo)})`};
@@ -2478,7 +2511,61 @@ function parseMinutas(text){
   return added;
 }
 
-// ---------- RENDER ----------
+// ---------- PARSE PREVISÃO DE EMBARQUE ----------
+// Formato: "Embarque- Mattel do Brasil Ltda(dd/mm) ... <NF> <agendamento> ... <nº minuta> ..."
+// As colunas variam (o campo de agendamento às vezes tem tab/aspas internos), então
+// usamos âncoras estáveis: o número da minuta (6 dígitos), as NFs, e o texto que
+// começa com "Agendado". A previsão é gravada na minuta correspondente (campo
+// prevEmbarque), aparecendo no detalhe do processo e nos relatórios.
+function parseEmbarque(text){
+  const lines = text.split('\n').map(l=>l.replace(/\r$/,'')).filter(l=>l.trim().length>0);
+  let updated = 0;
+  lines.forEach(line=>{
+    // aceita "Embarque", "Emabarque" (grafia com erro do sistema de origem) e
+    // variações; se não bater no cabeçalho, ainda tentamos pela presença de
+    // "Agendado" na linha (âncora real da previsão).
+    if(!/emb\w*arque/i.test(line) && !/agendado/i.test(line)) return;
+    const cols = line.split('\t');
+
+    // número da minuta = primeiro campo com exatamente 6 dígitos
+    const minutaId = (cols.find(c=>/^\d{6}$/.test(c.trim()))||'').trim();
+
+    // NFs = campo no formato "XXXXX" ou "XXXXX / YYYYY" (números de 4-5 dígitos)
+    let nfs = [];
+    for(const c of cols){
+      const cc = c.trim();
+      // campo composto só de números de 4-6 dígitos separados por / ou ,
+      if(/^\d{4,6}(\s*[/,]\s*\d{4,6})*$/.test(cc)){
+        const parts = cc.split(/[/,]/).map(s=>s.trim()).filter(s=>/^\d{4,6}$/.test(s) && s!==minutaId);
+        if(parts.length){ nfs = parts; break; }
+      }
+    }
+
+    // agendamento / previsão = primeiro campo que começa com "Agendado"
+    let prev = '';
+    for(const c of cols){
+      const cc = c.replace(/"/g,'').trim();
+      if(/^agendado/i.test(cc)){ prev = cc.replace(/\s*-\s*$/,'').trim(); break; }
+    }
+    if(!prev) return; // sem previsão, nada a atualizar
+
+    // Aplica a previsão: 1) na minuta com esse id, se existir; 2) em todas as
+    // minutas que contenham alguma das NFs citadas.
+    let hit = false;
+    if(minutaId && minutas[minutaId]){
+      minutas[minutaId].prevEmbarque = prev;
+      hit = true;
+    }
+    nfs.forEach(nf=>{
+      const m = nfToMinuta[nf];
+      if(m){ m.prevEmbarque = prev; hit = true; }
+      // também procura minuta cujo id contenha a NF (fallback)
+      Object.values(minutas).forEach(mm=>{ if(mm.nfs && mm.nfs.includes(nf)){ mm.prevEmbarque = prev; hit = true; } });
+    });
+    if(hit) updated++;
+  });
+  return updated;
+}
 function renderAll(){
   renderSummary();
   renderCasos();
@@ -2495,14 +2582,11 @@ function renderAll(){
 function renderPrazos(){
   const card = document.getElementById('prazosCard');
   const list = document.getElementById('prazosList');
-  const pendentes = Object.values(processos).filter(p=>{
-    const c = sepCounts(p);
-    return (c.SEPARADA + c.EXPEDIDO) < p.nfs.length; // ainda não 100% separado/expedido
-  });
+  const pendentes = Object.values(processos).filter(p=> getProcStatus(p) !== 'EXPEDIDA');
   if(pendentes.length===0){
     if(Object.keys(processos).length===0){ card.style.display='none'; return; }
     card.style.display='block';
-    list.innerHTML = '<div style="font-size:12.5px; color:var(--green); font-weight:600; padding:4px 0;">✔ Todos os processos estão separados. Nenhuma pendência.</div>';
+    list.innerHTML = '<div style="font-size:12.5px; color:var(--green); font-weight:600; padding:4px 0;">✔ Todos os processos foram expedidos. Nenhuma pendência.</div>';
     return;
   }
   card.style.display='block';
@@ -2510,32 +2594,18 @@ function renderPrazos(){
   pendentes.sort((a,b)=>prazoDate(a) - prazoDate(b));
   list.innerHTML='';
   pendentes.forEach(p=>{
-    const c = sepCounts(p);
-    const total = p.nfs.length;
+    const st = getProcStatus(p);
+    const s = SEP_STATUS[st];
     const info = prazoInfo(p);
-    const pctO = total? (c.EXPEDIDO/total*100):0;
-    const pctB = total? (c.SEPARADA/total*100):0;
-    const pctY = total? (c.EM_PROCESSO/total*100):0;
-    const pctR = total? (c.AGUARDANDO/total*100):0;
     const div = document.createElement('div');
     div.className='prazo-item';
     div.innerHTML = `
       <div>
         <div class="p-cod">${p.codigo}</div>
-        <div class="p-info">coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')} ·
-          <span class="sep-mini o"></span>${c.EXPEDIDO}
-          <span class="sep-mini b" style="margin-left:6px;"></span>${c.SEPARADA}
-          <span class="sep-mini y" style="margin-left:6px;"></span>${c.EM_PROCESSO}
-          <span class="sep-mini r" style="margin-left:6px;"></span>${c.AGUARDANDO}
-          &nbsp;de ${total} NFs</div>
+        <div class="p-info">coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')} · ${p.nfs.length} NFs</div>
       </div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <div class="sep-bar">
-          <div class="seg o" style="width:${pctO}%"></div>
-          <div class="seg b" style="width:${pctB}%"></div>
-          <div class="seg y" style="width:${pctY}%"></div>
-          <div class="seg r" style="width:${pctR}%"></div>
-        </div>
+        <span class="status-tag" style="background:${s.cor}; color:${s.txt};">${s.label}</span>
         <span class="prazo-pill ${info.cls}">${info.label}</span>
       </div>`;
     div.addEventListener('click', ()=>{
@@ -2629,6 +2699,15 @@ function renderCalendar(){
   document.getElementById('monthLabel').textContent = `${MESES[curMonth-1]} de ${curYear}`;
   document.getElementById('dowRow').innerHTML = DOW.map(d=>`<div class="dow">${d}</div>`).join('');
 
+  // legenda de cores dos status
+  const leg = document.getElementById('statusLegend');
+  if(leg){
+    leg.innerHTML = SEP_ORDER.map(k=>{
+      const s = SEP_STATUS[k];
+      return `<span class="leg-item"><span class="leg-dot" style="background:${s.cor};"></span>${s.label}</span>`;
+    }).join('');
+  }
+
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
 
@@ -2667,17 +2746,22 @@ function renderCalendar(){
       const nfsSet = new Set(procsForDay.flatMap(p=>p.nfs));
       const totalNfs = nfsSet.size;
       const comMinuta = [...nfsSet].filter(nf=>nfToMinuta[nf]).length;
-      let sep = {AGUARDANDO:0, EM_PROCESSO:0, SEPARADA:0, EXPEDIDO:0};
-      procsForDay.forEach(p=>{
-        const c = sepCounts(p);
-        sep.AGUARDANDO+=c.AGUARDANDO; sep.EM_PROCESSO+=c.EM_PROCESSO; sep.SEPARADA+=c.SEPARADA; sep.EXPEDIDO+=c.EXPEDIDO;
-      });
+      const sc = statusCountsList(procsForDay);
       let badgeClass = 'badge';
       if(comMinuta>0 && comMinuta<totalNfs) badgeClass += ' partial';
       else if(comMinuta===totalNfs && totalNfs>0) badgeClass += ' done';
       inner += `<span class="${badgeClass}">${procsForDay.length} proc.</span>`;
       inner += `<span class="nfcount">${totalNfs} NFs · ${comMinuta} c/ minuta</span>`;
-      inner += `<span class="nfcount"><span class="sep-mini o"></span>${sep.EXPEDIDO} <span class="sep-mini b" style="margin-left:4px;"></span>${sep.SEPARADA} <span class="sep-mini y" style="margin-left:4px;"></span>${sep.EM_PROCESSO} <span class="sep-mini r" style="margin-left:4px;"></span>${sep.AGUARDANDO}</span>`;
+      // bolinhas grandes com a quantidade de PROCESSOS em cada status (só as > 0)
+      let dots = '<div class="status-dots">';
+      SEP_ORDER.forEach(k=>{
+        if(sc[k] > 0){
+          const s = SEP_STATUS[k];
+          dots += `<span class="sdot" title="${s.label}: ${sc[k]}" style="background:${s.cor}; color:${s.txt};">${sc[k]}</span>`;
+        }
+      });
+      dots += '</div>';
+      inner += dots;
     }
     cell.innerHTML = inner;
     if(procsForDay.length>0){
@@ -2707,17 +2791,15 @@ function renderDayDetail(key){
   list.innerHTML = '';
   procsForDay.sort((a,b)=>a.codigo.localeCompare(b.codigo)).forEach(p=>{
     const comMinuta = p.nfs.filter(nf=>nfToMinuta[nf]).length;
-    const c = sepCounts(p);
+    const st = getProcStatus(p);
+    const s = SEP_STATUS[st];
     const info = prazoInfo(p);
     const div = document.createElement('div');
     div.className = 'proc-item' + (selectedProcesso===p.codigo ? ' expanded':'');
     div.innerHTML = `<span class="codigo">${p.codigo}</span>
       <span class="stats">
-        ${p.nfs.length} NFs · ${comMinuta}/${p.nfs.length} c/ minuta ·
-        <span class="sep-mini o"></span>${c.EXPEDIDO}
-        <span class="sep-mini b" style="margin-left:4px;"></span>${c.SEPARADA}
-        <span class="sep-mini y" style="margin-left:4px;"></span>${c.EM_PROCESSO}
-        <span class="sep-mini r" style="margin-left:4px;"></span>${c.AGUARDANDO}
+        ${p.nfs.length} NFs · ${comMinuta}/${p.nfs.length} c/ minuta
+        <span class="status-tag" style="background:${s.cor}; color:${s.txt};">${s.label}</span>
       </span>
       <span class="prazo-pill ${info.cls}">${info.label}</span>`;
     div.addEventListener('click', ()=>{
@@ -2737,61 +2819,54 @@ function renderProcDetail(codigo){
   document.getElementById('procDetailTitle').textContent = `Processo ${codigo} — ${p.nfs.length} NFs`;
 
   const info = prazoInfo(p);
-  const c = sepCounts(p);
+  const st = getProcStatus(p);
+  const stInfo = SEP_STATUS[st];
+
+  // Select de status do PROCESSO (um só) + pill de prazo
+  const optHtml = SEP_ORDER.map(k=>`<option value="${k}" ${k===st?'selected':''}>${SEP_STATUS[k].label}</option>`).join('');
   document.getElementById('procPrazoInfo').innerHTML =
-    `<span class="prazo-pill ${info.cls}">${info.label}</span>
+    `<span style="font-size:12px; font-weight:700; color:var(--navy); margin-right:6px;">Status do processo:</span>
+     <select id="procStatusSelect" class="sep-select ${stInfo.cls}">${optHtml}</select>
+     <span class="prazo-pill ${info.cls}" style="margin-left:10px;">${info.label}</span>
      <span style="font-size:12px; color:var(--muted); margin-left:10px;">
-       coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano} ·
-       <span class="sep-mini o"></span>${c.EXPEDIDO} expedidas
-       <span class="sep-mini b" style="margin-left:6px;"></span>${c.SEPARADA} separadas
-       <span class="sep-mini y" style="margin-left:6px;"></span>${c.EM_PROCESSO} em processo
-       <span class="sep-mini r" style="margin-left:6px;"></span>${c.AGUARDANDO} aguardando
+       coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}
      </span>`;
+
+  const selStatus = document.getElementById('procStatusSelect');
+  if(selStatus){
+    selStatus.addEventListener('change', async ()=>{
+      if(!Access.canEdit()){
+        alert('🔒 Edição bloqueada. Desbloqueie com a senha.');
+        renderProcDetail(codigo);
+        return;
+      }
+      setProcStatus(p, selStatus.value);
+      try{ await saveProcessos(); }catch(e){}
+      renderAll();
+    });
+  }
 
   const tbody = document.getElementById('nfTableBody');
   tbody.innerHTML='';
   const sortedNfs = [...p.nfs].sort((a,b)=>Number(a)-Number(b));
   sortedNfs.forEach(nf=>{
     const m = nfToMinuta[nf];
-    const st = getSepStatus(p, nf);
-    const sepCell = `<select class="sep-select ${SEP_STATUS[st].cls}" data-nf="${nf}">
-        <option value="AGUARDANDO" ${st==='AGUARDANDO'?'selected':''}>AGUARDANDO PROCESSO</option>
-        <option value="EM_PROCESSO" ${st==='EM_PROCESSO'?'selected':''}>EM PROCESSO</option>
-        <option value="SEPARADA" ${st==='SEPARADA'?'selected':''}>SEPARADA</option>
-        <option value="EXPEDIDO" ${st==='EXPEDIDO'?'selected':''}>EXPEDIDO</option>
-      </select>`;
     const tr = document.createElement('tr');
     if(m){
       tr.innerHTML = `<td><strong>${nf}</strong></td>
-        <td>${sepCell}</td>
         <td><span class="status-pill ok">com minuta</span></td>
         <td>${m.cte||'—'}</td>
         <td>${m.destinatario||'—'}</td>
         <td>${m.cidadeDestino||'—'}</td>
+        <td>${m.prevEmbarque ? '<strong style="color:var(--navy);">'+m.prevEmbarque+'</strong>' : '—'}</td>
         <td>${m.ocorrencia||'—'}</td>
         <td>${m.dataStatus||'—'}</td>`;
     } else {
       tr.innerHTML = `<td><strong>${nf}</strong></td>
-        <td>${sepCell}</td>
         <td><span class="status-pill pending">aguardando minuta</span></td>
-        <td colspan="5" style="color:var(--muted);">—</td>`;
+        <td colspan="6" style="color:var(--muted);">—</td>`;
     }
     tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll('select.sep-select').forEach(sel=>{
-    sel.addEventListener('change', async ()=>{
-      if(!Access.canEdit()){
-        alert('🔒 Edição bloqueada. Desbloqueie com a senha.');
-        renderProcDetail(codigo); // restaura o valor anterior no select
-        return;
-      }
-      const nf = sel.getAttribute('data-nf');
-      if(!p.statusNfs) p.statusNfs = {};
-      p.statusNfs[nf] = sel.value;
-      try{ await saveProcessos(); }catch(e){}
-      renderAll(); // atualiza cores, contadores, prazos e calendário
-    });
   });
 }
 
@@ -2832,6 +2907,25 @@ document.getElementById('processarMinutas').addEventListener('click', async ()=>
     renderAll();
   }catch(e){
     msg.textContent='Processado, mas houve erro ao salvar.'; msg.className='msg err';
+    renderAll();
+  }
+});
+
+document.getElementById('processarEmbarque').addEventListener('click', async ()=>{
+  if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha antes de atualizar.'); return; }
+  const txt = document.getElementById('embarqueInput').value;
+  const msg = document.getElementById('embarqueMsg');
+  if(!txt.trim()){ msg.textContent='Cole as linhas de embarque antes de atualizar.'; msg.className='msg err'; return; }
+  const n = parseEmbarque(txt);
+  if(n===0){ msg.textContent='Nenhuma previsão vinculada. Verifique se as minutas/NFs já foram importadas.'; msg.className='msg err'; return; }
+  try{
+    await saveMinutas();
+    msg.textContent = `Previsão de embarque atualizada em ${n} processo(s).`;
+    msg.className='msg';
+    document.getElementById('embarqueInput').value='';
+    renderAll();
+  }catch(e){
+    msg.textContent='Atualizado, mas houve erro ao salvar.'; msg.className='msg err';
     renderAll();
   }
 });
@@ -2915,16 +3009,14 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
 });
 
 // ---------- IMPRESSÃO ----------
-const SEP_PRINT = {
-  AGUARDANDO: {label:'AGUARDANDO', cls:'r'},
-  EM_PROCESSO:{label:'EM PROCESSO', cls:'y'},
-  SEPARADA:   {label:'SEPARADA', cls:'b'},
-  EXPEDIDO:   {label:'EXPEDIDO', cls:'o'}
-};
-
 function procDateObj(p){ return new Date(p.ano, p.mes-1, p.dia); }
 
-function buildPrintHTML(procsFiltrados, tituloFiltro){
+// hideExpedidos: quando true, processos com status EXPEDIDA não entram no relatório
+function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
+  // filtra expedidos se solicitado
+  if(hideExpedidos){
+    procsFiltrados = procsFiltrados.filter(p=> getProcStatus(p) !== 'EXPEDIDA');
+  }
   if(procsFiltrados.length===0) return null;
 
   // agrupar por data
@@ -2935,15 +3027,19 @@ function buildPrintHTML(procsFiltrados, tituloFiltro){
   });
   const datas = Object.keys(porData).sort();
 
-  // resumo geral
-  let tProc=0, tNfs=0, tMin=0, tSep={AGUARDANDO:0,EM_PROCESSO:0,SEPARADA:0,EXPEDIDO:0};
+  // resumo geral: contagem de processos por status
+  let tProc=0, tNfs=0, tMin=0;
+  const tSt = {NAO_COLETADA:0, NAO_PROCESSADA:0, SEPARANDO:0, AGUARDANDO_EXP:0, EXPEDIDA:0};
   procsFiltrados.forEach(p=>{
     tProc++;
     tNfs += p.nfs.length;
     tMin += p.nfs.filter(nf=>nfToMinuta[nf]).length;
-    const c = sepCounts(p);
-    tSep.AGUARDANDO+=c.AGUARDANDO; tSep.EM_PROCESSO+=c.EM_PROCESSO; tSep.SEPARADA+=c.SEPARADA; tSep.EXPEDIDO+=c.EXPEDIDO;
+    tSt[getProcStatus(p)]++;
   });
+  const resumoStatus = SEP_ORDER
+    .filter(k=>tSt[k]>0)
+    .map(k=>`${tSt[k]} ${SEP_STATUS[k].label.toLowerCase()}`)
+    .join(' / ') || '—';
 
   const agora = new Date();
   const agoraStr = agora.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -2952,56 +3048,54 @@ function buildPrintHTML(procsFiltrados, tituloFiltro){
     <div class="pr-header">
       <div>
         <h1>Acompanhamento de Cargas — Mattel</h1>
-        <div class="pr-sub">${tituloFiltro}${casoAtual ? ' · Caso: '+casoAtual : ''}</div>
+        <div class="pr-sub">${tituloFiltro}${hideExpedidos ? ' · (sem processos expedidos)' : ''}${casoAtual ? ' · Caso: '+casoAtual : ''}</div>
       </div>
       <div class="pr-sub">Emitido em ${agoraStr}</div>
     </div>
     <div class="pr-resumo">
-      <strong>Resumo:</strong> ${tProc} processo(s) · ${tNfs} NF(s) · ${tMin} com minuta ·
-      Separação: ${tSep.EXPEDIDO} expedidas / ${tSep.SEPARADA} separadas / ${tSep.EM_PROCESSO} em processo / ${tSep.AGUARDANDO} aguardando
+      <strong>Resumo:</strong> ${tProc} processo(s) · ${tNfs} NF(s) · ${tMin} com minuta · Status: ${resumoStatus}
     </div>`;
 
   datas.forEach(dk=>{
     const parts = dk.split('-');
     html += `<div class="pr-dia">Coleta em ${parts[2]}/${parts[1]}/${parts[0]}</div>`;
     porData[dk].sort((a,b)=>a.codigo.localeCompare(b.codigo)).forEach(p=>{
-      const c = sepCounts(p);
+      const st = getProcStatus(p);
+      const s = SEP_STATUS[st];
       const info = prazoInfo(p);
       const prazo = fmtDate(prazoDate(p));
       html += `
       <div class="pr-proc">
         <div class="pr-proc-head">
           <span class="cod">${p.codigo}</span>
+          <span class="st-print" style="background:${s.cor}; color:${s.txt};">${s.label}</span>
           <span class="meta">
-            ${p.nfs.length} NFs · Prazo de separação: <strong>${prazo}</strong> ·
-            Situação: ${c.EXPEDIDO} exp. / ${c.SEPARADA} sep. / ${c.EM_PROCESSO} em proc. / ${c.AGUARDANDO} aguard.
+            ${p.nfs.length} NFs · Prazo: <strong>${prazo}</strong>
             ${info.cls==='vencido' ? ' · <strong style="color:#C0392B;">PRAZO VENCIDO</strong>' : ''}
             ${info.cls==='hoje' ? ' · <strong style="color:#B5790A;">VENCE HOJE</strong>' : ''}
-            ${info.cls==='concluido' ? ' · <strong style="color:#123A7A;">CONCLUÍDO</strong>' : ''}
+            ${info.cls==='concluido' ? ' · <strong style="color:#1E8E5A;">EXPEDIDA</strong>' : ''}
           </span>
         </div>
         <table>
           <thead>
             <tr>
-              <th>NF</th><th>Separação</th><th>Minuta</th><th>CTE</th><th>Destinatário</th>
-              <th>Cidade destino</th><th>Vol.</th><th>Peso</th><th>Prev. entrega</th><th>Ocorrência</th>
+              <th>NF</th><th>Minuta</th><th>CTE</th><th>Destinatário</th>
+              <th>Cidade destino</th><th>Vol.</th><th>Peso</th><th>Prev. embarque</th><th>Ocorrência</th>
             </tr>
           </thead>
           <tbody>`;
       const sortedNfs = [...p.nfs].sort((a,b)=>Number(a)-Number(b));
       sortedNfs.forEach(nf=>{
-        const st = SEP_PRINT[getSepStatus(p,nf)];
         const m = nfToMinuta[nf];
         html += `<tr>
           <td><strong>${nf}</strong></td>
-          <td><span class="st ${st.cls}">${st.label}</span></td>
           <td>${m ? (m.id||'sim') : '—'}</td>
           <td>${m ? (m.cte||'—') : '—'}</td>
           <td>${m ? (m.destinatario||'—') : '—'}</td>
           <td>${m ? (m.cidadeDestino||'—') : '—'}</td>
           <td>${m ? (m.volumes||'—') : '—'}</td>
           <td>${m ? (m.peso||'—') : '—'}</td>
-          <td>${m ? (m.prevEntrega||'—') : '—'}</td>
+          <td>${m ? (m.prevEmbarque||m.prevEntrega||'—') : '—'}</td>
           <td>${m ? (m.ocorrencia||'—') : '—'}</td>
         </tr>`;
       });
@@ -3074,8 +3168,9 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
     titulo = `Relatório do processo ${cod}`;
   }
 
-  const html = buildPrintHTML(filtrados, titulo);
-  if(!html){ msg.textContent='Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
+  const hideExp = document.getElementById('printHideExp').checked;
+  const html = buildPrintHTML(filtrados, titulo, hideExp);
+  if(!html){ msg.textContent = hideExp ? 'Nenhum processo não-expedido para esse filtro.' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
   document.getElementById('printArea').innerHTML = html;
   window.print();
 });
@@ -3119,9 +3214,15 @@ function applyAccessMode(){
   const canEdit = Access.canEdit();
   if(tab) tab.classList.toggle('readonly', !canEdit);
 
+  // Quando bloqueado, oculta toda a área de configurações (sincronização,
+  // casos salvos, limpar dados e importações). A página passa a começar no
+  // calendário. Ao desbloquear, as configurações reaparecem.
+  const cfg = document.getElementById('configSections');
+  if(cfg) cfg.style.display = canEdit ? 'block' : 'none';
+
   // desabilita/reabilita campos e botões de edição diretamente
-  ['coletasInput','minutasInput','casoNomeInput','processarColetas',
-   'processarMinutas','salvarCasoBtn','novoCasoBtn','resetBtn'].forEach(id=>{
+  ['coletasInput','minutasInput','embarqueInput','casoNomeInput','processarColetas',
+   'processarMinutas','processarEmbarque','salvarCasoBtn','novoCasoBtn','resetBtn'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.disabled = !canEdit;
   });
