@@ -326,8 +326,8 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
 #tabCargas .dow{font-size:11px; text-align:center; color:var(--muted); font-weight:600; padding-bottom:4px;}
 #tabCargas .day-cell{
-    min-height:78px; border:1px solid var(--line); border-radius:8px; padding:6px; background:var(--surface2);
-    display:flex; flex-direction:column; gap:4px;
+    min-height:92px; border:1px solid var(--line); border-radius:8px; padding:6px; background:var(--surface2);
+    display:flex; flex-direction:column; gap:5px;
   }
 #tabCargas .day-cell.empty{background:transparent; border:none;}
 #tabCargas .day-cell.today{outline:2px solid var(--navy);}
@@ -341,6 +341,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .badge.partial{background:var(--amber-bg); color:var(--amber);}
 #tabCargas .badge.done{background:var(--green-bg); color:var(--green);}
 #tabCargas .nfcount{font-size:10px; color:var(--muted);}
+#tabCargas .daymeta{font-size:9.5px; color:var(--muted); margin-top:auto;}
 #tabCargas .detail-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px;}
 #tabCargas .detail-card h3{margin:0 0 12px; color:var(--navy); font-size:15px;}
 #tabCargas .proc-item{
@@ -429,11 +430,11 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .sep-select.st-expedida{background:#22c55e; color:#06210f; border-color:#22c55e;}
 
 /* bolinhas grandes com a quantidade de NOTAS por status */
-#tabCargas .status-dots{display:inline-flex; flex-wrap:wrap; gap:3px; margin-top:4px; vertical-align:middle;}
+#tabCargas .status-dots{display:flex; flex-wrap:wrap; gap:4px; margin-top:2px;}
 #tabCargas .sdot{
     display:inline-flex; align-items:center; justify-content:center;
-    min-width:22px; height:22px; padding:0 5px; border-radius:11px;
-    font-size:12.5px; font-weight:800; border:1px solid rgba(255,255,255,.25);
+    min-width:26px; height:26px; padding:0 6px; border-radius:13px;
+    font-size:14px; font-weight:800; border:1px solid rgba(255,255,255,.3);
     box-sizing:border-box; line-height:1;
   }
 
@@ -727,7 +728,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status por nota v2</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status por nota v3</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -2781,21 +2782,19 @@ function renderCalendar(){
       const totalNfs = nfsSet.size;
       const comMinuta = [...nfsSet].filter(nf=>nfToMinuta[nf]).length;
       const sc = sepCountsList(procsForDay);
-      let badgeClass = 'badge';
-      if(comMinuta>0 && comMinuta<totalNfs) badgeClass += ' partial';
-      else if(comMinuta===totalNfs && totalNfs>0) badgeClass += ' done';
-      inner += `<span class="${badgeClass}">${procsForDay.length} proc.</span>`;
-      inner += `<span class="nfcount">${totalNfs} NFs · ${comMinuta} c/ minuta</span>`;
-      // bolinhas grandes com a quantidade de NOTAS em cada status (só as > 0)
+      // DESTAQUE: bolinhas grandes com a quantidade de NOTAS em cada status.
+      // Cada cor = um status; o número dentro = quantas notas estão nele.
       let dots = '<div class="status-dots">';
       SEP_ORDER.forEach(k=>{
         if(sc[k] > 0){
           const s = SEP_STATUS[k];
-          dots += `<span class="sdot" title="${s.label}: ${sc[k]}" style="background:${s.cor}; color:${s.txt};">${sc[k]}</span>`;
+          dots += `<span class="sdot" title="${s.label}: ${sc[k]} nota(s)" style="background:${s.cor}; color:${s.txt};">${sc[k]}</span>`;
         }
       });
       dots += '</div>';
       inner += dots;
+      // rodapé discreto: total de processos e notas do dia
+      inner += `<span class="daymeta">${procsForDay.length} proc. · ${totalNfs} NFs · ${comMinuta} c/ min.</span>`;
     }
     cell.innerHTML = inner;
     if(procsForDay.length>0){
