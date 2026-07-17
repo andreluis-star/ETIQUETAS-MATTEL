@@ -206,6 +206,16 @@ td.qtd{text-align:right;font-weight:600}
 
 /* ── RESUMO TAB ────────────────────────────────────────────────────────────── */
 .resumo-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.resumo-combinado{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:18px}
+.resumo-combinado h3{font-size:15px;margin-bottom:12px}
+.rc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.rc-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.rc-val{font-size:22px;font-weight:800;color:var(--accent)}
+.rc-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.rc-status{margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rc-status-lbl{font-size:12px;color:var(--muted);font-weight:600}
+.rc-chip{font-size:11px;font-weight:700;padding:3px 10px;border-radius:11px;border:1px solid rgba(255,255,255,.2)}
+.rc-note{margin-top:10px;font-size:12px;color:var(--muted);font-style:italic}
 .resumo-subtabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:3px}
 .resumo-print-opts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .resumo-print-opts label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
@@ -347,6 +357,15 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
     color:var(--text); font-size:12px; padding:5px 8px; color-scheme:dark;
   }
 #tabCargas .prazo-date:focus{border-color:var(--orange); outline:none;}
+#tabCargas .resumo-cargas{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:20px;}
+#tabCargas .resumo-cargas h3{font-size:14px; color:var(--navy); margin-bottom:12px;}
+#tabCargas .rcc-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;}
+#tabCargas .rcc-card{background:var(--surface2); border:1px solid var(--line); border-radius:8px; padding:12px; text-align:center;}
+#tabCargas .rcc-val{font-size:22px; font-weight:800; color:var(--navy);}
+#tabCargas .rcc-lbl{font-size:11px; color:var(--muted); margin-top:2px;}
+#tabCargas .rcc-status{margin-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+#tabCargas .rcc-status-lbl{font-size:12px; color:var(--muted); font-weight:600;}
+#tabCargas .rcc-chip{font-size:11px; font-weight:700; padding:3px 10px; border-radius:11px; border:1px solid rgba(255,255,255,.2);}
 #tabCargas .detail-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px;}
 #tabCargas .detail-card h3{margin:0 0 12px; color:var(--navy); font-size:15px;}
 #tabCargas .proc-item{
@@ -733,7 +752,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status por nota v4</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">resumo combinado + banco notas v5</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -821,6 +840,8 @@ body *{visibility:hidden;}
     </div>
   </div>
   </div><!-- /configSections -->
+
+  <div class="resumo-cargas" id="resumoCargas"></div>
 
   <div class="cal-card">
     <div class="cal-header">
@@ -1093,6 +1114,51 @@ let sortCol = 'nf', sortAsc = true;
 const $ = id => document.getElementById(id);
 
 // ══════════════════════════════════════════════════════════════════════════════
+// BANCO DE NOTAS XML (persistente e compartilhado via ponte com a aba Cargas)
+// ──────────────────────────────────────────────────────────────────────────────
+// Salva o estado atual das notas (itens, metadados, minutas e nomes de arquivo)
+// na base compartilhada, para não precisar recarregar os XMLs a cada uso.
+let notasDbCarregado = false;
+
+async function salvarBancoNotas() {
+  if (!(window.CargasDB && window.CargasDB._ready)) return; // ponte ainda não pronta
+  try {
+    await window.CargasDB.setNotasXml({
+      items: allItems,
+      meta: nfMeta,
+      minutas: nfMinutas,
+      files: [...loadedFiles],
+      fileItems: Object.fromEntries(fileItemsMap),
+      savedAt: new Date().toISOString()
+    });
+  } catch(e){ console.warn('Falha ao salvar banco de notas:', e); }
+}
+
+async function carregarBancoNotas() {
+  if (notasDbCarregado) return;
+  if (!(window.CargasDB && window.CargasDB._ready)) return;
+  try {
+    const db = await window.CargasDB.getNotasXml();
+    if (db && db.items && db.items.length) {
+      allItems = db.items;
+      nfMeta = db.meta || {};
+      nfMinutas = db.minutas || {};
+      loadedFiles = new Set(db.files || []);
+      fileItemsMap = new Map(Object.entries(db.fileItems || {}));
+      // recria os badges dos arquivos salvos
+      const fl = $('file-list');
+      if (fl) { fl.innerHTML=''; [...loadedFiles].forEach(addFileBadge); }
+      updateStats(); renderTable(); renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
+      const has = allItems.length > 0;
+      if ($('statsBar')) $('statsBar').style.display = has ? 'flex' : 'none';
+      if ($('tabsBar'))  $('tabsBar').style.display  = has ? 'flex' : 'none';
+    }
+  } catch(e){ console.warn('Falha ao carregar banco de notas:', e); }
+  notasDbCarregado = true;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
 // XML HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
 function gTag(node, tag) {
@@ -1194,6 +1260,8 @@ async function processFiles(files) {
   $('statsBar').style.display = has ? 'flex' : 'none';
   $('tabsBar').style.display  = has ? 'flex' : 'none';
 
+  if (added) salvarBancoNotas(); // persiste o banco compartilhado
+
   if (added)  toast(`✓ ${added} arquivo(s) carregado(s)${skipped?', '+skipped+' ignorado(s)':''}`, false);
   if (errors) toast(`⚠ ${errors} arquivo(s) com erro ou formato inválido`, true);
 }
@@ -1227,6 +1295,7 @@ function removeFile(name) {
   const has = allItems.length > 0;
   $('statsBar').style.display = has ? 'flex' : 'none';
   $('tabsBar').style.display  = has ? 'flex' : 'none';
+  salvarBancoNotas(); // atualiza o banco compartilhado após remoção
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1334,11 +1403,12 @@ function exportarExcel() {
   toast('✓ Excel exportado!',false);
 }
 function limpar() {
-  if (!allItems.length||!confirm('Limpar todos os dados?')) return;
+  if (!allItems.length||!confirm('Limpar todos os dados? Isso também apaga o banco de notas salvo (compartilhado com o time).')) return;
   allItems=[];nfMeta={};nfMinutas={};loadedFiles.clear();fileItemsMap.clear();
   $('file-list').innerHTML='';
   $('statsBar').style.display='none';$('tabsBar').style.display='none';
   renderTable();renderMinutaInputs();renderLabels();renderResumo();renderRosto();
+  salvarBancoNotas(); // grava o estado vazio (limpa o banco compartilhado)
   toast('Dados limpos.',false);
 }
 
@@ -1498,21 +1568,65 @@ function buildCodTableRows(data) {
   return rows;
 }
 
+// Monta o painel de RESUMO COMBINADO lendo as duas abas:
+//  • Conversor de NF-e (allItems / nfMeta / nfMinutas) → notas XML e itens
+//  • Acompanhamento de Cargas (via window.CargasDB) → minutas e processos
+function buildResumoCombinado(){
+  const nfsXml = new Set(allItems.map(i=>i.nf));
+  const totalNotasXml = nfsXml.size;
+  const totalItens = allItems.length;
+  const totalQtd = allItems.reduce((s,i)=>s+i.qtd,0);
+  const notasComMinuta = [...nfsXml].filter(nf=>nfMinutas[nf]).length;
+
+  let cargas = null;
+  if (window.CargasDB && window.CargasDB.getCargasCounts){
+    try{ cargas = window.CargasDB.getCargasCounts(); }catch(e){ cargas = null; }
+  }
+
+  const card = (label, valor, cor) =>
+    `<div class="rc-card"><div class="rc-val" style="${cor?'color:'+cor:''}">${valor}</div><div class="rc-lbl">${label}</div></div>`;
+
+  let statusChips = '';
+  if (cargas){
+    const ordem = ['NAO_COLETADA','NAO_PROCESSADA','SEPARANDO','AGUARDANDO_EXP','EXPEDIDA'];
+    statusChips = ordem.filter(k=>cargas.notasPorStatus[k]>0).map(k=>
+      `<span class="rc-chip" style="background:${cargas.statusCores[k]}; color:${k==='NAO_COLETADA'?'#1a1d27':'#fff'};">
+        ${cargas.notasPorStatus[k]} ${cargas.statusLabels[k]}</span>`
+    ).join('');
+  }
+
+  return `
+    <div class="resumo-combinado">
+      <h3>📊 Resumo Geral <span style="font-weight:400; font-size:12px; color:var(--muted)">— consolida Conversor de NF-e e Acompanhamento de Cargas</span></h3>
+      <div class="rc-grid">
+        ${card('Notas (XML)', totalNotasXml)}
+        ${card('Itens', totalItens)}
+        ${card('Unidades', totalQtd%1===0?totalQtd:totalQtd.toFixed(2))}
+        ${card('Notas c/ minuta', notasComMinuta)}
+        ${card('Minutas (Cargas)', cargas ? cargas.totalMinutas : '—')}
+        ${card('Processos (Cargas)', cargas ? cargas.totalProcessos : '—')}
+      </div>
+      ${cargas && statusChips ? `<div class="rc-status"><span class="rc-status-lbl">Notas por status (Cargas):</span> ${statusChips}</div>` : ''}
+      ${!cargas ? '<div class="rc-note">Conecte/abra a aba Acompanhamento de Cargas para consolidar minutas e processos.</div>' : ''}
+    </div>`;
+}
+
 function renderResumo() {
   const el = $('resumoContent');
+  const combinado = buildResumoCombinado();
   if (!allItems.length) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">📊</div><p>Carregue XMLs para ver o resumo por SKU ou por Nota.</p></div>`;
+    el.innerHTML = combinado + `<div class="empty-state"><div class="icon">📊</div><p>Carregue XMLs para ver o resumo por SKU ou por Nota. O resumo geral acima também reflete os dados do Acompanhamento de Cargas.</p></div>`;
     return;
   }
   if (resumoView === 'sku') {
     const data = skuSummaryData();
-    let h = `<div class="table-wrap"><table><thead><tr>
+    let h = combinado + `<div class="table-wrap"><table><thead><tr>
       <th>Código</th><th>Descrição</th><th>NF</th><th>Qtd</th><th>Qtd Total</th>
     </tr></thead><tbody>${buildCodTableRows(data)}</tbody></table></div>`;
     el.innerHTML = h;
   } else {
     const data = notaSummaryData();
-    let h = '';
+    let h = combinado;
     for (const d of data) {
       h += `<div class="resumo-nf-block"><div class="resumo-nf-head">
         <h3>NF ${esc(d.nf)}${d.minuta ? ' · Minuta '+esc(d.minuta) : ''}</h3>
@@ -2101,7 +2215,35 @@ dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('drag-o
 $('fileInput').addEventListener('change', e=>{ if(e.target.files.length) processFiles([...e.target.files]); });
 
 // Init siglas count
+// Contadores do Conversor de NF-e, para o resumo combinado da aba Cargas
+window.getConversorCounts = function(){
+  const nfs = new Set(allItems.map(i=>i.nf));
+  return {
+    totalNotasXml: nfs.size,
+    totalItens: allItems.length,
+    totalUnidades: allItems.reduce((s,i)=>s+i.qtd,0),
+    notasComMinuta: [...nfs].filter(nf=>nfMinutas[nf]).length
+  };
+};
+
 document.addEventListener('DOMContentLoaded', ()=>{ $('siglasCount').textContent = Object.keys(SIGLAS).length; });
+
+// Carrega o banco de notas salvo assim que a ponte com o Cargas estiver pronta.
+// A ponte é criada pela IIFE do Cargas e os dados chegam do Firebase de forma
+// assíncrona, então tentamos algumas vezes até o banco aparecer.
+(function aguardarBancoNotas(){
+  let tentativas = 0;
+  const timer = setInterval(async ()=>{
+    tentativas++;
+    if (window.CargasDB && window.CargasDB._ready){
+      await carregarBancoNotas();
+      // se ainda não veio nada mas o Firebase pode estar sincronizando, tenta de novo
+      if (allItems.length>0 || tentativas>=8){ clearInterval(timer); }
+      else { notasDbCarregado = false; } // permite nova tentativa
+    }
+    if (tentativas>=12) clearInterval(timer);
+  }, 700);
+})();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ALTERNÂNCIA DE SEÇÃO: Conversor de NF-e  ⇄  Acompanhamento de Cargas
@@ -2112,6 +2254,12 @@ function switchSection(section) {
   $('tabCargas').style.display  = isCargas ? 'block' : 'none';
   $('btnSectionNfe').classList.toggle('active', !isCargas);
   $('btnSectionCargas').classList.toggle('active', isCargas);
+  // Atualiza o resumo combinado da aba que está sendo aberta (consolida os
+  // números da outra aba, que podem ter mudado).
+  try{
+    if(isCargas){ if(window.CargasRefreshResumo) window.CargasRefreshResumo(); }
+    else { if($('tabResumo') && $('tabResumo').style.display!=='none') renderResumo(); }
+  }catch(e){}
 }
 </script>
 
@@ -2480,6 +2628,58 @@ async function saveMinutas(){
   await window.storage.set('minutas-data', JSON.stringify(minutas), false);
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// PONTE ENTRE AS ABAS (window.CargasDB)
+// ──────────────────────────────────────────────────────────────────────────
+// A aba "Conversor de NF-e" (script principal) e a aba "Acompanhamento de
+// Cargas" (esta IIFE) são isoladas. Esta ponte permite ao conversor:
+//   • salvar/ler o BANCO DE NOTAS DE XML na mesma base do Firebase (para não
+//     precisar recarregar os XMLs a cada uso — os dados voltam ao abrir);
+//   • ler os contadores de minutas/processos do Cargas (para o resumo combinado).
+// O banco de notas fica na chave 'notas-xml-data' e é ACUMULATIVO.
+window.CargasDB = {
+  // Lê o banco de notas de XML já salvo (compartilhado). Retorna
+  // {items, meta, minutas, files} ou null se ainda não há nada.
+  async getNotasXml(){
+    try{
+      const r = await window.storage.get('notas-xml-data', false);
+      return r ? JSON.parse(r.value) : null;
+    }catch(e){ return null; }
+  },
+  // Salva (sobrescreve) o banco de notas de XML. O conversor monta o objeto
+  // acumulado e chama aqui; isto sincroniza com o time via Firebase.
+  async setNotasXml(obj){
+    await window.storage.set('notas-xml-data', JSON.stringify(obj||{}), false);
+  },
+  // Contadores do Acompanhamento de Cargas para o resumo combinado.
+  getCargasCounts(){
+    const procList = Object.values(processos);
+    const totalProc = procList.length;
+    const nfsEmProc = new Set(procList.flatMap(p=>p.nfs));
+    const totalMinutas = Object.keys(minutas).length;
+    // notas por status (agregado)
+    const st = {NAO_COLETADA:0, NAO_PROCESSADA:0, SEPARANDO:0, AGUARDANDO_EXP:0, EXPEDIDA:0};
+    procList.forEach(p=>{ const c = sepCounts(p); SEP_ORDER.forEach(k=>st[k]+=c[k]); });
+    return {
+      totalProcessos: totalProc,
+      totalMinutas: totalMinutas,
+      nfsEmProcessos: nfsEmProc.size,
+      notasPorStatus: st,
+      statusLabels: Object.fromEntries(SEP_ORDER.map(k=>[k, SEP_STATUS[k].label])),
+      statusCores: Object.fromEntries(SEP_ORDER.map(k=>[k, SEP_STATUS[k].cor]))
+    };
+  },
+  // Permite ao conversor pedir um re-render do resumo do Cargas quando ele
+  // altera o banco de notas (para manter os dois em sincronia).
+  onNotasChanged: null,
+  _ready: true
+};
+
+// Permite ao script principal pedir a atualização do resumo combinado do Cargas
+window.CargasRefreshResumo = function(){
+  try{ renderResumoCombinadoCargas(); }catch(e){}
+};
+
 function rebuildIndexes(){
   nfToMinuta = {};
   Object.values(minutas).forEach(m=>{
@@ -2739,6 +2939,43 @@ function renderSummary(){
   document.getElementById('summaryTag').textContent =
     totalProc === 0 ? 'nenhum dado carregado' :
     `${totalProc} processos · ${allNfs.size} NFs · ${comMinuta} com minuta`;
+  renderResumoCombinadoCargas();
+}
+
+// Resumo combinado exibido na aba Cargas: consolida os dados do Cargas com os
+// do Conversor de NF-e (lidos via window.getConversorCounts).
+function renderResumoCombinadoCargas(){
+  const box = document.getElementById('resumoCargas');
+  if(!box) return;
+  const totalProc = Object.keys(processos).length;
+  const totalMin = Object.keys(minutas).length;
+  const allNfs = new Set(Object.values(processos).flatMap(p=>p.nfs));
+  // notas por status (agregado)
+  const st = {NAO_COLETADA:0, NAO_PROCESSADA:0, SEPARANDO:0, AGUARDANDO_EXP:0, EXPEDIDA:0};
+  Object.values(processos).forEach(p=>{ const c = sepCounts(p); SEP_ORDER.forEach(k=>st[k]+=c[k]); });
+
+  let conv = null;
+  if(window.getConversorCounts){ try{ conv = window.getConversorCounts(); }catch(e){ conv=null; } }
+
+  const card = (label, valor) =>
+    `<div class="rcc-card"><div class="rcc-val">${valor}</div><div class="rcc-lbl">${label}</div></div>`;
+
+  const chips = SEP_ORDER.filter(k=>st[k]>0).map(k=>{
+    const s = SEP_STATUS[k];
+    return `<span class="rcc-chip" style="background:${s.cor}; color:${s.txt};">${st[k]} ${s.label}</span>`;
+  }).join('');
+
+  box.innerHTML = `
+    <h3>📊 Resumo Geral <span style="font-weight:400; font-size:12px; color:var(--muted)">— consolida Acompanhamento de Cargas e Conversor de NF-e</span></h3>
+    <div class="rcc-grid">
+      ${card('Processos', totalProc)}
+      ${card('Minutas', totalMin)}
+      ${card('NFs em processos', allNfs.size)}
+      ${card('Notas (XML)', conv ? conv.totalNotasXml : '—')}
+      ${card('Itens (XML)', conv ? conv.totalItens : '—')}
+      ${card('Unidades (XML)', conv ? (conv.totalUnidades%1===0?conv.totalUnidades:conv.totalUnidades.toFixed(2)) : '—')}
+    </div>
+    ${chips ? `<div class="rcc-status"><span class="rcc-status-lbl">Notas por status:</span> ${chips}</div>` : ''}`;
 }
 
 function dateKey(dia,mes,ano){
