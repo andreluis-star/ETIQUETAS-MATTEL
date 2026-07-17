@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Conversor de NF-e — Portoexpress</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -270,19 +273,19 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
    button, table, select etc.)
    ══════════════════════════════════════════════════════════════════ */
 #tabCargas{
-    --navy:#1A3A6E;
-    --navy-dark:#122A50;
-    --orange:#E8611A;
-    --orange-light:#FFEFE3;
-    --bg:#F3F5F8;
-    --card:#FFFFFF;
-    --line:#E1E6ED;
-    --text:#1F2733;
-    --muted:#6B7686;
-    --green:#1E8E5A;
-    --green-bg:#E7F6EE;
-    --amber:#B5790A;
-    --amber-bg:#FFF4DF;
+    --navy:#7c8cff;
+    --navy-dark:#4f6ef7;
+    --orange:#f59e0b;
+    --orange-light:#3a2f1a;
+    --bg:#0f1117;
+    --card:#1a1d27;
+    --line:#2e3350;
+    --text:#e8eaf6;
+    --muted:#8b92b8;
+    --green:#22c55e;
+    --green-bg:#14331f;
+    --amber:#f59e0b;
+    --amber-bg:#3a2f1a;
   }
 #tabCargas *{box-sizing:border-box;}
 #tabCargas{
@@ -305,17 +308,17 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .card .sub{font-size:12px; color:var(--muted); margin-bottom:10px;}
 #tabCargas textarea{
     width:100%; min-height:110px; resize:vertical; border:1px solid var(--line); border-radius:8px;
-    padding:10px; font-family:Consolas, monospace; font-size:12px; color:var(--text); background:#FAFBFC;
+    padding:10px; font-family:Consolas, monospace; font-size:12px; color:var(--text); background:var(--surface2);
   }
 #tabCargas .row-btns{display:flex; gap:8px; margin-top:10px; align-items:center; flex-wrap:wrap;}
 #tabCargas button{
     border:none; border-radius:7px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer;
     transition:filter .15s;
   }
-#tabCargas button:hover{filter:brightness(0.95);}
-#tabCargas .btn-primary{background:var(--orange); color:#fff;}
+#tabCargas button:hover{filter:brightness(1.12);}
+#tabCargas .btn-primary{background:var(--orange); color:#1a1206;}
 #tabCargas .msg{font-size:12px; color:var(--green); margin-left:4px;}
-#tabCargas .msg.err{color:#C0392B;}
+#tabCargas .msg.err{color:#ff6b6b;}
 #tabCargas .cal-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px;}
 #tabCargas .cal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
 #tabCargas .cal-header .month-label{font-size:17px; font-weight:700; color:var(--navy); text-transform:capitalize;}
@@ -323,15 +326,15 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
 #tabCargas .dow{font-size:11px; text-align:center; color:var(--muted); font-weight:600; padding-bottom:4px;}
 #tabCargas .day-cell{
-    min-height:78px; border:1px solid var(--line); border-radius:8px; padding:6px; background:#FCFDFE;
+    min-height:78px; border:1px solid var(--line); border-radius:8px; padding:6px; background:var(--surface2);
     display:flex; flex-direction:column; gap:4px;
   }
 #tabCargas .day-cell.empty{background:transparent; border:none;}
 #tabCargas .day-cell.today{outline:2px solid var(--navy);}
 #tabCargas .day-cell .dnum{font-size:11px; color:var(--muted); font-weight:600;}
-#tabCargas .day-cell.has-data{cursor:pointer; background:#fff;}
+#tabCargas .day-cell.has-data{cursor:pointer; background:var(--card);}
 #tabCargas .day-cell.has-data:hover{border-color:var(--orange);}
-#tabCargas .day-cell.selected{background:var(--orange-light); border-color:var(--orange);}
+#tabCargas .day-cell.selected{background:rgba(245,158,11,.15); border-color:var(--orange);}
 #tabCargas .badge{
     font-size:10.5px; background:var(--navy); color:#fff; border-radius:5px; padding:2px 6px; display:inline-block; width:fit-content;
   }
@@ -368,7 +371,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .access-cfg-btn{background:var(--bg); border:1px solid var(--line); color:var(--navy); width:32px; height:32px; border-radius:7px; font-size:14px;}
 #tabCargas .access-cfg{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-bottom:20px;}
 #tabCargas .access-cfg-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
-#tabCargas .access-cfg-row input{flex:1; min-width:200px; border:1px solid var(--line); border-radius:7px; padding:8px 10px; font-size:13px; background:#FAFBFC; color:var(--text);}
+#tabCargas .access-cfg-row input{flex:1; min-width:200px; border:1px solid var(--line); border-radius:7px; padding:8px 10px; font-size:13px; background:var(--surface2); color:var(--text);}
 /* Estado somente-leitura: esconde/atenua os controles de edição */
 #tabCargas.readonly .grid-top,
 #tabCargas.readonly .save-row,
@@ -384,7 +387,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .sync-toggle-cfg{background:var(--bg); border:1px solid var(--line); color:var(--navy); border-radius:7px; padding:5px 12px; font-size:12px; font-weight:600;}
 #tabCargas .sync-field{margin:12px 0;}
 #tabCargas .sync-field label{display:block; font-size:12px; font-weight:700; color:var(--navy); margin-bottom:4px;}
-#tabCargas .sync-field input{width:100%; border:1px solid var(--line); border-radius:7px; padding:8px 10px; font-size:13px; color:var(--text); background:#FAFBFC; font-family:Consolas, monospace;}
+#tabCargas .sync-field input{width:100%; border:1px solid var(--line); border-radius:7px; padding:8px 10px; font-size:13px; color:var(--text); background:var(--surface2); font-family:Consolas, monospace;}
 #tabCargas .sync-hint{display:block; font-size:11px; color:var(--muted); margin-top:4px; line-height:1.5;}
 #tabCargas .sync-hint code{background:var(--bg); padding:1px 5px; border-radius:4px; font-size:10.5px;}
 #tabCargas .sync-actions{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center;}
@@ -396,7 +399,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .save-row{display:flex; gap:8px; margin:10px 0 14px; flex-wrap:wrap; align-items:center;}
 #tabCargas .save-row input{
     flex:1; min-width:200px; border:1px solid var(--line); border-radius:7px; padding:8px 10px;
-    font-size:13px; color:var(--text); background:#FAFBFC;
+    font-size:13px; color:var(--text); background:var(--surface2);
   }
 #tabCargas .btn-navy{background:var(--navy); color:#fff;}
 #tabCargas .caso-item{
@@ -408,38 +411,53 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .caso-item .caso-info{font-size:11.5px; color:var(--muted);}
 #tabCargas .caso-item .caso-acoes{display:flex; gap:6px;}
 #tabCargas .btn-sm{padding:5px 10px; font-size:12px;}
-#tabCargas .btn-danger{background:#fff; color:#C0392B; border:1px solid #EFC7C2;}
+#tabCargas .btn-danger{background:var(--surface2); color:#ff6b6b; border:1px solid #5a2a2a;}
 #tabCargas{
-    --red:#C0392B; --red-bg:#FBEAE8;
-    --blue-dark:#123A7A; --blue-bg:#E4ECFA;
+    --red:#ef4444; --red-bg:#3a1d1d;
+    --blue-dark:#7c8cff; --blue-bg:#1e2440;
+    --surface2:#22263a;
   }
 #tabCargas .sep-select{
-    border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:5px 12px; font-size:12px; font-weight:700;
-    cursor:pointer; appearance:none; -webkit-appearance:none; text-align:center;
+    border:1px solid var(--line); border-radius:12px; padding:5px 12px; font-size:12px; font-weight:700;
+    cursor:pointer; appearance:none; -webkit-appearance:none; text-align:center; background:var(--surface2); color:var(--text);
   }
-/* cores do select de status do processo */
-#tabCargas .sep-select.st-naocoletada{background:#FFFFFF; color:#333; border-color:#bbb;}
-#tabCargas .sep-select.st-naoproc{background:#C0392B; color:#fff;}
-#tabCargas .sep-select.st-separando{background:#E0A700; color:#333;}
-#tabCargas .sep-select.st-aguardexp{background:#123A7A; color:#fff;}
-#tabCargas .sep-select.st-expedida{background:#1E8E5A; color:#fff;}
+/* cores do select de status por nota (tema escuro) */
+#tabCargas .sep-select.st-naocoletada{background:#e8eaf6; color:#1a1d27; border-color:#e8eaf6;}
+#tabCargas .sep-select.st-naoproc{background:#ef4444; color:#fff; border-color:#ef4444;}
+#tabCargas .sep-select.st-separando{background:#f59e0b; color:#1a1206; border-color:#f59e0b;}
+#tabCargas .sep-select.st-aguardexp{background:#7c8cff; color:#0f1117; border-color:#7c8cff;}
+#tabCargas .sep-select.st-expedida{background:#22c55e; color:#06210f; border-color:#22c55e;}
 
-/* bolinhas grandes com a quantidade de processos por status, no calendário */
-#tabCargas .status-dots{display:flex; flex-wrap:wrap; gap:3px; margin-top:4px;}
+/* bolinhas grandes com a quantidade de NOTAS por status */
+#tabCargas .status-dots{display:inline-flex; flex-wrap:wrap; gap:3px; margin-top:4px; vertical-align:middle;}
 #tabCargas .sdot{
     display:inline-flex; align-items:center; justify-content:center;
-    min-width:20px; height:20px; padding:0 4px; border-radius:10px;
-    font-size:12px; font-weight:800; border:1px solid rgba(0,0,0,.22);
+    min-width:22px; height:22px; padding:0 5px; border-radius:11px;
+    font-size:12.5px; font-weight:800; border:1px solid rgba(255,255,255,.25);
     box-sizing:border-box; line-height:1;
   }
 
 /* legenda de cores no topo do calendário */
-#tabCargas .status-legend{display:flex; flex-wrap:wrap; gap:10px 14px; margin:0 0 12px; padding:8px 10px; background:var(--bg); border:1px solid var(--line); border-radius:8px;}
-#tabCargas .leg-item{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:var(--navy);}
-#tabCargas .leg-dot{display:inline-block; width:13px; height:13px; border-radius:50%; border:1px solid rgba(0,0,0,.25);}
+#tabCargas .status-legend{display:flex; flex-wrap:wrap; gap:10px 14px; margin:0 0 12px; padding:8px 10px; background:var(--surface2); border:1px solid var(--line); border-radius:8px;}
+#tabCargas .leg-item{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:var(--text);}
+#tabCargas .leg-dot{display:inline-block; width:13px; height:13px; border-radius:50%; border:1px solid rgba(255,255,255,.3);}
 
 /* tag de status colorida (listas de processos) */
 #tabCargas .status-tag{display:inline-block; padding:2px 9px; border-radius:11px; font-size:10.5px; font-weight:800; border:1px solid rgba(0,0,0,.18); white-space:nowrap; margin-left:6px;}
+
+/* campos de entrega editáveis dentro do detalhe do processo */
+#tabCargas .entrega-inp{
+    width:100%; min-width:80px; background:transparent; border:1px solid transparent; border-radius:6px;
+    color:var(--text); font-size:12px; padding:4px 6px; transition:border-color .15s, background .15s;
+  }
+#tabCargas .entrega-inp:hover{border-color:var(--line); background:var(--surface2);}
+#tabCargas .entrega-inp:focus{border-color:var(--orange); background:var(--surface2); outline:none;}
+/* botão de excluir nota */
+#tabCargas .nf-del{
+    background:transparent; border:1px solid transparent; color:var(--muted); border-radius:6px;
+    width:26px; height:26px; padding:0; font-size:13px; cursor:pointer; line-height:1;
+  }
+#tabCargas .nf-del:hover{background:var(--red-bg); color:#ff6b6b; border-color:#5a2a2a;}
 
 #tabCargas .prazo-pill{
     display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap;
@@ -461,7 +479,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .print-card h2{font-size:14px; margin:0 0 10px; color:var(--navy);}
 #tabCargas .print-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
 #tabCargas .print-row select, #tabCargas .print-row input[type="date"]{
-    border:1px solid var(--line); border-radius:7px; padding:7px 10px; font-size:13px; background:#FAFBFC; color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:7px 10px; font-size:13px; background:var(--surface2); color:var(--text);
   }
 #tabCargas .print-row label{font-size:12.5px; color:var(--muted); font-weight:600;}
 #printArea{display:none;}
@@ -709,7 +727,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo</div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status por nota v2</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -724,7 +742,7 @@ body *{visibility:hidden;}
     </div>
     <div class="access-actions">
       <button class="btn-navy" id="unlockBtn" type="button">🔓 Desbloquear edição</button>
-      <button class="btn-ghost-alt" id="lockBtn" type="button" style="background:#fff; color:var(--navy); border:1px solid var(--line); display:none;">🔒 Bloquear</button>
+      <button class="btn-ghost-alt" id="lockBtn" type="button" style="background:var(--surface2); color:var(--navy); border:1px solid var(--line); display:none;">🔒 Bloquear</button>
       <button class="access-cfg-btn" id="accessCfgBtn" type="button">⚙</button>
     </div>
   </div>
@@ -757,7 +775,7 @@ body *{visibility:hidden;}
     <div class="save-row">
       <input type="text" id="casoNomeInput" placeholder="Nome do caso (ex.: Mattel 15/07)">
       <button class="btn-navy" id="salvarCasoBtn">💾 Salvar caso atual</button>
-      <button class="btn-ghost-alt" id="novoCasoBtn" style="background:#fff; color:var(--navy); border:1px solid var(--line);">➕ Novo caso em branco</button>
+      <button class="btn-ghost-alt" id="novoCasoBtn" style="background:var(--surface2); color:var(--navy); border:1px solid var(--line);">➕ Novo caso em branco</button>
       <span class="msg" id="casoMsg"></span>
     </div>
     <div id="casosList"></div>
@@ -835,7 +853,7 @@ body *{visibility:hidden;}
       </span>
       <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
         <input type="checkbox" id="printHideExp" style="width:auto;">
-        Ocultar processos expedidos
+        Ocultar notas expedidas
       </label>
       <button class="btn-primary" id="printBtn">Imprimir</button>
       <span class="msg" id="printMsg"></span>
@@ -859,13 +877,14 @@ body *{visibility:hidden;}
       <thead>
         <tr>
           <th>NF</th>
+          <th>Separação</th>
           <th>Minuta</th>
           <th>CTE</th>
           <th>Destinatário</th>
           <th>Cidade</th>
           <th>Prev. embarque</th>
           <th>Ocorrência</th>
-          <th>Data status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="nfTableBody"></tbody>
@@ -2099,6 +2118,13 @@ function switchSection(section) {
 (function(){
 'use strict';
 
+// Escapa texto para uso seguro dentro de atributos HTML (inclui aspas)
+function escAttr(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // CAMADA DE ARMAZENAMENTO + SINCRONIZAÇÃO EM EQUIPE (Firebase Realtime Database)
 // ──────────────────────────────────────────────────────────────────────────
@@ -2344,39 +2370,39 @@ let selectedProcesso = null;
 const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 const DOW = ["dom","seg","ter","qua","qui","sex","sáb"];
 
-// --- Status do PROCESSO (um status por processo, não por nota) ---
-// Cada status tem: label, classe CSS, cor (para bolinha do calendário/impressão)
+// --- Status por NOTA FISCAL (cada NF tem seu próprio status) ---
+// Cada status: label, classe CSS do select, cor da bolinha e cor do texto.
 const SEP_STATUS = {
-  NAO_COLETADA:   {label:'NÃO COLETADA',   cls:'st-naocoletada',  cor:'#FFFFFF', txt:'#333', key:'w'},
-  NAO_PROCESSADA: {label:'NÃO PROCESSADA', cls:'st-naoproc',      cor:'#C0392B', txt:'#fff', key:'r'},
-  SEPARANDO:      {label:'SEPARANDO',      cls:'st-separando',    cor:'#E0A700', txt:'#333', key:'y'},
-  AGUARDANDO_EXP: {label:'AGUARDANDO EXP', cls:'st-aguardexp',    cor:'#123A7A', txt:'#fff', key:'b'},
-  EXPEDIDA:       {label:'EXPEDIDA',       cls:'st-expedida',     cor:'#1E8E5A', txt:'#fff', key:'g'}
+  NAO_COLETADA:   {label:'NÃO COLETADA',   cls:'st-naocoletada', cor:'#e8eaf6', txt:'#1a1d27', key:'w'},
+  NAO_PROCESSADA: {label:'NÃO PROCESSADA', cls:'st-naoproc',     cor:'#ef4444', txt:'#fff',    key:'r'},
+  SEPARANDO:      {label:'SEPARANDO',      cls:'st-separando',   cor:'#f59e0b', txt:'#1a1206', key:'y'},
+  AGUARDANDO_EXP: {label:'AGUARDANDO EXP', cls:'st-aguardexp',   cor:'#7c8cff', txt:'#0f1117', key:'b'},
+  EXPEDIDA:       {label:'EXPEDIDA',       cls:'st-expedida',    cor:'#22c55e', txt:'#06210f', key:'g'}
 };
 const SEP_ORDER = ['NAO_COLETADA','NAO_PROCESSADA','SEPARANDO','AGUARDANDO_EXP','EXPEDIDA'];
 const DEFAULT_STATUS = 'NAO_COLETADA';
 
-// Status do processo (com migração dos status antigos por-NF, se existirem)
-function getProcStatus(proc){
-  if(proc.status && SEP_STATUS[proc.status]) return proc.status;
-  // migração: se veio de versão antiga com statusNfs por nota, deriva um status
-  if(proc.statusNfs && Object.keys(proc.statusNfs).length){
-    const vals = Object.values(proc.statusNfs);
-    const allExp = vals.every(v=>v==='EXPEDIDO');
-    if(allExp) return 'EXPEDIDA';
-  }
-  return DEFAULT_STATUS;
+// Status de uma NF dentro do processo (default = NÃO COLETADA)
+function getStatusNf(proc, nf){
+  if(!proc.statusNfs) proc.statusNfs = {};
+  const v = proc.statusNfs[nf];
+  return (v && SEP_STATUS[v]) ? v : DEFAULT_STATUS;
+}
+function setStatusNf(proc, nf, status){
+  if(!proc.statusNfs) proc.statusNfs = {};
+  proc.statusNfs[nf] = status;
 }
 
-function setProcStatus(proc, status){
-  proc.status = status;
-  if(proc.statusNfs) delete proc.statusNfs; // limpa modelo antigo
-}
-
-// Conta processos por status dentro de uma lista
-function statusCountsList(procs){
+// Conta NOTAS por status dentro de um processo
+function sepCounts(proc){
   const c = {NAO_COLETADA:0, NAO_PROCESSADA:0, SEPARANDO:0, AGUARDANDO_EXP:0, EXPEDIDA:0};
-  procs.forEach(p=>{ c[getProcStatus(p)]++; });
+  proc.nfs.forEach(nf=>{ c[getStatusNf(proc,nf)]++; });
+  return c;
+}
+// Soma a contagem de notas por status numa lista de processos
+function sepCountsList(procs){
+  const c = {NAO_COLETADA:0, NAO_PROCESSADA:0, SEPARANDO:0, AGUARDANDO_EXP:0, EXPEDIDA:0};
+  procs.forEach(p=>{ const cc = sepCounts(p); SEP_ORDER.forEach(k=>c[k]+=cc[k]); });
   return c;
 }
 
@@ -2387,14 +2413,15 @@ function prazoDate(proc){
 function fmtDate(d){
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
-// Retorna {cls,label} para o pill de prazo do processo (baseado no status do processo)
+// Pill de prazo do processo — concluído quando TODAS as notas estão EXPEDIDA
 function prazoInfo(proc){
-  const st = getProcStatus(proc);
+  const c = sepCounts(proc);
+  const total = proc.nfs.length;
   const prazo = prazoDate(proc);
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const pz = new Date(prazo); pz.setHours(0,0,0,0);
 
-  if(st === 'EXPEDIDA'){
+  if(total > 0 && c.EXPEDIDA === total){
     return {cls:'concluido', label:`✔ expedida — prazo ${fmtDate(prazo)}`};
   }
   if(hoje > pz)  return {cls:'vencido', label:`⚠ VENCIDO — prazo era ${fmtDate(prazo)}`};
@@ -2582,11 +2609,15 @@ function renderAll(){
 function renderPrazos(){
   const card = document.getElementById('prazosCard');
   const list = document.getElementById('prazosList');
-  const pendentes = Object.values(processos).filter(p=> getProcStatus(p) !== 'EXPEDIDA');
+  // pendente = ainda tem nota que não foi expedida
+  const pendentes = Object.values(processos).filter(p=>{
+    const c = sepCounts(p);
+    return c.EXPEDIDA < p.nfs.length;
+  });
   if(pendentes.length===0){
     if(Object.keys(processos).length===0){ card.style.display='none'; return; }
     card.style.display='block';
-    list.innerHTML = '<div style="font-size:12.5px; color:var(--green); font-weight:600; padding:4px 0;">✔ Todos os processos foram expedidos. Nenhuma pendência.</div>';
+    list.innerHTML = '<div style="font-size:12.5px; color:var(--green); font-weight:600; padding:4px 0;">✔ Todas as notas foram expedidas. Nenhuma pendência.</div>';
     return;
   }
   card.style.display='block';
@@ -2594,9 +2625,12 @@ function renderPrazos(){
   pendentes.sort((a,b)=>prazoDate(a) - prazoDate(b));
   list.innerHTML='';
   pendentes.forEach(p=>{
-    const st = getProcStatus(p);
-    const s = SEP_STATUS[st];
+    const c = sepCounts(p);
     const info = prazoInfo(p);
+    const dots = SEP_ORDER.filter(k=>c[k]>0).map(k=>{
+      const s = SEP_STATUS[k];
+      return `<span class="sdot" title="${s.label}: ${c[k]}" style="background:${s.cor}; color:${s.txt};">${c[k]}</span>`;
+    }).join('');
     const div = document.createElement('div');
     div.className='prazo-item';
     div.innerHTML = `
@@ -2605,7 +2639,7 @@ function renderPrazos(){
         <div class="p-info">coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')} · ${p.nfs.length} NFs</div>
       </div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <span class="status-tag" style="background:${s.cor}; color:${s.txt};">${s.label}</span>
+        <span class="status-dots">${dots}</span>
         <span class="prazo-pill ${info.cls}">${info.label}</span>
       </div>`;
     div.addEventListener('click', ()=>{
@@ -2746,13 +2780,13 @@ function renderCalendar(){
       const nfsSet = new Set(procsForDay.flatMap(p=>p.nfs));
       const totalNfs = nfsSet.size;
       const comMinuta = [...nfsSet].filter(nf=>nfToMinuta[nf]).length;
-      const sc = statusCountsList(procsForDay);
+      const sc = sepCountsList(procsForDay);
       let badgeClass = 'badge';
       if(comMinuta>0 && comMinuta<totalNfs) badgeClass += ' partial';
       else if(comMinuta===totalNfs && totalNfs>0) badgeClass += ' done';
       inner += `<span class="${badgeClass}">${procsForDay.length} proc.</span>`;
       inner += `<span class="nfcount">${totalNfs} NFs · ${comMinuta} c/ minuta</span>`;
-      // bolinhas grandes com a quantidade de PROCESSOS em cada status (só as > 0)
+      // bolinhas grandes com a quantidade de NOTAS em cada status (só as > 0)
       let dots = '<div class="status-dots">';
       SEP_ORDER.forEach(k=>{
         if(sc[k] > 0){
@@ -2791,15 +2825,18 @@ function renderDayDetail(key){
   list.innerHTML = '';
   procsForDay.sort((a,b)=>a.codigo.localeCompare(b.codigo)).forEach(p=>{
     const comMinuta = p.nfs.filter(nf=>nfToMinuta[nf]).length;
-    const st = getProcStatus(p);
-    const s = SEP_STATUS[st];
+    const c = sepCounts(p);
     const info = prazoInfo(p);
+    const dots = SEP_ORDER.filter(k=>c[k]>0).map(k=>{
+      const s = SEP_STATUS[k];
+      return `<span class="sdot" title="${s.label}: ${c[k]}" style="background:${s.cor}; color:${s.txt};">${c[k]}</span>`;
+    }).join('');
     const div = document.createElement('div');
     div.className = 'proc-item' + (selectedProcesso===p.codigo ? ' expanded':'');
     div.innerHTML = `<span class="codigo">${p.codigo}</span>
       <span class="stats">
         ${p.nfs.length} NFs · ${comMinuta}/${p.nfs.length} c/ minuta
-        <span class="status-tag" style="background:${s.cor}; color:${s.txt};">${s.label}</span>
+        <span class="status-dots" style="margin-left:6px;">${dots}</span>
       </span>
       <span class="prazo-pill ${info.cls}">${info.label}</span>`;
     div.addEventListener('click', ()=>{
@@ -2819,28 +2856,33 @@ function renderProcDetail(codigo){
   document.getElementById('procDetailTitle').textContent = `Processo ${codigo} — ${p.nfs.length} NFs`;
 
   const info = prazoInfo(p);
-  const st = getProcStatus(p);
-  const stInfo = SEP_STATUS[st];
+  const c = sepCounts(p);
 
-  // Select de status do PROCESSO (um só) + pill de prazo
-  const optHtml = SEP_ORDER.map(k=>`<option value="${k}" ${k===st?'selected':''}>${SEP_STATUS[k].label}</option>`).join('');
+  // Resumo: contagem de NOTAS por status + botão de aplicar um status a todas
+  const bulkOpts = SEP_ORDER.map(k=>`<option value="${k}">${SEP_STATUS[k].label}</option>`).join('');
+  const chips = SEP_ORDER.filter(k=>c[k]>0).map(k=>{
+    const s = SEP_STATUS[k];
+    return `<span class="sdot" style="background:${s.cor}; color:${s.txt};">${c[k]}</span>
+            <span style="font-size:11px; color:var(--muted); margin-right:8px;">${s.label}</span>`;
+  }).join('');
   document.getElementById('procPrazoInfo').innerHTML =
-    `<span style="font-size:12px; font-weight:700; color:var(--navy); margin-right:6px;">Status do processo:</span>
-     <select id="procStatusSelect" class="sep-select ${stInfo.cls}">${optHtml}</select>
-     <span class="prazo-pill ${info.cls}" style="margin-left:10px;">${info.label}</span>
-     <span style="font-size:12px; color:var(--muted); margin-left:10px;">
-       coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}
-     </span>`;
+    `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+       <span class="prazo-pill ${info.cls}">${info.label}</span>
+       <span style="font-size:12px; color:var(--muted);">coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}</span>
+     </div>
+     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px;">${chips}</div>
+     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+       <span style="font-size:12px; color:var(--muted);">Aplicar a todas as notas:</span>
+       <select id="bulkStatusSel" class="sep-select">${bulkOpts}</select>
+       <button class="btn-navy btn-sm" id="bulkStatusBtn">aplicar</button>
+     </div>`;
 
-  const selStatus = document.getElementById('procStatusSelect');
-  if(selStatus){
-    selStatus.addEventListener('change', async ()=>{
-      if(!Access.canEdit()){
-        alert('🔒 Edição bloqueada. Desbloqueie com a senha.');
-        renderProcDetail(codigo);
-        return;
-      }
-      setProcStatus(p, selStatus.value);
+  const bulkBtn = document.getElementById('bulkStatusBtn');
+  if(bulkBtn){
+    bulkBtn.addEventListener('click', async ()=>{
+      if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); return; }
+      const v = document.getElementById('bulkStatusSel').value;
+      p.nfs.forEach(nf=>setStatusNf(p, nf, v));
       try{ await saveProcessos(); }catch(e){}
       renderAll();
     });
@@ -2851,22 +2893,85 @@ function renderProcDetail(codigo){
   const sortedNfs = [...p.nfs].sort((a,b)=>Number(a)-Number(b));
   sortedNfs.forEach(nf=>{
     const m = nfToMinuta[nf];
+    const stnf = getStatusNf(p, nf);
+    const sepCell = `<select class="sep-select ${SEP_STATUS[stnf].cls}" data-nf="${nf}">
+        ${SEP_ORDER.map(k=>`<option value="${k}" ${k===stnf?'selected':''}>${SEP_STATUS[k].label}</option>`).join('')}
+      </select>`;
+    // campos de entrega — editáveis por qualquer um (mesmo com a página bloqueada)
+    const minutaCell = m ? `<strong style="color:var(--navy);">${m.id||'—'}</strong>` : '<span class="status-pill pending">sem minuta</span>';
+    const cte = m ? (m.cte||'') : '';
+    const dest = m ? (m.destinatario||'') : '';
+    const cidade = m ? (m.cidadeDestino||'') : '';
+    const prev = m ? (m.prevEmbarque||'') : '';
+    const ocor = m ? (m.ocorrencia||'') : '';
+    const delBtn = `<button class="nf-del" data-nf="${nf}" title="Excluir esta nota do processo">✕</button>`;
     const tr = document.createElement('tr');
-    if(m){
-      tr.innerHTML = `<td><strong>${nf}</strong></td>
-        <td><span class="status-pill ok">com minuta</span></td>
-        <td>${m.cte||'—'}</td>
-        <td>${m.destinatario||'—'}</td>
-        <td>${m.cidadeDestino||'—'}</td>
-        <td>${m.prevEmbarque ? '<strong style="color:var(--navy);">'+m.prevEmbarque+'</strong>' : '—'}</td>
-        <td>${m.ocorrencia||'—'}</td>
-        <td>${m.dataStatus||'—'}</td>`;
-    } else {
-      tr.innerHTML = `<td><strong>${nf}</strong></td>
-        <td><span class="status-pill pending">aguardando minuta</span></td>
-        <td colspan="6" style="color:var(--muted);">—</td>`;
-    }
+    tr.innerHTML = `<td><strong>${nf}</strong></td>
+      <td>${sepCell}</td>
+      <td>${minutaCell}</td>
+      <td><input class="entrega-inp" data-nf="${nf}" data-campo="cte" value="${escAttr(cte)}" placeholder="—"></td>
+      <td><input class="entrega-inp" data-nf="${nf}" data-campo="destinatario" value="${escAttr(dest)}" placeholder="—"></td>
+      <td><input class="entrega-inp" data-nf="${nf}" data-campo="cidadeDestino" value="${escAttr(cidade)}" placeholder="—"></td>
+      <td><input class="entrega-inp" data-nf="${nf}" data-campo="prevEmbarque" value="${escAttr(prev)}" placeholder="—"></td>
+      <td><input class="entrega-inp" data-nf="${nf}" data-campo="ocorrencia" value="${escAttr(ocor)}" placeholder="—"></td>
+      <td>${delBtn}</td>`;
     tbody.appendChild(tr);
+  });
+
+  // status por nota (respeita bloqueio)
+  tbody.querySelectorAll('select.sep-select').forEach(sel=>{
+    sel.addEventListener('change', async ()=>{
+      if(!Access.canEdit()){
+        alert('🔒 Edição bloqueada. Desbloqueie com a senha.');
+        renderProcDetail(codigo);
+        return;
+      }
+      const nf = sel.getAttribute('data-nf');
+      setStatusNf(p, nf, sel.value);
+      try{ await saveProcessos(); }catch(e){}
+      renderAll();
+    });
+  });
+
+  // campos de entrega — QUALQUER pessoa pode editar (não exige desbloqueio).
+  // Grava na minuta correspondente; se a NF ainda não tem minuta, cria um
+  // registro mínimo para guardar os dados de entrega.
+  tbody.querySelectorAll('input.entrega-inp').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      const nf = inp.getAttribute('data-nf');
+      const campo = inp.getAttribute('data-campo');
+      let m = nfToMinuta[nf];
+      if(!m){
+        // cria minuta mínima só para armazenar os campos de entrega desta NF
+        const novoId = 'S/'+nf;
+        m = minutas[novoId] || { id:novoId, nfs:[nf] };
+        minutas[novoId] = m;
+        nfToMinuta[nf] = m;
+      }
+      m[campo] = inp.value.trim();
+      try{ await saveMinutas(); }catch(e){}
+      // atualiza contadores/calendário sem re-renderizar o campo em foco
+      renderSummary(); renderCalendar();
+      if(selectedDateKey) renderDayDetail(selectedDateKey);
+    });
+  });
+
+  // excluir nota do processo (exige desbloqueio, pois altera a estrutura)
+  tbody.querySelectorAll('button.nf-del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha para excluir notas.'); return; }
+      const nf = btn.getAttribute('data-nf');
+      if(!confirm(`Excluir a nota ${nf} do processo ${codigo}?`)) return;
+      p.nfs = p.nfs.filter(x=>x!==nf);
+      if(p.statusNfs) delete p.statusNfs[nf];
+      // se o processo ficar sem notas, remove o processo inteiro
+      let procRemovido = false;
+      if(p.nfs.length===0){ delete processos[codigo]; selectedProcesso=null; procRemovido=true; }
+      try{ await saveProcessos(); }catch(e){}
+      rebuildIndexes();
+      if(procRemovido){ document.getElementById('procDetail').style.display='none'; }
+      renderAll();
+    });
   });
 }
 
@@ -3011,11 +3116,15 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
 // ---------- IMPRESSÃO ----------
 function procDateObj(p){ return new Date(p.ano, p.mes-1, p.dia); }
 
-// hideExpedidos: quando true, processos com status EXPEDIDA não entram no relatório
+// hideExpedidos: quando true, oculta as NOTAS já expedidas (e processos que
+// ficariam sem nenhuma nota a exibir).
 function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
-  // filtra expedidos se solicitado
+  // se ocultar expedidos, remove processos cujas notas estão TODAS expedidas
   if(hideExpedidos){
-    procsFiltrados = procsFiltrados.filter(p=> getProcStatus(p) !== 'EXPEDIDA');
+    procsFiltrados = procsFiltrados.filter(p=>{
+      const c = sepCounts(p);
+      return c.EXPEDIDA < p.nfs.length;
+    });
   }
   if(procsFiltrados.length===0) return null;
 
@@ -3027,14 +3136,15 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
   });
   const datas = Object.keys(porData).sort();
 
-  // resumo geral: contagem de processos por status
+  // resumo geral: contagem de NOTAS por status
   let tProc=0, tNfs=0, tMin=0;
   const tSt = {NAO_COLETADA:0, NAO_PROCESSADA:0, SEPARANDO:0, AGUARDANDO_EXP:0, EXPEDIDA:0};
   procsFiltrados.forEach(p=>{
     tProc++;
     tNfs += p.nfs.length;
     tMin += p.nfs.filter(nf=>nfToMinuta[nf]).length;
-    tSt[getProcStatus(p)]++;
+    const c = sepCounts(p);
+    SEP_ORDER.forEach(k=>tSt[k]+=c[k]);
   });
   const resumoStatus = SEP_ORDER
     .filter(k=>tSt[k]>0)
@@ -3048,29 +3158,28 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
     <div class="pr-header">
       <div>
         <h1>Acompanhamento de Cargas — Mattel</h1>
-        <div class="pr-sub">${tituloFiltro}${hideExpedidos ? ' · (sem processos expedidos)' : ''}${casoAtual ? ' · Caso: '+casoAtual : ''}</div>
+        <div class="pr-sub">${tituloFiltro}${hideExpedidos ? ' · (sem notas expedidas)' : ''}${casoAtual ? ' · Caso: '+casoAtual : ''}</div>
       </div>
       <div class="pr-sub">Emitido em ${agoraStr}</div>
     </div>
     <div class="pr-resumo">
-      <strong>Resumo:</strong> ${tProc} processo(s) · ${tNfs} NF(s) · ${tMin} com minuta · Status: ${resumoStatus}
+      <strong>Resumo:</strong> ${tProc} processo(s) · ${tNfs} NF(s) · ${tMin} com minuta · Notas por status: ${resumoStatus}
     </div>`;
 
   datas.forEach(dk=>{
     const parts = dk.split('-');
     html += `<div class="pr-dia">Coleta em ${parts[2]}/${parts[1]}/${parts[0]}</div>`;
     porData[dk].sort((a,b)=>a.codigo.localeCompare(b.codigo)).forEach(p=>{
-      const st = getProcStatus(p);
-      const s = SEP_STATUS[st];
+      const c = sepCounts(p);
       const info = prazoInfo(p);
       const prazo = fmtDate(prazoDate(p));
+      const resumoP = SEP_ORDER.filter(k=>c[k]>0).map(k=>`${c[k]} ${SEP_STATUS[k].label.toLowerCase()}`).join(' / ');
       html += `
       <div class="pr-proc">
         <div class="pr-proc-head">
           <span class="cod">${p.codigo}</span>
-          <span class="st-print" style="background:${s.cor}; color:${s.txt};">${s.label}</span>
           <span class="meta">
-            ${p.nfs.length} NFs · Prazo: <strong>${prazo}</strong>
+            ${p.nfs.length} NFs · Prazo: <strong>${prazo}</strong> · ${resumoP}
             ${info.cls==='vencido' ? ' · <strong style="color:#C0392B;">PRAZO VENCIDO</strong>' : ''}
             ${info.cls==='hoje' ? ' · <strong style="color:#B5790A;">VENCE HOJE</strong>' : ''}
             ${info.cls==='concluido' ? ' · <strong style="color:#1E8E5A;">EXPEDIDA</strong>' : ''}
@@ -3079,22 +3188,25 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
         <table>
           <thead>
             <tr>
-              <th>NF</th><th>Minuta</th><th>CTE</th><th>Destinatário</th>
-              <th>Cidade destino</th><th>Vol.</th><th>Peso</th><th>Prev. embarque</th><th>Ocorrência</th>
+              <th>NF</th><th>Status</th><th>Minuta</th><th>CTE</th><th>Destinatário</th>
+              <th>Cidade destino</th><th>Vol.</th><th>Prev. embarque</th><th>Ocorrência</th>
             </tr>
           </thead>
           <tbody>`;
-      const sortedNfs = [...p.nfs].sort((a,b)=>Number(a)-Number(b));
+      let sortedNfs = [...p.nfs].sort((a,b)=>Number(a)-Number(b));
+      // se ocultar expedidos, não lista as notas já expedidas
+      if(hideExpedidos) sortedNfs = sortedNfs.filter(nf=>getStatusNf(p,nf)!=='EXPEDIDA');
       sortedNfs.forEach(nf=>{
         const m = nfToMinuta[nf];
+        const stnf = SEP_STATUS[getStatusNf(p,nf)];
         html += `<tr>
           <td><strong>${nf}</strong></td>
+          <td><span class="st-print" style="background:${stnf.cor}; color:${stnf.txt};">${stnf.label}</span></td>
           <td>${m ? (m.id||'sim') : '—'}</td>
           <td>${m ? (m.cte||'—') : '—'}</td>
           <td>${m ? (m.destinatario||'—') : '—'}</td>
           <td>${m ? (m.cidadeDestino||'—') : '—'}</td>
           <td>${m ? (m.volumes||'—') : '—'}</td>
-          <td>${m ? (m.peso||'—') : '—'}</td>
           <td>${m ? (m.prevEmbarque||m.prevEntrega||'—') : '—'}</td>
           <td>${m ? (m.ocorrencia||'—') : '—'}</td>
         </tr>`;
@@ -3170,7 +3282,7 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
 
   const hideExp = document.getElementById('printHideExp').checked;
   const html = buildPrintHTML(filtrados, titulo, hideExp);
-  if(!html){ msg.textContent = hideExp ? 'Nenhum processo não-expedido para esse filtro.' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
+  if(!html){ msg.textContent = hideExp ? 'Nada a exibir (todas as notas do filtro estão expedidas).' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
   document.getElementById('printArea').innerHTML = html;
   window.print();
 });
