@@ -130,6 +130,23 @@ td.qtd{text-align:right;font-weight:600}
 .label-count-badge b{color:var(--accent);font-size:14px}
 .label-sort-toggle{display:flex;align-items:center;gap:8px}
 .label-sort-lbl{font-size:12px;color:var(--muted)}
+.label-gen-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px}
+.label-gen-head h3{font-size:15px;margin-bottom:2px}
+.label-gen-head span{font-size:12px;color:var(--muted)}
+.label-gen-controls{margin-top:12px;display:flex;flex-direction:column;gap:14px}
+.lg-modo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lg-lbl{font-size:12px;color:var(--muted);font-weight:600}
+.lg-sel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.lg-sel-actions{display:flex;gap:6px}
+.btn-mini{font-size:11px;padding:4px 10px}
+.lg-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;max-height:280px;overflow-y:auto;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+.lg-opt{display:flex;flex-direction:column;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;cursor:pointer;position:relative}
+.lg-opt:hover{border-color:var(--accent)}
+.lg-opt input{position:absolute;top:8px;right:8px;width:16px;height:16px;cursor:pointer}
+.lg-opt-main{font-size:13px;font-weight:700;padding-right:22px}
+.lg-opt-sub{font-size:11px;color:var(--muted)}
+.lg-empty{grid-column:1/-1;padding:22px;text-align:center;color:var(--muted);font-size:13px}
+.lg-footer{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:12px}
 
 /* Modal de escolha de lote de impressão */
 .lb-modal-wrap .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
@@ -596,7 +613,7 @@ body *{visibility:hidden;}
       <button class="tab-btn"        onclick="switchTab('rosto')"     id="btnTabRosto">📄 Folha Rosto</button>
       <button class="tab-btn"        onclick="switchTab('siglas')"    id="btnTabSiglas">🗂 Siglas</button>
     </div>
-    <button class="btn-purple" onclick="switchTab('etiquetas');setTimeout(printLabels,250)">🖨 Imprimir Etiquetas</button>
+    <button class="btn-purple" onclick="switchTab('etiquetas')">🏷 Etiquetas</button>
   </div>
 
   <!-- ── TAB: DADOS ────────────────────────────────────────────────────────── -->
@@ -670,23 +687,51 @@ body *{visibility:hidden;}
       </div>
     </div>
 
-    <!-- Label actions -->
-    <div class="label-actions">
-      <div class="label-count-badge">Total de etiquetas: <b id="labelCount">0</b></div>
-      <div class="label-sort-toggle">
-        <span class="label-sort-lbl">Ordenar por:</span>
-        <div class="tabs">
-          <button class="tab-btn active" id="btnSortNf"  onclick="setLabelSort('nf')">Nota Fiscal</button>
-          <button class="tab-btn"        id="btnSortCod" onclick="setLabelSort('cod')">Código (SKU)</button>
+    <!-- Seletor de geração de etiquetas -->
+    <div class="label-gen-panel">
+      <div class="label-gen-head">
+        <h3>🏷 Gerar etiquetas</h3>
+        <span>Escolha o critério e os itens; as etiquetas só aparecem depois de gerar.</span>
+      </div>
+      <div class="label-gen-controls">
+        <div class="lg-modo">
+          <span class="lg-lbl">Gerar por:</span>
+          <div class="tabs">
+            <button class="tab-btn active" id="lgModoNota"    onclick="setLabelGenMode('nota')">Nota Fiscal</button>
+            <button class="tab-btn"        id="lgModoProc"    onclick="setLabelGenMode('processo')">Processo</button>
+            <button class="tab-btn"        id="lgModoData"    onclick="setLabelGenMode('data')">Data</button>
+            <button class="tab-btn"        id="lgModoMinuta"  onclick="setLabelGenMode('minuta')">Minuta</button>
+          </div>
+        </div>
+        <div class="lg-selecao">
+          <div class="lg-sel-head">
+            <span class="lg-lbl" id="lgSelLabel">Selecione as notas:</span>
+            <div class="lg-sel-actions">
+              <button class="btn-outline btn-mini" onclick="labelSelAll(true)">Marcar todos</button>
+              <button class="btn-outline btn-mini" onclick="labelSelAll(false)">Limpar</button>
+            </div>
+          </div>
+          <div class="lg-options" id="lgOptions"></div>
+        </div>
+        <div class="lg-footer">
+          <div class="label-sort-toggle">
+            <span class="label-sort-lbl">Ordenar por:</span>
+            <div class="tabs">
+              <button class="tab-btn active" id="btnSortNf"  onclick="setLabelSort('nf')">Nota Fiscal</button>
+              <button class="tab-btn"        id="btnSortCod" onclick="setLabelSort('cod')">Código (SKU)</button>
+            </div>
+          </div>
+          <div class="label-count-badge">Etiquetas na seleção: <b id="labelCount">0</b></div>
+          <button class="btn-purple" onclick="gerarEtiquetas()">✨ Gerar etiquetas</button>
+          <button class="btn-purple" id="btnImprimirEtq" onclick="printLabels()" style="display:none;">🖨 Imprimir</button>
         </div>
       </div>
-      <button class="btn-purple" onclick="printLabels()">🖨 Imprimir Etiquetas</button>
     </div>
 
-    <!-- Labels preview -->
+    <!-- Labels preview (vazio até gerar) -->
     <div class="labels-grid" id="labelsGrid">
       <div class="empty-state"><div class="icon">🏷</div>
-        <p>Carregue XMLs de NF-e para gerar etiquetas.</p>
+        <p>Escolha um critério acima (nota, processo, data ou minuta), selecione os itens e clique em <b>Gerar etiquetas</b>.</p>
       </div>
     </div>
   </div>
@@ -752,7 +797,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">resumo combinado + banco notas v5</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">etiquetas por seleção v6</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1896,19 +1941,126 @@ function buildLabel(p) {
 // ORDENAÇÃO DAS ETIQUETAS (por Nota Fiscal ou por Código/SKU)
 // ══════════════════════════════════════════════════════════════════════════════
 let labelSortMode = 'nf'; // 'nf' | 'cod'
+let labelGenMode = 'nota'; // 'nota' | 'processo' | 'data' | 'minuta'
+let labelSelecionados = new Set(); // chaves marcadas no seletor atual
+let labelGerado = false; // já foi gerada a pré-visualização?
 
 function setLabelSort(mode) {
   labelSortMode = mode;
   $('btnSortNf').classList.toggle('active', mode==='nf');
   $('btnSortCod').classList.toggle('active', mode==='cod');
-  renderLabels();
+  if (labelGerado) gerarEtiquetas(); // re-gera na nova ordem só se já foi gerado
 }
 
-// Monta a lista de parâmetros de cada etiqueta, mantendo a numeração de
-// Volume(NFE)/Volume(produto) sempre calculada a partir do agrupamento por NF —
-// a ordenação escolhida só decide a SEQUÊNCIA de impressão, não a numeração.
-function buildLabelParams() {
-  const nfOrder = [...new Set(allItems.map(i=>i.nf))];
+// Alterna o critério de geração (nota, processo, data, minuta) e repopula as opções
+function setLabelGenMode(mode) {
+  labelGenMode = mode;
+  const idMap = { nota:'lgModoNota', processo:'lgModoProc', data:'lgModoData', minuta:'lgModoMinuta' };
+  Object.entries(idMap).forEach(([m,id])=>{
+    const b = $(id);
+    if (b) b.classList.toggle('active', m===mode);
+  });
+  labelSelecionados = new Set();
+  renderLabelOptions();
+}
+
+// Retorna a lista de opções do critério atual: {chave, rotulo, nfs:[...]}
+function labelGetOptions() {
+  const temCargas = window.CargasDB && window.CargasDB._ready;
+  if (labelGenMode === 'nota') {
+    const nfs = [...new Set(allItems.map(i=>i.nf))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
+    return nfs.map(nf=>{
+      const meta = nfMeta[nf]||{};
+      const n = allItems.filter(i=>i.nf===nf).reduce((s,i)=>s+Math.max(1,Math.floor(i.qtd)),0);
+      return { chave:nf, rotulo:`NF ${nf}`, sub:`${meta.cidade||''}${meta.uf?'/'+meta.uf:''} · ${n} etiq.`, nfs:[nf] };
+    });
+  }
+  if (labelGenMode === 'minuta') {
+    // usa as minutas do Cargas, e também as minutas digitadas no conversor (nfMinutas)
+    const map = {};
+    if (temCargas) window.CargasDB.listMinutas().forEach(m=>{ map[m.id] = new Set(m.nfs); });
+    Object.entries(nfMinutas).forEach(([nf,min])=>{ if(min){ (map[min]=map[min]||new Set()).add(nf); } });
+    return Object.keys(map).sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})).map(id=>{
+      const nfs = [...map[id]].filter(nf=>allItems.some(i=>i.nf===nf)); // só NFs que têm XML carregado
+      return { chave:'min:'+id, rotulo:`Minuta ${id}`, sub:`${nfs.length} NF(s) com XML`, nfs };
+    }).filter(o=>o.nfs.length>0);
+  }
+  if (labelGenMode === 'processo') {
+    if (!temCargas) return [];
+    return window.CargasDB.listProcessos().map(p=>{
+      const nfs = p.nfs.filter(nf=>allItems.some(i=>i.nf===nf));
+      return { chave:'proc:'+p.codigo, rotulo:`Processo ${p.codigo}`, sub:`coleta ${p.data} · ${nfs.length}/${p.nfs.length} NF(s) com XML`, nfs };
+    }).filter(o=>o.nfs.length>0);
+  }
+  if (labelGenMode === 'data') {
+    if (!temCargas) return [];
+    return window.CargasDB.listDatas().map(d=>{
+      const nfs = d.nfs.filter(nf=>allItems.some(i=>i.nf===nf));
+      return { chave:'data:'+d.key, rotulo:`Coleta ${d.label}`, sub:`${nfs.length} NF(s) com XML`, nfs };
+    }).filter(o=>o.nfs.length>0);
+  }
+  return [];
+}
+
+// Renderiza a lista de checkboxes do critério atual
+function renderLabelOptions() {
+  const box = $('lgOptions');
+  const lbl = $('lgSelLabel');
+  if (!box) return;
+  const rotuloModo = {nota:'as notas', processo:'os processos', data:'as datas', minuta:'as minutas'}[labelGenMode];
+  if (lbl) lbl.textContent = `Selecione ${rotuloModo}:`;
+
+  if (!allItems.length) {
+    box.innerHTML = `<div class="lg-empty">Carregue XMLs de NF-e para listar ${rotuloModo}.</div>`;
+    return;
+  }
+  const opts = labelGetOptions();
+  if (!opts.length) {
+    const extra = (labelGenMode==='processo'||labelGenMode==='data')
+      ? ` Verifique se há processos cadastrados na aba Acompanhamento de Cargas com NFs que também têm XML carregado aqui.`
+      : (labelGenMode==='minuta' ? ` Vincule minutas às NFs (via importação MD ou na aba Cargas).` : '');
+    box.innerHTML = `<div class="lg-empty">Nenhuma opção disponível para "${rotuloModo}".${extra}</div>`;
+    return;
+  }
+  box.innerHTML = opts.map(o=>`
+    <label class="lg-opt">
+      <input type="checkbox" class="lg-chk" value="${o.chave}" ${labelSelecionados.has(o.chave)?'checked':''}
+        onchange="labelToggle('${o.chave.replace(/'/g,"\\'")}', this.checked)">
+      <span class="lg-opt-main">${o.rotulo}</span>
+      <span class="lg-opt-sub">${o.sub||''}</span>
+    </label>`).join('');
+  atualizarContagemSelecao();
+}
+
+function labelToggle(chave, on) {
+  if (on) labelSelecionados.add(chave); else labelSelecionados.delete(chave);
+  atualizarContagemSelecao();
+}
+function labelSelAll(on) {
+  const opts = labelGetOptions();
+  labelSelecionados = new Set(on ? opts.map(o=>o.chave) : []);
+  renderLabelOptions();
+}
+
+// NFs resultantes da seleção atual
+function labelNfsSelecionadas() {
+  const opts = labelGetOptions();
+  const nfs = new Set();
+  opts.forEach(o=>{ if(labelSelecionados.has(o.chave)) o.nfs.forEach(nf=>nfs.add(nf)); });
+  return nfs;
+}
+
+function atualizarContagemSelecao() {
+  const nfs = labelNfsSelecionadas();
+  const count = buildLabelParams(nfs).length;
+  $('labelCount').textContent = count;
+}
+
+// Monta a lista de parâmetros de cada etiqueta. Se nfsFiltro (Set) for
+// fornecido, gera apenas as etiquetas das NFs selecionadas.
+function buildLabelParams(nfsFiltro) {
+  let nfOrder = [...new Set(allItems.map(i=>i.nf))];
+  if (nfsFiltro && nfsFiltro.size) nfOrder = nfOrder.filter(nf=>nfsFiltro.has(nf));
   const labels = [];
   for (const nf of nfOrder) {
     const nfItems  = allItems.filter(i=>i.nf===nf);
@@ -1944,17 +2096,37 @@ function buildLabelParams() {
   return labels;
 }
 
-function renderLabels() {
+// Gera a pré-visualização das etiquetas APENAS da seleção atual.
+function gerarEtiquetas() {
   const grid = $('labelsGrid');
   if (!allItems.length) {
-    grid.innerHTML=`<div class="empty-state"><div class="icon">🏷</div><p>Carregue XMLs de NF-e para gerar etiquetas.</p></div>`;
-    $('labelCount').textContent='0'; return;
+    grid.innerHTML=`<div class="empty-state"><div class="icon">🏷</div><p>Carregue XMLs de NF-e primeiro.</p></div>`;
+    return;
   }
-  const labels = buildLabelParams();
-  const html = labels.map(buildLabel).join('');
-  grid.innerHTML = html;
+  const nfs = labelNfsSelecionadas();
+  if (!nfs.size) {
+    grid.innerHTML=`<div class="empty-state"><div class="icon">☝️</div><p>Selecione ao menos um item acima e clique em <b>Gerar etiquetas</b>.</p></div>`;
+    labelGerado = false;
+    $('btnImprimirEtq').style.display = 'none';
+    return;
+  }
+  const labels = buildLabelParams(nfs);
+  grid.innerHTML = labels.map(buildLabel).join('');
   $('labelCount').textContent = labels.length;
   renderBarcodes(grid);
+  labelGerado = true;
+  $('btnImprimirEtq').style.display = 'inline-flex';
+}
+
+// Ao abrir a aba, NÃO gera nada — apenas monta a lista de opções do critério.
+function renderLabels() {
+  labelGerado = false;
+  const grid = $('labelsGrid');
+  if (grid && !grid.querySelector('.etiqueta')) {
+    // mantém o estado vazio inicial
+  }
+  const btn = $('btnImprimirEtq'); if (btn) btn.style.display = 'none';
+  renderLabelOptions();
 }
 
 function renderBarcodes(container) {
@@ -2037,7 +2209,9 @@ function openLabelPrintWindow(html, windowTitle) {
 // imprime direto; senão, mostra o painel de acompanhamento com os lotes.
 function printLabels() {
   if ($('tabEtiquetas').style.display==='none') switchTab('etiquetas');
-  const labels = buildLabelParams();
+  const nfs = labelNfsSelecionadas();
+  if (!nfs.size) { toast('⚠ Selecione itens e gere as etiquetas antes de imprimir.', true); return; }
+  const labels = buildLabelParams(nfs);
   if (!labels.length) { toast('⚠ Nenhuma etiqueta para imprimir.', true); return; }
   const totalBatches = Math.ceil(labels.length / LABEL_BATCH_SIZE);
   if (totalBatches <= 1) { printLabelsBatch(1); return; }
@@ -2083,7 +2257,8 @@ function closeLabelBatchPicker(e) {
 // etiqueta é sempre a global, calculada sobre TODAS as etiquetas)
 function printLabelsBatch(batchIndex) {
   closeLabelBatchPicker();
-  const labels = buildLabelParams();
+  const nfs = labelNfsSelecionadas();
+  const labels = buildLabelParams(nfs);
   if (!labels.length) { toast('⚠ Nenhuma etiqueta para imprimir.', true); return; }
   const totalBatches = Math.ceil(labels.length / LABEL_BATCH_SIZE);
   const start = (batchIndex - 1) * LABEL_BATCH_SIZE;
@@ -2672,6 +2847,32 @@ window.CargasDB = {
   // Permite ao conversor pedir um re-render do resumo do Cargas quando ele
   // altera o banco de notas (para manter os dois em sincronia).
   onNotasChanged: null,
+  // Lista os PROCESSOS (código + data + NFs) para o seletor de etiquetas.
+  listProcessos(){
+    return Object.values(processos).map(p=>({
+      codigo: p.codigo,
+      dia: p.dia, mes: p.mes, ano: p.ano,
+      data: `${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}`,
+      nfs: [...p.nfs]
+    })).sort((a,b)=> (a.ano-b.ano)||(a.mes-b.mes)||(a.dia-b.dia)|| a.codigo.localeCompare(b.codigo));
+  },
+  // Lista as DATAS de coleta distintas, com as NFs de cada data.
+  listDatas(){
+    const map = {};
+    Object.values(processos).forEach(p=>{
+      const key = `${p.ano}-${String(p.mes).padStart(2,'0')}-${String(p.dia).padStart(2,'0')}`;
+      const label = `${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}`;
+      if(!map[key]) map[key] = { key, label, nfs:new Set() };
+      p.nfs.forEach(nf=>map[key].nfs.add(nf));
+    });
+    return Object.values(map).sort((a,b)=>a.key.localeCompare(b.key))
+      .map(d=>({ key:d.key, label:d.label, nfs:[...d.nfs] }));
+  },
+  // Lista as MINUTAS (id + NFs) para o seletor de etiquetas.
+  listMinutas(){
+    return Object.values(minutas).map(m=>({ id:m.id, nfs:[...(m.nfs||[])] }))
+      .sort((a,b)=>String(a.id).localeCompare(String(b.id), undefined, {numeric:true}));
+  },
   _ready: true
 };
 
