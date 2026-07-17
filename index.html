@@ -98,6 +98,11 @@ td.qtd{text-align:right;font-weight:600}
 .minuta-panel-head h3{font-size:13px;font-weight:700;color:var(--text)}
 .minuta-panel-head span{font-size:11px;color:var(--muted)}
 .minuta-row{display:grid;grid-template-columns:100px 1fr 120px 160px;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)}
+#minutaRows{max-height:500px;overflow-y:auto}
+#minutaRows::-webkit-scrollbar{width:9px}
+#minutaRows::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px}
+#minutaRows::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+#minutaRows::-webkit-scrollbar-track{background:transparent}
 .minuta-row:last-child{border-bottom:none}
 .minuta-row:hover{background:rgba(79,110,247,.04)}
 .minuta-nf{font-size:14px;font-weight:700;color:var(--accent)}
@@ -797,7 +802,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">etiquetas por seleção v6</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">minutas rolagem v8</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1505,6 +1510,7 @@ function processarMD() {
   renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
   const res = $('mdResult');
   if (matched > 0) {
+    salvarBancoNotas(); // persiste as vinculações feitas em massa
     res.textContent = `✓ ${matched} nota(s) vinculada(s) automaticamente.`;
     res.className = 'md-result ok';
     toast(`✓ ${matched} nota(s) vinculada(s)!`, false);
@@ -1527,9 +1533,16 @@ function limparMD() {
 function renderMinutaInputs() {
   const wrap = $('minutaRows');
   const nfOrder = [...new Set(allItems.map(i=>i.nf))];
+  const head = document.querySelector('#minutaPanel .minuta-panel-head span');
   if (!nfOrder.length) {
+    if (head) head.textContent = 'Preencha a minuta de cada NF — ela aparecerá nas etiquetas';
     wrap.innerHTML=`<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">📥</div><p>Carregue XMLs para preencher as minutas.</p></div>`;
     return;
+  }
+  if (head) {
+    head.textContent = nfOrder.length > 10
+      ? `${nfOrder.length} notas — role para ver todas`
+      : `${nfOrder.length} nota(s) — preencha a minuta de cada NF`;
   }
   wrap.innerHTML = nfOrder.map(nf => {
     const m   = nfMeta[nf]||{};
@@ -1552,6 +1565,7 @@ function renderMinutaInputs() {
   }).join('');
 }
 
+let _minutaSaveTimer = null;
 function setMinuta(nf, input) {
   nfMinutas[nf] = input.value.trim();
   input.classList.toggle('filled', !!nfMinutas[nf]);
@@ -1559,6 +1573,10 @@ function setMinuta(nf, input) {
   if ($('tabEtiquetas').style.display !== 'none') renderLabels();
   if ($('tabResumo').style.display !== 'none') renderResumo();
   if ($('tabRosto').style.display !== 'none') renderRosto();
+  // Persiste a vinculação com debounce (agrupa digitação rápida) para não
+  // gravar a cada tecla; o storage já sincroniza com o time em segundo plano.
+  clearTimeout(_minutaSaveTimer);
+  _minutaSaveTimer = setTimeout(()=>{ salvarBancoNotas(); }, 600);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -3797,6 +3815,11 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
   if(Sync.isConfigured()){
     // Firebase configurado no código → liga automaticamente para todos.
     Sync.start();
+    // Se a página for fechada/ocultada com uma gravação pendente (debounce),
+    // envia imediatamente para não perder a alteração mais recente.
+    const flush = ()=>{ if(Sync.pushTimer){ clearTimeout(Sync.pushTimer); Sync.pushTimer=null; try{ Sync.push(); }catch(e){} } };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden) flush(); });
   } else {
     // Sem configuração: funciona localmente só nesta máquina.
     Sync.setStatus('', 'somente local');
