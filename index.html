@@ -342,6 +342,11 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas .badge.done{background:var(--green-bg); color:var(--green);}
 #tabCargas .nfcount{font-size:10px; color:var(--muted);}
 #tabCargas .daymeta{font-size:9.5px; color:var(--muted); margin-top:auto;}
+#tabCargas .prazo-date{
+    background:var(--surface2); border:1px solid var(--line); border-radius:7px;
+    color:var(--text); font-size:12px; padding:5px 8px; color-scheme:dark;
+  }
+#tabCargas .prazo-date:focus{border-color:var(--orange); outline:none;}
 #tabCargas .detail-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px;}
 #tabCargas .detail-card h3{margin:0 0 12px; color:var(--navy); font-size:15px;}
 #tabCargas .proc-item{
@@ -728,7 +733,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status por nota v3</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status por nota v4</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -2407,9 +2412,19 @@ function sepCountsList(procs){
   return c;
 }
 
-// Prazo = data da coleta + 2 dias
+// Prazo de separação: por padrão é a data da coleta + 2 dias, mas pode ser
+// sobreposto manualmente (proc.prazoManual = 'YYYY-MM-DD').
 function prazoDate(proc){
+  if(proc.prazoManual){
+    const [y,m,d] = proc.prazoManual.split('-').map(Number);
+    if(y && m && d) return new Date(y, m-1, d);
+  }
   return new Date(proc.ano, proc.mes-1, proc.dia + 2);
+}
+// valor YYYY-MM-DD para preencher o input date
+function prazoInputValue(proc){
+  const d = prazoDate(proc);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function fmtDate(d){
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
@@ -2868,6 +2883,12 @@ function renderProcDetail(codigo){
     `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
        <span class="prazo-pill ${info.cls}">${info.label}</span>
        <span style="font-size:12px; color:var(--muted);">coleta ${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}</span>
+       <button class="btn-danger btn-sm" id="delProcBtn" style="margin-left:auto;">🗑 Excluir processo</button>
+     </div>
+     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+       <span style="font-size:12px; font-weight:700; color:var(--navy);">Prazo de separação:</span>
+       <input type="date" id="prazoInput" class="prazo-date" value="${prazoInputValue(p)}">
+       ${p.prazoManual ? '<button class="btn-ghost-alt btn-sm" id="prazoResetBtn" style="background:var(--surface2); color:var(--navy); border:1px solid var(--line);">voltar ao padrão (coleta+2)</button>' : '<span style="font-size:11px; color:var(--muted);">(padrão: coleta + 2 dias)</span>'}
      </div>
      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px;">${chips}</div>
      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -2875,6 +2896,41 @@ function renderProcDetail(codigo){
        <select id="bulkStatusSel" class="sep-select">${bulkOpts}</select>
        <button class="btn-navy btn-sm" id="bulkStatusBtn">aplicar</button>
      </div>`;
+
+  // Alterar a data de vencimento do prazo (grava como prazo manual)
+  const prazoInp = document.getElementById('prazoInput');
+  if(prazoInp){
+    prazoInp.addEventListener('change', async ()=>{
+      if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); renderProcDetail(codigo); return; }
+      if(prazoInp.value){ p.prazoManual = prazoInp.value; }
+      try{ await saveProcessos(); }catch(e){}
+      renderAll();
+    });
+  }
+  const prazoReset = document.getElementById('prazoResetBtn');
+  if(prazoReset){
+    prazoReset.addEventListener('click', async ()=>{
+      if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); return; }
+      delete p.prazoManual;
+      try{ await saveProcessos(); }catch(e){}
+      renderAll();
+    });
+  }
+
+  // Excluir o processo inteiro
+  const delProc = document.getElementById('delProcBtn');
+  if(delProc){
+    delProc.addEventListener('click', async ()=>{
+      if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha para excluir.'); return; }
+      if(!confirm(`Excluir o processo ${codigo} inteiro (${p.nfs.length} nota(s))? Essa ação não pode ser desfeita.`)) return;
+      delete processos[codigo];
+      selectedProcesso = null;
+      try{ await saveProcessos(); }catch(e){}
+      rebuildIndexes();
+      document.getElementById('procDetail').style.display='none';
+      renderAll();
+    });
+  }
 
   const bulkBtn = document.getElementById('bulkStatusBtn');
   if(bulkBtn){
