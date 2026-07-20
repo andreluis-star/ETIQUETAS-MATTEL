@@ -638,24 +638,51 @@ body *{visibility:hidden;}
 
   <!-- ── TAB: RESUMO ───────────────────────────────────────────────────────── -->
   <div id="tabResumo" style="display:none">
-    <div class="resumo-toolbar">
-      <div class="resumo-subtabs">
-        <button class="tab-btn active" id="btnResumoSku"  onclick="switchResumoView('sku')">Por SKU</button>
-        <button class="tab-btn"        id="btnResumoNota" onclick="switchResumoView('nota')">Por Nota</button>
+    <div class="label-gen-panel">
+      <div class="label-gen-head">
+        <h3>📊 Gerar resumo</h3>
+        <span>Escolha o critério e os itens; o resumo é montado só do que você selecionar.</span>
       </div>
-      <div class="resumo-print-opts">
-        <label>Orientação:
-          <select id="resumoOrientacao">
-            <option value="portrait">Retrato</option>
-            <option value="landscape">Paisagem</option>
-          </select>
-        </label>
-        <button class="btn-purple" onclick="printResumo()">🖨 Imprimir Resumo (A4)</button>
+      <div class="label-gen-controls">
+        <div class="lg-modo">
+          <span class="lg-lbl">Gerar por:</span>
+          <div class="tabs">
+            <button class="tab-btn active" id="rsModoNota"   onclick="rsSel.setModo('nota')">Nota Fiscal</button>
+            <button class="tab-btn"        id="rsModoProc"   onclick="rsSel.setModo('processo')">Processo</button>
+            <button class="tab-btn"        id="rsModoData"   onclick="rsSel.setModo('data')">Data</button>
+            <button class="tab-btn"        id="rsModoMinuta" onclick="rsSel.setModo('minuta')">Minuta</button>
+          </div>
+        </div>
+        <div class="lg-selecao">
+          <div class="lg-sel-head">
+            <span class="lg-lbl" id="rsSelLabel">Selecione as notas:</span>
+            <div class="lg-sel-actions">
+              <button class="btn-outline btn-mini" onclick="rsSel.selAll(true)">Marcar todos</button>
+              <button class="btn-outline btn-mini" onclick="rsSel.selAll(false)">Limpar</button>
+            </div>
+          </div>
+          <div class="lg-options" id="rsOptions"></div>
+        </div>
+        <div class="lg-footer">
+          <div class="resumo-subtabs">
+            <button class="tab-btn active" id="btnResumoSku"  onclick="switchResumoView('sku')">Por SKU</button>
+            <button class="tab-btn"        id="btnResumoNota" onclick="switchResumoView('nota')">Por Nota</button>
+          </div>
+          <label style="font-size:12px;color:var(--muted)">Orientação:
+            <select id="resumoOrientacao">
+              <option value="portrait">Retrato</option>
+              <option value="landscape">Paisagem</option>
+            </select>
+          </label>
+          <div class="label-count-badge">NFs na seleção: <b id="rsCount">0</b></div>
+          <button class="btn-purple" onclick="gerarResumo()">✨ Gerar resumo</button>
+          <button class="btn-purple" id="btnImprimirResumo" onclick="printResumo()" style="display:none;">🖨 Imprimir Resumo (A4)</button>
+        </div>
       </div>
     </div>
     <div id="resumoContent">
       <div class="empty-state"><div class="icon">📊</div>
-        <p>Carregue XMLs para ver o resumo por SKU ou por Nota.</p>
+        <p>Escolha um critério acima (nota, processo, data ou minuta), selecione os itens e clique em <b>Gerar resumo</b>.</p>
       </div>
     </div>
   </div>
@@ -743,13 +770,41 @@ body *{visibility:hidden;}
 
   <!-- ── TAB: FOLHA ROSTO ─────────────────────────────────────────────────── -->
   <div id="tabRosto" style="display:none">
-    <div class="rosto-toolbar">
-      <p>Uma página por Minuta, com letra gigante para identificação de longe. Notas sem minuta preenchida aparecem agrupadas separadamente.</p>
-      <button class="btn-purple" onclick="printRosto()">🖨 Imprimir Folha Rosto (A4 Paisagem)</button>
+    <div class="label-gen-panel">
+      <div class="label-gen-head">
+        <h3>📄 Gerar folha rosto</h3>
+        <span>Uma página por Minuta, com letra gigante. Escolha o critério e os itens; a folha só aparece depois de gerar.</span>
+      </div>
+      <div class="label-gen-controls">
+        <div class="lg-modo">
+          <span class="lg-lbl">Gerar por:</span>
+          <div class="tabs">
+            <button class="tab-btn active" id="roModoNota"   onclick="roSel.setModo('nota')">Nota Fiscal</button>
+            <button class="tab-btn"        id="roModoProc"   onclick="roSel.setModo('processo')">Processo</button>
+            <button class="tab-btn"        id="roModoData"   onclick="roSel.setModo('data')">Data</button>
+            <button class="tab-btn"        id="roModoMinuta" onclick="roSel.setModo('minuta')">Minuta</button>
+          </div>
+        </div>
+        <div class="lg-selecao">
+          <div class="lg-sel-head">
+            <span class="lg-lbl" id="roSelLabel">Selecione as notas:</span>
+            <div class="lg-sel-actions">
+              <button class="btn-outline btn-mini" onclick="roSel.selAll(true)">Marcar todos</button>
+              <button class="btn-outline btn-mini" onclick="roSel.selAll(false)">Limpar</button>
+            </div>
+          </div>
+          <div class="lg-options" id="roOptions"></div>
+        </div>
+        <div class="lg-footer">
+          <div class="label-count-badge">NFs na seleção: <b id="roCount">0</b></div>
+          <button class="btn-purple" onclick="gerarRosto()">✨ Gerar folha rosto</button>
+          <button class="btn-purple" id="btnImprimirRosto" onclick="printRosto()" style="display:none;">🖨 Imprimir Folha Rosto (A4 Paisagem)</button>
+        </div>
+      </div>
     </div>
     <div id="rostoContent">
       <div class="empty-state"><div class="icon">📄</div>
-        <p>Carregue XMLs e preencha as minutas para gerar a folha rosto.</p>
+        <p>Escolha um critério acima (nota, processo, data ou minuta), selecione os itens e clique em <b>Gerar folha rosto</b>.</p>
       </div>
     </div>
   </div>
@@ -802,7 +857,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">minutas rolagem v8</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">seletores resumo+rosto v9</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1588,12 +1643,16 @@ function switchResumoView(v) {
   resumoView = v;
   $('btnResumoSku').classList.toggle('active', v==='sku');
   $('btnResumoNota').classList.toggle('active', v==='nota');
-  renderResumo();
+  // Só re-monta o conteúdo se o resumo já tiver sido gerado
+  if (typeof rsSel !== 'undefined' && rsSel && rsSel.gerado) gerarResumo();
+  else renderResumo();
 }
 
-function skuSummaryData() {
+// nfsFiltro (Set) opcional: quando informado, considera só as NFs selecionadas.
+function skuSummaryData(nfsFiltro) {
   const map = new Map();
   for (const it of allItems) {
+    if (nfsFiltro && nfsFiltro.size && !nfsFiltro.has(it.nf)) continue;
     const key = (it.sku||'') + '|' + it.cod;
     if (!map.has(key)) map.set(key, { sku: it.sku, cod: it.cod, item: it.item, nfs: new Map(), total: 0 });
     const e = map.get(key);
@@ -1603,9 +1662,10 @@ function skuSummaryData() {
   return [...map.values()].sort((a,b) => (a.sku||a.cod).localeCompare(b.sku||b.cod));
 }
 
-function notaSummaryData() {
+function notaSummaryData(nfsFiltro) {
   const map = new Map();
   for (const it of allItems) {
+    if (nfsFiltro && nfsFiltro.size && !nfsFiltro.has(it.nf)) continue;
     if (!map.has(it.nf)) map.set(it.nf, { nf: it.nf, meta: nfMeta[it.nf]||{}, minuta: nfMinutas[it.nf]||'', items: [], total: 0 });
     const e = map.get(it.nf);
     e.items.push(it);
@@ -1675,20 +1735,35 @@ function buildResumoCombinado(){
 }
 
 function renderResumo() {
+  // Ao abrir a aba NÃO gera conteúdo: apenas atualiza as opções do seletor.
+  if (typeof rsSel !== 'undefined' && rsSel) rsSel.render();
+  const btn = $('btnImprimirResumo'); if (btn && !(rsSel && rsSel.gerado)) btn.style.display = 'none';
+}
+
+// Monta o resumo APENAS das NFs selecionadas no seletor.
+function gerarResumo() {
   const el = $('resumoContent');
   const combinado = buildResumoCombinado();
   if (!allItems.length) {
-    el.innerHTML = combinado + `<div class="empty-state"><div class="icon">📊</div><p>Carregue XMLs para ver o resumo por SKU ou por Nota. O resumo geral acima também reflete os dados do Acompanhamento de Cargas.</p></div>`;
+    el.innerHTML = combinado + `<div class="empty-state"><div class="icon">📊</div><p>Carregue XMLs para gerar o resumo. O resumo geral acima também reflete os dados do Acompanhamento de Cargas.</p></div>`;
+    return;
+  }
+  if (!rsSel) return;
+  const nfsFiltro = rsSel.nfsSelecionadas();
+  if (!nfsFiltro.size) {
+    el.innerHTML = combinado + `<div class="empty-state"><div class="icon">☝️</div><p>Selecione ao menos um item acima e clique em <b>Gerar resumo</b>.</p></div>`;
+    rsSel.gerado = false;
+    $('btnImprimirResumo').style.display = 'none';
     return;
   }
   if (resumoView === 'sku') {
-    const data = skuSummaryData();
+    const data = skuSummaryData(nfsFiltro);
     let h = combinado + `<div class="table-wrap"><table><thead><tr>
       <th>Código</th><th>Descrição</th><th>NF</th><th>Qtd</th><th>Qtd Total</th>
     </tr></thead><tbody>${buildCodTableRows(data)}</tbody></table></div>`;
     el.innerHTML = h;
   } else {
-    const data = notaSummaryData();
+    const data = notaSummaryData(nfsFiltro);
     let h = combinado;
     for (const d of data) {
       h += `<div class="resumo-nf-block"><div class="resumo-nf-head">
@@ -1703,19 +1778,24 @@ function renderResumo() {
     }
     el.innerHTML = h;
   }
+  rsSel.gerado = true;
+  $('btnImprimirResumo').style.display = 'inline-flex';
 }
 
 function printResumo() {
   if (!allItems.length) { toast('⚠ Nenhum dado para imprimir.', true); return; }
+  if (!rsSel) return;
+  const nfsFiltro = rsSel.nfsSelecionadas();
+  if (!nfsFiltro.size) { toast('⚠ Selecione itens e gere o resumo antes de imprimir.', true); return; }
   const orient = ($('resumoOrientacao')||{}).value || 'portrait';
   const title = resumoView === 'sku' ? 'Resumo por SKU' : 'Resumo por Nota Fiscal';
   let body = `<h1>${title}</h1>`;
   if (resumoView === 'sku') {
-    const data = skuSummaryData();
+    const data = skuSummaryData(nfsFiltro);
     body += `<table><thead><tr><th>Código</th><th>Descrição</th><th>NF</th><th>Qtd</th><th>Qtd Total</th></tr></thead>
       <tbody>${buildCodTableRows(data)}</tbody></table>`;
   } else {
-    const data = notaSummaryData();
+    const data = notaSummaryData(nfsFiltro);
     for (const d of data) {
       body += `<div class="nf-page"><h2>NF ${esc(d.nf)}${d.minuta ? ' · Minuta '+esc(d.minuta) : ''}</h2>
         <p class="meta">${esc(d.meta.dest||'')} · ${esc(d.meta.cidade||'')}${d.meta.uf?' / '+esc(d.meta.uf):''} · ${d.items.length} iten(s) · ${d.total%1===0?d.total:d.total.toFixed(2)} un.</p>
@@ -1752,9 +1832,12 @@ function printResumo() {
 // ══════════════════════════════════════════════════════════════════════════════
 // FOLHA ROSTO (resumo por Minuta — identificação de palete)
 // ══════════════════════════════════════════════════════════════════════════════
-function rostoData() {
+// nfsFiltro (Set) opcional: considera só as NFs selecionadas.
+function rostoData(nfsFiltro) {
   const map = new Map(); // minuta -> { minuta, nfs:[{nf,dest,cidade,uf,qtd}] }
-  for (const nf of [...new Set(allItems.map(i=>i.nf))]) {
+  let nfList = [...new Set(allItems.map(i=>i.nf))];
+  if (nfsFiltro && nfsFiltro.size) nfList = nfList.filter(nf=>nfsFiltro.has(nf));
+  for (const nf of nfList) {
     const minuta = nfMinutas[nf] || '';
     if (!map.has(minuta)) map.set(minuta, { minuta, nfs: [] });
     const meta  = nfMeta[nf] || {};
@@ -1769,13 +1852,28 @@ function rostoData() {
   });
 }
 
+// Ao abrir a aba NÃO gera conteúdo: apenas atualiza as opções do seletor.
 function renderRosto() {
+  if (typeof roSel !== 'undefined' && roSel) roSel.render();
+  const btn = $('btnImprimirRosto'); if (btn && !(roSel && roSel.gerado)) btn.style.display = 'none';
+}
+
+// Monta a folha rosto APENAS das NFs selecionadas.
+function gerarRosto() {
   const el = $('rostoContent');
   if (!allItems.length) {
     el.innerHTML = `<div class="empty-state"><div class="icon">📄</div><p>Carregue XMLs e preencha as minutas para gerar a folha rosto.</p></div>`;
     return;
   }
-  const groups = rostoData();
+  if (!roSel) return;
+  const nfsFiltro = roSel.nfsSelecionadas();
+  if (!nfsFiltro.size) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">☝️</div><p>Selecione ao menos um item acima e clique em <b>Gerar folha rosto</b>.</p></div>`;
+    roSel.gerado = false;
+    $('btnImprimirRosto').style.display = 'none';
+    return;
+  }
+  const groups = rostoData(nfsFiltro);
   let h = '';
   for (const g of groups) {
     const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
@@ -1797,6 +1895,8 @@ function renderRosto() {
     h += '</div>';
   }
   el.innerHTML = h;
+  roSel.gerado = true;
+  $('btnImprimirRosto').style.display = 'inline-flex';
 }
 
 // Fator de escala do conteúdo da folha rosto: com poucas NFs usa tamanho
@@ -1809,7 +1909,9 @@ function rostoScale(n) {
 
 function printRosto() {
   if (!allItems.length) { toast('⚠ Nenhum dado para imprimir.', true); return; }
-  const groups = rostoData();
+  const nfsFiltro = roSel.nfsSelecionadas();
+  if (!nfsFiltro.size) { toast('⚠ Selecione itens e gere a folha rosto antes de imprimir.', true); return; }
+  const groups = rostoData(nfsFiltro);
   let pages = '';
   for (const g of groups) {
     const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
@@ -1982,10 +2084,11 @@ function setLabelGenMode(mode) {
   renderLabelOptions();
 }
 
-// Retorna a lista de opções do critério atual: {chave, rotulo, nfs:[...]}
-function labelGetOptions() {
+// Retorna as opções de um critério (nota/processo/data/minuta) como
+// {chave, rotulo, sub, nfs:[...]}. Compartilhado por Etiquetas, Resumo e Rosto.
+function getGenOptions(mode) {
   const temCargas = window.CargasDB && window.CargasDB._ready;
-  if (labelGenMode === 'nota') {
+  if (mode === 'nota') {
     const nfs = [...new Set(allItems.map(i=>i.nf))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
     return nfs.map(nf=>{
       const meta = nfMeta[nf]||{};
@@ -1993,24 +2096,23 @@ function labelGetOptions() {
       return { chave:nf, rotulo:`NF ${nf}`, sub:`${meta.cidade||''}${meta.uf?'/'+meta.uf:''} · ${n} etiq.`, nfs:[nf] };
     });
   }
-  if (labelGenMode === 'minuta') {
-    // usa as minutas do Cargas, e também as minutas digitadas no conversor (nfMinutas)
+  if (mode === 'minuta') {
     const map = {};
     if (temCargas) window.CargasDB.listMinutas().forEach(m=>{ map[m.id] = new Set(m.nfs); });
     Object.entries(nfMinutas).forEach(([nf,min])=>{ if(min){ (map[min]=map[min]||new Set()).add(nf); } });
     return Object.keys(map).sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})).map(id=>{
-      const nfs = [...map[id]].filter(nf=>allItems.some(i=>i.nf===nf)); // só NFs que têm XML carregado
+      const nfs = [...map[id]].filter(nf=>allItems.some(i=>i.nf===nf));
       return { chave:'min:'+id, rotulo:`Minuta ${id}`, sub:`${nfs.length} NF(s) com XML`, nfs };
     }).filter(o=>o.nfs.length>0);
   }
-  if (labelGenMode === 'processo') {
+  if (mode === 'processo') {
     if (!temCargas) return [];
     return window.CargasDB.listProcessos().map(p=>{
       const nfs = p.nfs.filter(nf=>allItems.some(i=>i.nf===nf));
       return { chave:'proc:'+p.codigo, rotulo:`Processo ${p.codigo}`, sub:`coleta ${p.data} · ${nfs.length}/${p.nfs.length} NF(s) com XML`, nfs };
     }).filter(o=>o.nfs.length>0);
   }
-  if (labelGenMode === 'data') {
+  if (mode === 'data') {
     if (!temCargas) return [];
     return window.CargasDB.listDatas().map(d=>{
       const nfs = d.nfs.filter(nf=>allItems.some(i=>i.nf===nf));
@@ -2018,6 +2120,11 @@ function labelGetOptions() {
     }).filter(o=>o.nfs.length>0);
   }
   return [];
+}
+
+// Retorna a lista de opções do critério atual: {chave, rotulo, nfs:[...]}
+function labelGetOptions() {
+  return getGenOptions(labelGenMode);
 }
 
 // Renderiza a lista de checkboxes do critério atual
@@ -2073,6 +2180,79 @@ function atualizarContagemSelecao() {
   const count = buildLabelParams(nfs).length;
   $('labelCount').textContent = count;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FÁBRICA DE SELETORES "GERAR POR: NOTA/PROCESSO/DATA/MINUTA"
+// ──────────────────────────────────────────────────────────────────────────────
+// Cria um seletor reutilizável (usado por Resumo e Folha Rosto). Cada instância
+// tem seu próprio estado (modo + seleção) e um conjunto de IDs de elementos.
+// prefix: prefixo dos IDs (ex.: 'rs' para resumo, 'ro' para rosto).
+// onGerar(nfsSet): callback chamado ao clicar em "Gerar".
+function criarSeletor(prefix, onGerar){
+  const sel = {
+    prefix, onGerar,
+    modo: 'nota',
+    selecionados: new Set(),
+    gerado: false,
+    idModo: m => `${prefix}Modo${ {nota:'Nota',processo:'Proc',data:'Data',minuta:'Minuta'}[m] }`,
+    setModo(m){
+      this.modo = m;
+      ['nota','processo','data','minuta'].forEach(x=>{
+        const b = $(this.idModo(x)); if(b) b.classList.toggle('active', x===m);
+      });
+      this.selecionados = new Set();
+      this.render();
+    },
+    getOptions(){ return getGenOptions(this.modo); },
+    nfsSelecionadas(){
+      const nfs = new Set();
+      this.getOptions().forEach(o=>{ if(this.selecionados.has(o.chave)) o.nfs.forEach(nf=>nfs.add(nf)); });
+      return nfs;
+    },
+    toggle(chave, on){ if(on) this.selecionados.add(chave); else this.selecionados.delete(chave); this.atualizarContagem(); },
+    selAll(on){ this.selecionados = new Set(on ? this.getOptions().map(o=>o.chave) : []); this.render(); },
+    atualizarContagem(){
+      const nfs = this.nfsSelecionadas();
+      const el = $(`${prefix}Count`); if(el) el.textContent = nfs.size;
+    },
+    render(){
+      const box = $(`${prefix}Options`);
+      const lbl = $(`${prefix}SelLabel`);
+      if(!box) return;
+      const rotuloModo = {nota:'as notas', processo:'os processos', data:'as datas', minuta:'as minutas'}[this.modo];
+      if(lbl) lbl.textContent = `Selecione ${rotuloModo}:`;
+      if(!allItems.length){ box.innerHTML = `<div class="lg-empty">Carregue XMLs de NF-e para listar ${rotuloModo}.</div>`; this.atualizarContagem(); return; }
+      const opts = this.getOptions();
+      if(!opts.length){
+        const extra = (this.modo==='processo'||this.modo==='data')
+          ? ` Verifique se há processos na aba Acompanhamento de Cargas com NFs que também têm XML carregado.`
+          : (this.modo==='minuta' ? ` Vincule minutas às NFs (importação MD ou aba Cargas).` : '');
+        box.innerHTML = `<div class="lg-empty">Nenhuma opção disponível para "${rotuloModo}".${extra}</div>`;
+        this.atualizarContagem(); return;
+      }
+      box.innerHTML = opts.map(o=>`
+        <label class="lg-opt">
+          <input type="checkbox" value="${o.chave}" ${this.selecionados.has(o.chave)?'checked':''}
+            onchange="${prefix}Sel.toggle('${o.chave.replace(/'/g,"\\'")}', this.checked)">
+          <span class="lg-opt-main">${o.rotulo}</span>
+          <span class="lg-opt-sub">${o.sub||''}</span>
+        </label>`).join('');
+      this.atualizarContagem();
+    },
+    gerar(){
+      const nfs = this.nfsSelecionadas();
+      this.gerado = nfs.size > 0;
+      this.onGerar(nfs);
+    }
+  };
+  return sel;
+}
+
+// Instâncias dos seletores das abas Resumo e Folha Rosto.
+// O callback é chamado ao clicar em "Gerar" (os botões chamam gerarResumo/gerarRosto
+// diretamente, então aqui o callback apenas delega).
+var rsSel = criarSeletor('rs', ()=>gerarResumo());
+var roSel = criarSeletor('ro', ()=>gerarRosto());
 
 // Monta a lista de parâmetros de cada etiqueta. Se nfsFiltro (Set) for
 // fornecido, gera apenas as etiquetas das NFs selecionadas.
