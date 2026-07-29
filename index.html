@@ -857,7 +857,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">seletores resumo+rosto v9</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">resumo SKU ordenado por código v10</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1659,7 +1659,7 @@ function skuSummaryData(nfsFiltro) {
     e.nfs.set(it.nf, (e.nfs.get(it.nf)||0) + it.qtd);
     e.total += it.qtd;
   }
-  return [...map.values()].sort((a,b) => (a.sku||a.cod).localeCompare(b.sku||b.cod));
+  return [...map.values()].sort((a,b) => String(a.cod||'').localeCompare(String(b.cod||''), 'pt-BR', {numeric:true, sensitivity:'base'}));
 }
 
 function notaSummaryData(nfsFiltro) {
