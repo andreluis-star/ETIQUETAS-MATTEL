@@ -857,7 +857,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">migração de nota entre minutas v12</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">placa veículo coleta v13</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1011,7 +1011,7 @@ body *{visibility:hidden;}
           <th>NF</th>
           <th>Separação</th>
           <th>Minuta</th>
-          <th>CTE</th>
+          <th>Placa veículo coleta</th>
           <th>Destinatário</th>
           <th>Cidade</th>
           <th>Prev. embarque</th>
@@ -3159,7 +3159,9 @@ function parseMinutas(text){
     const antigo = minutas[id];
     if(antigo){
       if(antigo.prevEmbarque && !importado.prevEmbarque) importado.prevEmbarque = antigo.prevEmbarque;
-      ['destinatario','cidadeDestino','cte','ocorrencia','prevEntrega'].forEach(campo=>{
+      // placaColeta é sempre manual (não vem da planilha) → preserva sempre
+      if(antigo.placaColeta) importado.placaColeta = antigo.placaColeta;
+      ['destinatario','cidadeDestino','ocorrencia','prevEntrega'].forEach(campo=>{
         if(!importado[campo] && antigo[campo]) importado[campo] = antigo[campo];
       });
     }
@@ -3558,11 +3560,36 @@ function renderProcDetail(codigo){
        ${p.prazoManual ? '<button class="btn-ghost-alt btn-sm" id="prazoResetBtn" style="background:var(--surface2); color:var(--navy); border:1px solid var(--line);">voltar ao padrão (coleta+2)</button>' : '<span style="font-size:11px; color:var(--muted);">(padrão: coleta + 2 dias)</span>'}
      </div>
      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px;">${chips}</div>
-     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-       <span style="font-size:12px; color:var(--muted);">Aplicar a todas as notas:</span>
+     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+       <span style="font-size:12px; color:var(--muted);">Status — aplicar a todas as notas:</span>
        <select id="bulkStatusSel" class="sep-select">${bulkOpts}</select>
        <button class="btn-navy btn-sm" id="bulkStatusBtn">aplicar</button>
+     </div>
+     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+       <span style="font-size:12px; color:var(--muted);">Placa veículo coleta — aplicar a todas as notas:</span>
+       <input type="text" id="bulkPlacaInp" class="entrega-inp" style="max-width:150px; border:1px solid var(--line); background:var(--surface2); text-transform:uppercase;" placeholder="ABC1D23">
+       <button class="btn-navy btn-sm" id="bulkPlacaBtn">aplicar</button>
      </div>`;
+
+  // Aplicar a placa do veículo a todas as notas do processo de uma vez.
+  // Grava na minuta de cada NF; cria registro mínimo se a NF não tiver minuta.
+  const bulkPlacaBtn = document.getElementById('bulkPlacaBtn');
+  if(bulkPlacaBtn){
+    bulkPlacaBtn.addEventListener('click', async ()=>{
+      const val = (document.getElementById('bulkPlacaInp').value||'').trim().toUpperCase();
+      p.nfs.forEach(nf=>{
+        let m = nfToMinuta[nf];
+        if(!m){
+          const novoId = 'S/'+nf;
+          m = minutas[novoId] || { id:novoId, nfs:[nf] };
+          minutas[novoId] = m; nfToMinuta[nf] = m;
+        }
+        m.placaColeta = val;
+      });
+      try{ await saveMinutas(); }catch(e){}
+      renderAll();
+    });
+  }
 
   // Alterar a data de vencimento do prazo (grava como prazo manual)
   const prazoInp = document.getElementById('prazoInput');
@@ -3621,7 +3648,7 @@ function renderProcDetail(codigo){
       </select>`;
     // campos de entrega — editáveis por qualquer um (mesmo com a página bloqueada)
     const minutaCell = m ? `<strong style="color:var(--navy);">${m.id||'—'}</strong>` : '<span class="status-pill pending">sem minuta</span>';
-    const cte = m ? (m.cte||'') : '';
+    const placa = m ? (m.placaColeta||'') : '';
     const dest = m ? (m.destinatario||'') : '';
     const cidade = m ? (m.cidadeDestino||'') : '';
     const prev = m ? (m.prevEmbarque||'') : '';
@@ -3631,7 +3658,7 @@ function renderProcDetail(codigo){
     tr.innerHTML = `<td><strong>${nf}</strong></td>
       <td>${sepCell}</td>
       <td>${minutaCell}</td>
-      <td><input class="entrega-inp" data-nf="${nf}" data-campo="cte" value="${escAttr(cte)}" placeholder="—"></td>
+      <td><input class="entrega-inp" data-nf="${nf}" data-campo="placaColeta" value="${escAttr(placa)}" placeholder="—"></td>
       <td><input class="entrega-inp" data-nf="${nf}" data-campo="destinatario" value="${escAttr(dest)}" placeholder="—"></td>
       <td><input class="entrega-inp" data-nf="${nf}" data-campo="cidadeDestino" value="${escAttr(cidade)}" placeholder="—"></td>
       <td><input class="entrega-inp" data-nf="${nf}" data-campo="prevEmbarque" value="${escAttr(prev)}" placeholder="—"></td>
@@ -3910,7 +3937,7 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
         <table>
           <thead>
             <tr>
-              <th>NF</th><th>Status</th><th>Minuta</th><th>CTE</th><th>Destinatário</th>
+              <th>NF</th><th>Status</th><th>Minuta</th><th>Placa coleta</th><th>Destinatário</th>
               <th>Cidade destino</th><th>Vol.</th><th>Prev. embarque</th><th>Ocorrência</th>
             </tr>
           </thead>
@@ -3925,7 +3952,7 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
           <td><strong>${nf}</strong></td>
           <td><span class="st-print" style="background:${stnf.cor}; color:${stnf.txt};">${stnf.label}</span></td>
           <td>${m ? (m.id||'sim') : '—'}</td>
-          <td>${m ? (m.cte||'—') : '—'}</td>
+          <td>${m ? (m.placaColeta||'—') : '—'}</td>
           <td>${m ? (m.destinatario||'—') : '—'}</td>
           <td>${m ? (m.cidadeDestino||'—') : '—'}</td>
           <td>${m ? (m.volumes||'—') : '—'}</td>
