@@ -857,7 +857,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">placa veículo coleta v13</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">rosto com nº processo v14</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1845,6 +1845,18 @@ function rostoData(nfsFiltro) {
     const qtd   = items.reduce((s,i)=>s+i.qtd,0);
     map.get(minuta).nfs.push({ nf, dest: meta.dest||'', cidade: meta.cidade||'', uf: meta.uf||'', qtd });
   }
+  // Descobre o(s) processo(s) de cada grupo, cruzando as NFs com os processos
+  // cadastrados na aba Acompanhamento de Cargas (via ponte CargasDB).
+  let procList = [];
+  if (window.CargasDB && window.CargasDB.listProcessos) {
+    try { procList = window.CargasDB.listProcessos(); } catch(e){ procList = []; }
+  }
+  const nfParaProc = {};
+  procList.forEach(p=>{ (p.nfs||[]).forEach(nf=>{ nfParaProc[nf] = p.codigo; }); });
+  for (const g of map.values()) {
+    const procs = [...new Set(g.nfs.map(n=>nfParaProc[n.nf]).filter(Boolean))];
+    g.processo = procs.join(', '); // pode haver mais de um; normalmente é um só
+  }
   return [...map.values()].sort((a,b) => {
     if (!a.minuta && b.minuta) return 1;
     if (a.minuta && !b.minuta) return -1;
@@ -1879,7 +1891,7 @@ function gerarRosto() {
     const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
     h += `<div class="rosto-card"><div class="rosto-card-head">
       <div class="rosto-minuta-tag${g.minuta?'':' sem'}">${g.minuta ? 'Minuta '+esc(g.minuta) : 'Sem Minuta'}</div>
-      <span>${g.nfs.length} nota(s) · ${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)} un.</span>
+      <span>${g.processo ? 'Processo '+esc(g.processo)+' · ' : ''}${g.nfs.length} nota(s) · ${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)} un.</span>
     </div>`;
     if (g.nfs.length === 1) {
       const n = g.nfs[0];
@@ -1919,11 +1931,15 @@ function printRosto() {
     const minutaLabel = g.minuta ? esc(g.minuta) : 'SEM MINUTA';
     const scale = rostoScale(g.nfs.length);
     let mid = '';
+    const procItem = g.processo
+      ? `<div class="rp-info-item"><span class="rp-info-lbl">Processo</span><span class="rp-info-val">${esc(g.processo)}</span></div>`
+      : '';
     if (single) {
       const n = g.nfs[0];
       mid = `
         <div class="rp-nf"><span class="rp-nf-lbl">NF</span><span class="rp-nf-val">${esc(n.nf)}</span></div>
         <div class="rp-info">
+          ${procItem}
           <div class="rp-info-item"><span class="rp-info-lbl">Cliente</span><span class="rp-info-val rp-info-val-text">${esc(n.dest)||'—'}</span></div>
           <div class="rp-info-item"><span class="rp-info-lbl">Cidade / UF</span><span class="rp-info-val">${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</span></div>
           <div class="rp-info-item"><span class="rp-info-lbl">Quantidade</span><span class="rp-info-val">${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)}</span></div>
@@ -1932,6 +1948,7 @@ function printRosto() {
       mid = `
         <div class="rp-nf-multi">${g.nfs.map(n=>`<span class="rp-nf-chip">NF ${esc(n.nf)}</span>`).join('')}</div>
         <div class="rp-info">
+          ${procItem}
           <div class="rp-info-item"><span class="rp-info-lbl">Total de Notas</span><span class="rp-info-val">${g.nfs.length}</span></div>
           <div class="rp-info-item"><span class="rp-info-lbl">Quantidade Total</span><span class="rp-info-val">${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)}</span></div>
         </div>
