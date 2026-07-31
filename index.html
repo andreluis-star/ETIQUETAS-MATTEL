@@ -857,7 +857,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">resumo SKU ordenado por código v10</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">migração de nota entre minutas v12</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -3128,7 +3128,8 @@ function parseMinutas(text){
     const nfs = nfsRaw.split(',').map(s=>s.trim()).filter(s=>/^\d+$/.test(s));
     if(nfs.length===0) return;
 
-    minutas[id] = {
+    // Dados vindos da planilha nesta importação
+    const importado = {
       id,
       cte: (cols[1]||'').trim(),
       coleta: (cols[2]||'').trim(),
@@ -3148,6 +3149,36 @@ function parseMinutas(text){
       ocorrencia: (cols[20]||'').trim(),
       dataStatus: (cols[21]||'').trim()
     };
+
+    // SUBSTITUI a minuta de mesmo número (as demais permanecem intactas).
+    // Ao substituir, preservamos os dados que você acrescenta DEPOIS da
+    // importação e que a planilha não traz — para não perdê-los:
+    //  • prevEmbarque (importação de Previsão de Embarque)
+    //  • campos de entrega que você tenha editado à mão e venham vazios na
+    //    planilha (mantém o valor anterior em vez de apagar).
+    const antigo = minutas[id];
+    if(antigo){
+      if(antigo.prevEmbarque && !importado.prevEmbarque) importado.prevEmbarque = antigo.prevEmbarque;
+      ['destinatario','cidadeDestino','cte','ocorrencia','prevEntrega'].forEach(campo=>{
+        if(!importado[campo] && antigo[campo]) importado[campo] = antigo[campo];
+      });
+    }
+    minutas[id] = importado;
+
+    // MIGRAÇÃO DE NOTA: se alguma NF desta minuta estava vinculada a OUTRA
+    // minuta, ela deixa de valer na antiga e passa a valer nesta (a nova).
+    // Removemos a NF do array de qualquer outra minuta; se a outra minuta
+    // ficar sem nenhuma NF, ela é descartada.
+    nfs.forEach(nf=>{
+      Object.keys(minutas).forEach(outroId=>{
+        if(outroId === id) return;
+        const mo = minutas[outroId];
+        if(mo.nfs && mo.nfs.includes(nf)){
+          mo.nfs = mo.nfs.filter(x=>x!==nf);
+          if(mo.nfs.length === 0) delete minutas[outroId];
+        }
+      });
+    });
     added++;
   });
   return added;
