@@ -872,7 +872,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">checagem nome x nNF v19</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">proc puxa destinatario da nfe v20</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1020,6 +1020,7 @@ body *{visibility:hidden;}
   <div class="detail-card" id="procDetail" style="display:none;">
     <h3 id="procDetailTitle">Notas fiscais do processo</h3>
     <div id="procPrazoInfo" style="margin-bottom:6px;"></div>
+    <div id="procMsg" class="msg" style="margin-bottom:6px;"></div>
     <table>
       <thead>
         <tr>
@@ -2763,6 +2764,24 @@ window.getConversorCounts = function(){
   };
 };
 
+// Retorna os metadados (destinatário/cidade/uf) de uma NF, direto da NF-e (XML).
+// Usado pela aba Acompanhamento de Cargas para puxar esses dados da nota.
+window.getNfeMeta = function(nf){
+  const m = nfMeta[nf];
+  if (!m) return null;
+  return { dest: m.dest||'', cidade: m.cidade||'', uf: m.uf||'' };
+};
+// Versão em lote: recebe uma lista de NFs e devolve {nf: {dest,cidade,uf}} só
+// das que existem na base de XML.
+window.getNfeMetaBatch = function(nfsArr){
+  const out = {};
+  (nfsArr||[]).forEach(nf=>{
+    const m = nfMeta[nf];
+    if (m && (m.dest||m.cidade||m.uf)) out[nf] = { dest:m.dest||'', cidade:m.cidade||'', uf:m.uf||'' };
+  });
+  return out;
+};
+
 // Chamado pela aba Acompanhamento de Cargas após importar minutas: preenche
 // cliente/cidade/uf das notas no Conversor, mas SÓ onde o campo estiver vazio
 // (o que veio do XML tem prioridade e nunca é sobrescrito).
@@ -3772,6 +3791,10 @@ function renderProcDetail(codigo){
        <span style="font-size:12px; color:var(--muted);">Placa veículo coleta — aplicar a todas as notas:</span>
        <input type="text" id="bulkPlacaInp" class="entrega-inp" style="max-width:150px; border:1px solid var(--line); background:var(--surface2); text-transform:uppercase;" placeholder="ABC1D23">
        <button class="btn-navy btn-sm" id="bulkPlacaBtn">aplicar</button>
+     </div>
+     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:6px;">
+       <span style="font-size:12px; color:var(--muted);">Destinatário / Cidade:</span>
+       <button class="btn-navy btn-sm" id="atualizarNfeBtn" title="Puxa destinatário e cidade/UF direto da NF-e (XML) para todas as notas deste processo">🔄 Atualizar da NF-e</button>
      </div>`;
 
   // Aplicar a placa do veículo a todas as notas do processo de uma vez.
@@ -3791,6 +3814,38 @@ function renderProcDetail(codigo){
       });
       try{ await saveMinutas(); }catch(e){}
       renderAll();
+    });
+  }
+
+  // Atualizar destinatário/cidade das notas do processo direto da NF-e (XML).
+  // Grava na minuta de cada NF (criando registro mínimo se necessário), para
+  // que o dado persista e apareça também na impressão/folha rosto.
+  const atualizarNfeBtn = document.getElementById('atualizarNfeBtn');
+  if(atualizarNfeBtn){
+    atualizarNfeBtn.addEventListener('click', async ()=>{
+      if(!(window.getNfeMeta)){ alert('A aba Conversor de NF-e ainda não está pronta. Tente novamente em instantes.'); return; }
+      let atualizados = 0, semXml = 0;
+      p.nfs.forEach(nf=>{
+        let meta = null;
+        try{ meta = window.getNfeMeta(nf); }catch(e){}
+        if(!meta || (!meta.dest && !meta.cidade && !meta.uf)){ semXml++; return; }
+        let m = nfToMinuta[nf];
+        if(!m){
+          const novoId = 'S/'+nf;
+          m = minutas[novoId] || { id:novoId, nfs:[nf] };
+          minutas[novoId] = m; nfToMinuta[nf] = m;
+        }
+        if(meta.dest) m.destinatario = meta.dest;
+        if(meta.cidade || meta.uf) m.cidadeDestino = meta.cidade + (meta.uf ? ' - ' + meta.uf : '');
+        atualizados++;
+      });
+      try{ await saveMinutas(); }catch(e){}
+      renderAll();
+      const msgProc = document.getElementById('procMsg');
+      if(msgProc){
+        msgProc.textContent = `✓ ${atualizados} nota(s) atualizada(s) da NF-e${semXml?` · ${semXml} sem XML carregado`:''}.`;
+        msgProc.className = 'msg';
+      }
     });
   }
 
@@ -3852,8 +3907,15 @@ function renderProcDetail(codigo){
     // campos de entrega — editáveis por qualquer um (mesmo com a página bloqueada)
     const minutaCell = m ? `<strong style="color:var(--navy);">${m.id||'—'}</strong>` : '<span class="status-pill pending">sem minuta</span>';
     const placa = m ? (m.placaColeta||'') : '';
-    const dest = m ? (m.destinatario||'') : '';
-    const cidade = m ? (m.cidadeDestino||'') : '';
+    // Destinatário/cidade: prioridade para o dado da NF-e (XML) via ponte com o
+    // Conversor; se não houver XML dessa nota, usa o que está na minuta.
+    let metaNfe = null;
+    if (window.getNfeMeta) { try { metaNfe = window.getNfeMeta(nf); } catch(e){} }
+    const dest = (metaNfe && metaNfe.dest) ? metaNfe.dest : (m ? (m.destinatario||'') : '');
+    let cidade = m ? (m.cidadeDestino||'') : '';
+    if (metaNfe && (metaNfe.cidade || metaNfe.uf)) {
+      cidade = metaNfe.cidade + (metaNfe.uf ? ' - ' + metaNfe.uf : '');
+    }
     const prev = m ? (m.prevEmbarque||'') : '';
     const ocor = m ? (m.ocorrencia||'') : '';
     const delBtn = `<button class="nf-del" data-nf="${nf}" title="Excluir esta nota do processo">✕</button>`;
