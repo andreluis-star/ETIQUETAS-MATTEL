@@ -72,6 +72,9 @@ input::placeholder{color:var(--muted)}
 
 /* Table */
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto}
+.resumo-total-row td{background:var(--surface2);border-top:2px solid var(--accent);font-size:14px}
+.resumo-proc-head{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:14px;color:var(--text)}
+.resumo-proc-head b{color:var(--accent)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead th{background:var(--surface2);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
 thead th:hover{color:var(--accent)}
@@ -666,6 +669,7 @@ body *{visibility:hidden;}
         <div class="lg-footer">
           <div class="resumo-subtabs">
             <button class="tab-btn active" id="btnResumoSku"  onclick="switchResumoView('sku')">Por SKU</button>
+            <button class="tab-btn"        id="btnResumoSkuTotal" onclick="switchResumoView('sku_total')">SKU resumido</button>
             <button class="tab-btn"        id="btnResumoNota" onclick="switchResumoView('nota')">Por Nota</button>
           </div>
           <label style="font-size:12px;color:var(--muted)">Orientação:
@@ -857,7 +861,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">rosto com nº processo v14</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">minuta atualiza meta conversor v17</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1642,6 +1646,7 @@ let resumoView = 'sku';
 function switchResumoView(v) {
   resumoView = v;
   $('btnResumoSku').classList.toggle('active', v==='sku');
+  $('btnResumoSkuTotal').classList.toggle('active', v==='sku_total');
   $('btnResumoNota').classList.toggle('active', v==='nota');
   // Só re-monta o conteúdo se o resumo já tiver sido gerado
   if (typeof rsSel !== 'undefined' && rsSel && rsSel.gerado) gerarResumo();
@@ -1741,6 +1746,20 @@ function renderResumo() {
 }
 
 // Monta o resumo APENAS das NFs selecionadas no seletor.
+// Descobre os números de processo (aba Cargas) das NFs informadas.
+function processosDeNfs(nfsSet) {
+  if (!nfsSet || !nfsSet.size) return [];
+  let procList = [];
+  if (window.CargasDB && window.CargasDB.listProcessos) {
+    try { procList = window.CargasDB.listProcessos(); } catch(e){ procList = []; }
+  }
+  const encontrados = new Set();
+  procList.forEach(p=>{
+    (p.nfs||[]).forEach(nf=>{ if(nfsSet.has(nf)) encontrados.add(p.codigo); });
+  });
+  return [...encontrados];
+}
+
 function gerarResumo() {
   const el = $('resumoContent');
   const combinado = buildResumoCombinado();
@@ -1761,6 +1780,24 @@ function gerarResumo() {
     let h = combinado + `<div class="table-wrap"><table><thead><tr>
       <th>Código</th><th>Descrição</th><th>NF</th><th>Qtd</th><th>Qtd Total</th>
     </tr></thead><tbody>${buildCodTableRows(data)}</tbody></table></div>`;
+    el.innerHTML = h;
+  } else if (resumoView === 'sku_total') {
+    const data = skuSummaryData(nfsFiltro);
+    const totalGeral = data.reduce((s,d)=>s+d.total, 0);
+    const procs = processosDeNfs(nfsFiltro);
+    const procHead = procs.length
+      ? `<div class="resumo-proc-head">Processo(s): <b>${esc(procs.join(', '))}</b></div>`
+      : '';
+    let h = combinado + procHead + `<div class="table-wrap"><table><thead><tr>
+      <th>Código</th><th>Descrição</th><th>Quantidade Total</th>
+    </tr></thead><tbody>`;
+    for (const d of data) {
+      h += `<tr><td class="cod">${esc(d.cod)}</td><td class="item">${esc(d.item)}</td>
+        <td class="qtd">${d.total%1===0?d.total:d.total.toFixed(2)}</td></tr>`;
+    }
+    h += `<tr class="resumo-total-row"><td colspan="2"><b>TOTAL GERAL</b></td>
+      <td class="qtd"><b>${totalGeral%1===0?totalGeral:totalGeral.toFixed(2)}</b></td></tr>`;
+    h += `</tbody></table></div>`;
     el.innerHTML = h;
   } else {
     const data = notaSummaryData(nfsFiltro);
@@ -1788,12 +1825,25 @@ function printResumo() {
   const nfsFiltro = rsSel.nfsSelecionadas();
   if (!nfsFiltro.size) { toast('⚠ Selecione itens e gere o resumo antes de imprimir.', true); return; }
   const orient = ($('resumoOrientacao')||{}).value || 'portrait';
-  const title = resumoView === 'sku' ? 'Resumo por SKU' : 'Resumo por Nota Fiscal';
+  const title = resumoView === 'sku' ? 'Resumo por SKU'
+    : resumoView === 'sku_total' ? 'Resumo por SKU (consolidado)'
+    : 'Resumo por Nota Fiscal';
   let body = `<h1>${title}</h1>`;
   if (resumoView === 'sku') {
     const data = skuSummaryData(nfsFiltro);
     body += `<table><thead><tr><th>Código</th><th>Descrição</th><th>NF</th><th>Qtd</th><th>Qtd Total</th></tr></thead>
       <tbody>${buildCodTableRows(data)}</tbody></table>`;
+  } else if (resumoView === 'sku_total') {
+    const data = skuSummaryData(nfsFiltro);
+    const totalGeral = data.reduce((s,d)=>s+d.total, 0);
+    const procs = processosDeNfs(nfsFiltro);
+    if (procs.length) body += `<p class="meta">Processo(s): <b>${esc(procs.join(', '))}</b></p>`;
+    body += `<table><thead><tr><th>Código</th><th>Descrição</th><th>Quantidade Total</th></tr></thead><tbody>`;
+    for (const d of data) {
+      body += `<tr><td>${esc(d.cod)}</td><td>${esc(d.item)}</td><td>${d.total%1===0?d.total:d.total.toFixed(2)}</td></tr>`;
+    }
+    body += `<tr><td colspan="2"><b>TOTAL GERAL</b></td><td><b>${totalGeral%1===0?totalGeral:totalGeral.toFixed(2)}</b></td></tr>`;
+    body += `</tbody></table>`;
   } else {
     const data = notaSummaryData(nfsFiltro);
     for (const d of data) {
@@ -1837,8 +1887,21 @@ function rostoData(nfsFiltro) {
   const map = new Map(); // minuta -> { minuta, nfs:[{nf,dest,cidade,uf,qtd}] }
   let nfList = [...new Set(allItems.map(i=>i.nf))];
   if (nfsFiltro && nfsFiltro.size) nfList = nfList.filter(nf=>nfsFiltro.has(nf));
+
+  // Mapa NF → minuta vindo da aba Acompanhamento de Cargas (fallback), para os
+  // casos em que a minuta foi vinculada lá e não no conversor (nfMinutas).
+  const nfParaMinutaCargas = {};
+  if (window.CargasDB && window.CargasDB.listMinutas) {
+    try {
+      window.CargasDB.listMinutas().forEach(m=>{
+        (m.nfs||[]).forEach(nf=>{ nfParaMinutaCargas[nf] = m.id; });
+      });
+    } catch(e){}
+  }
+
   for (const nf of nfList) {
-    const minuta = nfMinutas[nf] || '';
+    // prioridade: minuta digitada/importada no conversor; senão, a do Cargas
+    const minuta = nfMinutas[nf] || nfParaMinutaCargas[nf] || '';
     if (!map.has(minuta)) map.set(minuta, { minuta, nfs: [] });
     const meta  = nfMeta[nf] || {};
     const items = allItems.filter(i=>i.nf===nf);
@@ -2614,6 +2677,34 @@ window.getConversorCounts = function(){
     totalUnidades: allItems.reduce((s,i)=>s+i.qtd,0),
     notasComMinuta: [...nfs].filter(nf=>nfMinutas[nf]).length
   };
+};
+
+// Chamado pela aba Acompanhamento de Cargas após importar minutas: preenche
+// cliente/cidade/uf das notas no Conversor, mas SÓ onde o campo estiver vazio
+// (o que veio do XML tem prioridade e nunca é sobrescrito).
+// entradas: [{ nf, dest, cidade, uf }]
+window.mergeMetaFromCargas = function(entradas){
+  if (!Array.isArray(entradas) || !entradas.length) return 0;
+  let atualizados = 0;
+  entradas.forEach(({nf, dest, cidade, uf})=>{
+    if (!nf) return;
+    const m = nfMeta[nf] || (nfMeta[nf] = { dest:'', cidade:'', uf:'' });
+    let mudou = false;
+    if (!m.dest && dest)     { m.dest = dest;     mudou = true; }
+    if (!m.cidade && cidade) { m.cidade = cidade; mudou = true; }
+    if (!m.uf && uf)         { m.uf = uf;         mudou = true; }
+    if (mudou) atualizados++;
+  });
+  if (atualizados){
+    salvarBancoNotas(); // persiste a atualização no banco compartilhado
+    // atualiza as telas que dependem desses dados, se estiverem visíveis
+    try{
+      if ($('tabResumo') && $('tabResumo').style.display !== 'none') { if (rsSel && rsSel.gerado) gerarResumo(); }
+      if ($('tabRosto') && $('tabRosto').style.display !== 'none') { if (roSel && roSel.gerado) gerarRosto(); }
+      if ($('tabDados') && $('tabDados').style.display !== 'none') renderTable();
+    }catch(e){}
+  }
+  return atualizados;
 };
 
 document.addEventListener('DOMContentLoaded', ()=>{ $('siglasCount').textContent = Object.keys(SIGLAS).length; });
@@ -3770,6 +3861,7 @@ document.getElementById('processarMinutas').addEventListener('click', async ()=>
   const n = parseMinutas(txt);
   if(n===0){ msg.textContent='Nenhuma linha reconhecida.'; msg.className='msg err'; return; }
   rebuildIndexes();
+  enviarMetaAoConversor(); // propaga cliente/cidade/uf para a aba Conversor
   try{
     await saveMinutas();
     msg.textContent = `${n} minuta(s) processada(s) e salvas.`;
@@ -3781,6 +3873,24 @@ document.getElementById('processarMinutas').addEventListener('click', async ()=>
     renderAll();
   }
 });
+
+// Monta cliente/cidade/uf de cada NF (a partir das minutas) e envia ao
+// Conversor de NF-e, que preenche apenas onde estiver vazio (XML tem prioridade).
+function enviarMetaAoConversor(){
+  if(!(window.mergeMetaFromCargas)) return;
+  const entradas = [];
+  Object.values(minutas).forEach(m=>{
+    const dest = (m.destinatario||'').trim();
+    // cidadeDestino costuma vir como "CIDADE - UF" ou "CIDADE/UF"
+    let cidade = (m.cidadeDestino||'').trim(), uf = '';
+    const mm = cidade.match(/^(.*?)[\s]*[-\/][\s]*([A-Za-z]{2})$/);
+    if(mm){ cidade = mm[1].trim(); uf = mm[2].toUpperCase(); }
+    (m.nfs||[]).forEach(nf=>{
+      if(dest || cidade || uf) entradas.push({ nf, dest, cidade, uf });
+    });
+  });
+  if(entradas.length){ try{ window.mergeMetaFromCargas(entradas); }catch(e){} }
+}
 
 document.getElementById('processarEmbarque').addEventListener('click', async ()=>{
   if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha antes de atualizar.'); return; }
