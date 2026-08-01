@@ -32,6 +32,14 @@ header span{font-size:11px;color:var(--muted);display:block;margin-top:1px}
 
 /* Drop Zone */
 .drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:36px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--surface);margin-bottom:14px;display:block}
+.divergencia-box{background:rgba(239,68,68,.08);border:1px solid var(--red);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.divergencia-box .dv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700;color:var(--red);font-size:13px}
+.divergencia-box .dv-close{background:transparent;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:5px}
+.divergencia-box .dv-close:hover{background:rgba(239,68,68,.15)}
+.divergencia-box .dv-sub{font-size:12px;color:var(--muted);margin:6px 0 8px}
+.divergencia-box .dv-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
+.divergencia-box .dv-list li{font-size:12px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 9px}
+.divergencia-box .dv-file{font-weight:700;color:var(--yellow)}
 .drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(79,110,247,.07)}
 .drop-zone .icon{font-size:36px;margin-bottom:8px}
 .drop-zone h2{font-size:15px;font-weight:600;margin-bottom:4px}
@@ -604,6 +612,9 @@ body *{visibility:hidden;}
 
   <div id="file-list"></div>
 
+  <!-- Aviso de arquivos bloqueados por divergência entre nome e nNF do XML -->
+  <div id="divergenciaBox" class="divergencia-box" style="display:none"></div>
+
   <!-- Stats -->
   <div class="stats-bar" id="statsBar" style="display:none">
     <div class="stat-card"><div class="val" id="statNfs">0</div><div class="lbl">Notas Fiscais</div></div>
@@ -861,7 +872,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">rosto inclui notas sem xml v18</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">checagem nome x nNF v19</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1328,6 +1339,8 @@ function parseNfe(xmlText) {
 // FILE PROCESSING
 // ══════════════════════════════════════════════════════════════════════════════
 async function processFiles(files) {
+  const dvBox = document.getElementById('divergenciaBox');
+  if (dvBox) { dvBox.style.display='none'; dvBox.innerHTML=''; }
   const xmlFiles = [];
   for (const f of files) {
     if (f.name.toLowerCase().endsWith('.zip')) {
@@ -1342,12 +1355,39 @@ async function processFiles(files) {
     }
   }
 
-  let added=0, skipped=0, errors=0;
+  let added=0, skipped=0, errors=0, divergentes=[];
+  // Normaliza um número de NF para comparação: só dígitos, sem zeros à esquerda.
+  const normNF = s => String(s||'').replace(/\D/g,'').replace(/^0+/,'') || '';
+  // Extrai o número da nota EXIGINDO que o nome do arquivo seja só o número
+  // (zeros à esquerda são permitidos). Qualquer texto extra invalida o nome.
+  // Retorna a NF normalizada, ou null se o nome não for estritamente numérico.
+  const nfDoNome = nome => {
+    const base = String(nome||'').split(/[\\/]/).pop()   // remove caminho (ZIP)
+                   .replace(/\.[^.]+$/,'').trim();        // remove extensão
+    if (!/^[0-9]+$/.test(base)) return null;             // precisa ser só dígitos
+    return normNF(base);
+  };
+
   for (const { name, text } of xmlFiles) {
     if (loadedFiles.has(name)) { skipped++; continue; }
     try {
       const items = parseNfe(text);
       if (!items.length) { errors++; continue; }
+
+      // CHECAGEM: o nome do arquivo deve ser exatamente o nNF de dentro do XML.
+      const nfXml = normNF(items[0].nf);
+      const nfNome = nfDoNome(name);
+      if (nfNome === null) {
+        divergentes.push({ name, motivo: `nome deveria ser apenas o número da NF (${nfXml})`, nfXml });
+        if (nfMeta[items[0].nf] && !allItems.some(i=>i.nf===items[0].nf)) delete nfMeta[items[0].nf];
+        continue; // bloqueia: nome tem texto extra ou não é numérico
+      }
+      if (nfNome !== nfXml) {
+        divergentes.push({ name, motivo: `arquivo diz NF ${nfNome}, XML contém NF ${nfXml}`, nfXml });
+        if (nfMeta[items[0].nf] && !allItems.some(i=>i.nf===items[0].nf)) delete nfMeta[items[0].nf];
+        continue; // bloqueia: divergência de número
+      }
+
       fileItemsMap.set(name, items);
       allItems.push(...items);
       loadedFiles.add(name);
@@ -1373,6 +1413,32 @@ async function processFiles(files) {
 
   if (added)  toast(`✓ ${added} arquivo(s) carregado(s)${skipped?', '+skipped+' ignorado(s)':''}`, false);
   if (errors) toast(`⚠ ${errors} arquivo(s) com erro ou formato inválido`, true);
+  if (divergentes.length) {
+    const lista = divergentes.slice(0,5).map(d=>`• ${d.name} — ${d.motivo}`).join('\n');
+    const extra = divergentes.length>5 ? `\n…e mais ${divergentes.length-5}.` : '';
+    toast(`🚫 ${divergentes.length} arquivo(s) BLOQUEADO(s): o nome não confere com a NF do XML.`, true);
+    // Aviso detalhado e persistente para o usuário conferir/renomear
+    mostrarDivergencias(divergentes);
+    console.warn('Arquivos bloqueados por divergência nome↔nNF:\n'+lista+extra);
+  }
+}
+
+// Exibe um painel persistente com os arquivos bloqueados por divergência entre
+// o nome do arquivo e o número da NF (nNF) dentro do XML.
+function mostrarDivergencias(divergentes) {
+  const box = $('divergenciaBox');
+  if (!box) return;
+  const linhas = divergentes.map(d=>
+    `<li><span class="dv-file">${esc(d.name)}</span> — ${esc(d.motivo)}</li>`
+  ).join('');
+  box.innerHTML = `
+    <div class="dv-head">
+      <span>🚫 ${divergentes.length} arquivo(s) não importado(s) — nome ≠ número da NF no XML</span>
+      <button class="dv-close" onclick="$('divergenciaBox').style.display='none'">✕</button>
+    </div>
+    <p class="dv-sub">Verifique/renomeie os arquivos abaixo. O padrão é o nome do arquivo ser igual ao número da nota fiscal.</p>
+    <ul class="dv-list">${linhas}</ul>`;
+  box.style.display = 'block';
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
