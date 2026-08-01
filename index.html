@@ -861,7 +861,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">minuta atualiza meta conversor v17</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">rosto inclui notas sem xml v18</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1885,28 +1885,41 @@ function printResumo() {
 // nfsFiltro (Set) opcional: considera só as NFs selecionadas.
 function rostoData(nfsFiltro) {
   const map = new Map(); // minuta -> { minuta, nfs:[{nf,dest,cidade,uf,qtd}] }
-  let nfList = [...new Set(allItems.map(i=>i.nf))];
-  if (nfsFiltro && nfsFiltro.size) nfList = nfList.filter(nf=>nfsFiltro.has(nf));
 
-  // Mapa NF → minuta vindo da aba Acompanhamento de Cargas (fallback), para os
-  // casos em que a minuta foi vinculada lá e não no conversor (nfMinutas).
+  // Dados das minutas do Acompanhamento de Cargas: mapa NF → minuta e um mapa
+  // NF → {dest,cidade,uf} para as notas que existem lá (mesmo sem XML no conversor).
   const nfParaMinutaCargas = {};
+  const metaCargas = {};
   if (window.CargasDB && window.CargasDB.listMinutas) {
     try {
       window.CargasDB.listMinutas().forEach(m=>{
-        (m.nfs||[]).forEach(nf=>{ nfParaMinutaCargas[nf] = m.id; });
+        (m.nfs||[]).forEach(nf=>{
+          nfParaMinutaCargas[nf] = m.id;
+          metaCargas[nf] = { dest: m.destinatario||'', cidade: m.cidade||'', uf: m.uf||'' };
+        });
       });
     } catch(e){}
   }
+
+  // Universo de NFs: as com XML (allItems) MAIS as que só existem nas minutas
+  // do Cargas (para aparecerem na folha rosto mesmo sem XML carregado).
+  let nfList = [...new Set([...allItems.map(i=>i.nf), ...Object.keys(nfParaMinutaCargas)])];
+  if (nfsFiltro && nfsFiltro.size) nfList = nfList.filter(nf=>nfsFiltro.has(nf));
 
   for (const nf of nfList) {
     // prioridade: minuta digitada/importada no conversor; senão, a do Cargas
     const minuta = nfMinutas[nf] || nfParaMinutaCargas[nf] || '';
     if (!map.has(minuta)) map.set(minuta, { minuta, nfs: [] });
-    const meta  = nfMeta[nf] || {};
-    const items = allItems.filter(i=>i.nf===nf);
-    const qtd   = items.reduce((s,i)=>s+i.qtd,0);
-    map.get(minuta).nfs.push({ nf, dest: meta.dest||'', cidade: meta.cidade||'', uf: meta.uf||'', qtd });
+    // meta: prioridade para o que veio do XML (nfMeta); senão, o da minuta do Cargas
+    const metaXml = nfMeta[nf] || {};
+    const mc = metaCargas[nf] || {};
+    const dest   = metaXml.dest   || mc.dest   || '';
+    const cidade = metaXml.cidade || mc.cidade || '';
+    const uf     = metaXml.uf     || mc.uf     || '';
+    const items  = allItems.filter(i=>i.nf===nf);
+    const qtd    = items.reduce((s,i)=>s+i.qtd,0); // notas sem XML ficam com qtd 0
+    const semXml = items.length === 0;
+    map.get(minuta).nfs.push({ nf, dest, cidade, uf, qtd, semXml });
   }
   // Descobre o(s) processo(s) de cada grupo, cruzando as NFs com os processos
   // cadastrados na aba Acompanhamento de Cargas (via ponte CargasDB).
@@ -1936,7 +1949,8 @@ function renderRosto() {
 // Monta a folha rosto APENAS das NFs selecionadas.
 function gerarRosto() {
   const el = $('rostoContent');
-  if (!allItems.length) {
+  const temCargasMin = !!(window.CargasDB && window.CargasDB.listMinutas && window.CargasDB.listMinutas().length);
+  if (!allItems.length && !temCargasMin) {
     el.innerHTML = `<div class="empty-state"><div class="icon">📄</div><p>Carregue XMLs e preencha as minutas para gerar a folha rosto.</p></div>`;
     return;
   }
@@ -1952,18 +1966,21 @@ function gerarRosto() {
   let h = '';
   for (const g of groups) {
     const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
+    const temSemXml = g.nfs.some(n=>n.semXml);
     h += `<div class="rosto-card"><div class="rosto-card-head">
       <div class="rosto-minuta-tag${g.minuta?'':' sem'}">${g.minuta ? 'Minuta '+esc(g.minuta) : 'Sem Minuta'}</div>
-      <span>${g.processo ? 'Processo '+esc(g.processo)+' · ' : ''}${g.nfs.length} nota(s) · ${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)} un.</span>
+      <span>${g.processo ? 'Processo '+esc(g.processo)+' · ' : ''}${g.nfs.length} nota(s) · ${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)} un.${temSemXml?' · <span style="color:var(--yellow)">algumas sem XML</span>':''}</span>
     </div>`;
     if (g.nfs.length === 1) {
       const n = g.nfs[0];
-      h += `<div class="rosto-card-body"><b>NF ${esc(n.nf)}</b> — ${esc(n.dest)||'—'} · ${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''} · ${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)} un.</div>`;
+      const q = n.semXml ? '—' : (n.qtd%1===0?n.qtd:n.qtd.toFixed(2));
+      h += `<div class="rosto-card-body"><b>NF ${esc(n.nf)}</b> — ${esc(n.dest)||'—'} · ${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''} · ${q} un.${n.semXml?' <span style="color:var(--yellow);font-size:11px">(sem XML)</span>':''}</div>`;
     } else {
       h += `<table><thead><tr><th>NF</th><th>Cliente</th><th>Cidade/UF</th><th>Qtd</th></tr></thead><tbody>`;
       for (const n of g.nfs) {
-        h += `<tr><td class="nf">${esc(n.nf)}</td><td class="item">${esc(n.dest)||'—'}</td>
-          <td>${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</td><td class="qtd">${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)}</td></tr>`;
+        const q = n.semXml ? '—' : (n.qtd%1===0?n.qtd:n.qtd.toFixed(2));
+        h += `<tr><td class="nf">${esc(n.nf)}${n.semXml?' <span style="color:var(--yellow);font-size:10px">(s/ XML)</span>':''}</td><td class="item">${esc(n.dest)||'—'}</td>
+          <td>${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</td><td class="qtd">${q}</td></tr>`;
       }
       h += '</tbody></table>';
     }
@@ -1999,13 +2016,14 @@ function printRosto() {
       : '';
     if (single) {
       const n = g.nfs[0];
+      const q = n.semXml ? '—' : (n.qtd%1===0?n.qtd:n.qtd.toFixed(2));
       mid = `
         <div class="rp-nf"><span class="rp-nf-lbl">NF</span><span class="rp-nf-val">${esc(n.nf)}</span></div>
         <div class="rp-info">
           ${procItem}
           <div class="rp-info-item"><span class="rp-info-lbl">Cliente</span><span class="rp-info-val rp-info-val-text">${esc(n.dest)||'—'}</span></div>
           <div class="rp-info-item"><span class="rp-info-lbl">Cidade / UF</span><span class="rp-info-val">${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</span></div>
-          <div class="rp-info-item"><span class="rp-info-lbl">Quantidade</span><span class="rp-info-val">${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)}</span></div>
+          <div class="rp-info-item"><span class="rp-info-lbl">Quantidade</span><span class="rp-info-val">${q}</span></div>
         </div>`;
     } else {
       mid = `
@@ -2016,7 +2034,7 @@ function printRosto() {
           <div class="rp-info-item"><span class="rp-info-lbl">Quantidade Total</span><span class="rp-info-val">${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)}</span></div>
         </div>
         <table class="rp-table"><thead><tr><th>NF</th><th>Cliente</th><th>Cidade/UF</th><th>Qtd</th></tr></thead><tbody>
-          ${g.nfs.map(n=>`<tr><td>${esc(n.nf)}</td><td>${esc(n.dest)||'—'}</td><td>${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</td><td>${n.qtd%1===0?n.qtd:n.qtd.toFixed(2)}</td></tr>`).join('')}
+          ${g.nfs.map(n=>`<tr><td>${esc(n.nf)}</td><td>${esc(n.dest)||'—'}</td><td>${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</td><td>${n.semXml?'—':(n.qtd%1===0?n.qtd:n.qtd.toFixed(2))}</td></tr>`).join('')}
         </tbody></table>`;
     }
     pages += `<div class="rosto-page" style="--rp-scale:${scale}">
@@ -3176,8 +3194,19 @@ window.CargasDB = {
   },
   // Lista as MINUTAS (id + NFs) para o seletor de etiquetas.
   listMinutas(){
-    return Object.values(minutas).map(m=>({ id:m.id, nfs:[...(m.nfs||[])] }))
-      .sort((a,b)=>String(a.id).localeCompare(String(b.id), undefined, {numeric:true}));
+    return Object.values(minutas).map(m=>{
+      // separa cidade e UF de cidadeDestino ("CIDADE - UF" ou "CIDADE/UF")
+      let cidade = (m.cidadeDestino||'').trim(), uf = '';
+      const mm = cidade.match(/^(.*?)[\s]*[-\/][\s]*([A-Za-z]{2})$/);
+      if(mm){ cidade = mm[1].trim(); uf = mm[2].toUpperCase(); }
+      return {
+        id: m.id,
+        nfs: [...(m.nfs||[])],
+        destinatario: (m.destinatario||'').trim(),
+        cidade, uf,
+        volumes: (m.volumes||'').trim()
+      };
+    }).sort((a,b)=>String(a.id).localeCompare(String(b.id), undefined, {numeric:true}));
   },
   _ready: true
 };
