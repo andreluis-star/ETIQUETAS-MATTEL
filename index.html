@@ -630,7 +630,6 @@ body *{visibility:hidden;}
       <button class="tab-btn"        onclick="switchTab('resumo')"    id="btnTabResumo">📊 Resumo</button>
       <button class="tab-btn"        onclick="switchTab('etiquetas')" id="btnTabEtiquetas">🏷 Etiquetas</button>
       <button class="tab-btn"        onclick="switchTab('rosto')"     id="btnTabRosto">📄 Folha Rosto</button>
-      <button class="tab-btn"        onclick="switchTab('conferencia')" id="btnTabConferencia">🧾 Conferência</button>
       <button class="tab-btn"        onclick="switchTab('siglas')"    id="btnTabSiglas">🗂 Siglas</button>
     </div>
     <button class="btn-purple" onclick="switchTab('etiquetas')">🏷 Etiquetas</button>
@@ -825,47 +824,6 @@ body *{visibility:hidden;}
     </div>
   </div>
 
-  <!-- ── TAB: CONFERÊNCIA DE BLOCO ────────────────────────────────────────── -->
-  <div id="tabConferencia" style="display:none">
-    <div class="label-gen-panel">
-      <div class="label-gen-head">
-        <h3>🧾 Gerar conferência de bloco</h3>
-        <span>Compila, por processo, todas as NFs, o volume de cada uma e o total geral — uma folha única para o conferente bater o bloco.</span>
-      </div>
-      <div class="label-gen-controls">
-        <div class="lg-modo">
-          <span class="lg-lbl">Gerar por:</span>
-          <div class="tabs">
-            <button class="tab-btn"        id="cfModoNota"   onclick="cfSel.setModo('nota')">Nota Fiscal</button>
-            <button class="tab-btn active" id="cfModoProc"   onclick="cfSel.setModo('processo')">Processo</button>
-            <button class="tab-btn"        id="cfModoData"   onclick="cfSel.setModo('data')">Data</button>
-            <button class="tab-btn"        id="cfModoMinuta" onclick="cfSel.setModo('minuta')">Minuta</button>
-          </div>
-        </div>
-        <div class="lg-selecao">
-          <div class="lg-sel-head">
-            <span class="lg-lbl" id="cfSelLabel">Selecione os processos:</span>
-            <div class="lg-sel-actions">
-              <button class="btn-outline btn-mini" onclick="cfSel.selAll(true)">Marcar todos</button>
-              <button class="btn-outline btn-mini" onclick="cfSel.selAll(false)">Limpar</button>
-            </div>
-          </div>
-          <div class="lg-options" id="cfOptions"></div>
-        </div>
-        <div class="lg-footer">
-          <div class="label-count-badge">NFs na seleção: <b id="cfCount">0</b></div>
-          <button class="btn-purple" onclick="gerarConferencia()">✨ Gerar conferência</button>
-          <button class="btn-purple" id="btnImprimirConferencia" onclick="printConferencia()" style="display:none;">🖨 Imprimir Conferência (A4)</button>
-        </div>
-      </div>
-    </div>
-    <div id="conferenciaContent">
-      <div class="empty-state"><div class="icon">🧾</div>
-        <p>Escolha um critério acima (processo, nota, data ou minuta), selecione os itens e clique em <b>Gerar conferência</b>.</p>
-      </div>
-    </div>
-  </div>
-
   <!-- ── TAB: SIGLAS ───────────────────────────────────────────────────────── -->
   <div id="tabSiglas" style="display:none">
 
@@ -914,7 +872,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">proc puxa destinatario da nfe v20</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">relatorio dados nfe + total itens v21</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1311,7 +1269,7 @@ async function carregarBancoNotas() {
       // recria os badges dos arquivos salvos
       const fl = $('file-list');
       if (fl) { fl.innerHTML=''; [...loadedFiles].forEach(addFileBadge); }
-      updateStats(); renderTable(); renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto(); renderConferencia();
+      updateStats(); renderTable(); renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
       const has = allItems.length > 0;
       if ($('statsBar')) $('statsBar').style.display = has ? 'flex' : 'none';
       if ($('tabsBar'))  $('tabsBar').style.display  = has ? 'flex' : 'none';
@@ -1448,7 +1406,6 @@ async function processFiles(files) {
   renderLabels();
   renderResumo();
   renderRosto();
-  renderConferencia();
   const has = allItems.length > 0;
   $('statsBar').style.display = has ? 'flex' : 'none';
   $('tabsBar').style.display  = has ? 'flex' : 'none';
@@ -1510,7 +1467,7 @@ function removeFile(name) {
   }
   const badge = $('file-list').querySelector(`[data-fname="${CSS.escape(name)}"]`);
   if (badge) badge.remove();
-  updateStats(); renderTable(); renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto(); renderConferencia();
+  updateStats(); renderTable(); renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
   const has = allItems.length > 0;
   $('statsBar').style.display = has ? 'flex' : 'none';
   $('tabsBar').style.display  = has ? 'flex' : 'none';
@@ -1534,15 +1491,14 @@ function updateStats() {
 // TABS
 // ══════════════════════════════════════════════════════════════════════════════
 function switchTab(tab) {
-  ['dados','resumo','etiquetas','rosto','conferencia','siglas'].forEach(t => {
+  ['dados','resumo','etiquetas','rosto','siglas'].forEach(t => {
     $('tab'+t[0].toUpperCase()+t.slice(1)).style.display = t===tab?'':'none';
     $('btnTab'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
   });
-  if (tab==='resumo')       renderResumo();
-  if (tab==='etiquetas')    renderLabels();
-  if (tab==='rosto')        renderRosto();
-  if (tab==='conferencia')  renderConferencia();
-  if (tab==='siglas')       renderSiglasTable();
+  if (tab==='resumo')    renderResumo();
+  if (tab==='etiquetas') renderLabels();
+  if (tab==='rosto')     renderRosto();
+  if (tab==='siglas')    renderSiglasTable();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1627,7 +1583,7 @@ function limpar() {
   allItems=[];nfMeta={};nfMinutas={};loadedFiles.clear();fileItemsMap.clear();
   $('file-list').innerHTML='';
   $('statsBar').style.display='none';$('tabsBar').style.display='none';
-  renderTable();renderMinutaInputs();renderLabels();renderResumo();renderRosto();renderConferencia();
+  renderTable();renderMinutaInputs();renderLabels();renderResumo();renderRosto();
   salvarBancoNotas(); // grava o estado vazio (limpa o banco compartilhado)
   toast('Dados limpos.',false);
 }
@@ -1677,7 +1633,7 @@ function processarMD() {
       }
     }
   }
-  renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto(); renderConferencia();
+  renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
   const res = $('mdResult');
   if (matched > 0) {
     salvarBancoNotas(); // persiste as vinculações feitas em massa
@@ -1743,7 +1699,6 @@ function setMinuta(nf, input) {
   if ($('tabEtiquetas').style.display !== 'none') renderLabels();
   if ($('tabResumo').style.display !== 'none') renderResumo();
   if ($('tabRosto').style.display !== 'none') renderRosto();
-  if ($('tabConferencia').style.display !== 'none') renderConferencia();
   // Persiste a vinculação com debounce (agrupa digitação rápida) para não
   // gravar a cada tecla; o storage já sincroniza com o time em segundo plano.
   clearTimeout(_minutaSaveTimer);
@@ -2197,174 +2152,6 @@ function printRosto() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// CONFERÊNCIA DE BLOCO (resumo por Processo — folha única para o conferente)
-// ══════════════════════════════════════════════════════════════════════════════
-// Agrupa as NFs selecionadas por PROCESSO (aba Acompanhamento de Cargas),
-// trazendo para cada NF o volume (qtd), destinatário, cidade/UF e minuta.
-// nfsFiltro (Set) opcional: considera só as NFs selecionadas.
-function conferenciaData(nfsFiltro) {
-  let procList = [];
-  if (window.CargasDB && window.CargasDB.listProcessos) {
-    try { procList = window.CargasDB.listProcessos(); } catch(e){ procList = []; }
-  }
-  const nfParaProc = {};
-  procList.forEach(p=>{ (p.nfs||[]).forEach(nf=>{ nfParaProc[nf] = p.codigo; }); });
-
-  // Universo de NFs: as com XML (allItems) MAIS as que só existem vinculadas
-  // a um processo (para aparecerem na conferência mesmo sem XML carregado).
-  let nfList = [...new Set([...allItems.map(i=>i.nf), ...Object.keys(nfParaProc)])];
-  if (nfsFiltro && nfsFiltro.size) nfList = nfList.filter(nf=>nfsFiltro.has(nf));
-
-  const map = new Map(); // codigo do processo ('' = sem processo) -> {codigo, data, nfs:[...]}
-  for (const nf of nfList) {
-    const codigo = nfParaProc[nf] || '';
-    if (!map.has(codigo)) {
-      const pInfo = procList.find(p=>p.codigo===codigo);
-      map.set(codigo, { codigo, data: pInfo ? pInfo.data : '', nfs: [] });
-    }
-    const meta   = nfMeta[nf] || {};
-    const minuta = nfMinutas[nf] || '';
-    const items  = allItems.filter(i=>i.nf===nf);
-    const qtd    = items.reduce((s,i)=>s+i.qtd,0); // notas sem XML ficam com qtd 0
-    const semXml = items.length === 0;
-    map.get(codigo).nfs.push({ nf, dest: meta.dest||'', cidade: meta.cidade||'', uf: meta.uf||'', minuta, qtd, semXml });
-  }
-  const arr = [...map.values()];
-  arr.forEach(g=>g.nfs.sort((a,b)=>String(a.nf).localeCompare(String(b.nf), undefined, {numeric:true})));
-  return arr.sort((a,b) => {
-    if (!a.codigo && b.codigo) return 1;
-    if (a.codigo && !b.codigo) return -1;
-    return String(a.codigo).localeCompare(String(b.codigo), undefined, {numeric:true});
-  });
-}
-
-// Ao abrir a aba NÃO gera conteúdo: apenas atualiza as opções do seletor.
-function renderConferencia() {
-  if (typeof cfSel !== 'undefined' && cfSel) cfSel.render();
-  const btn = $('btnImprimirConferencia'); if (btn && !(cfSel && cfSel.gerado)) btn.style.display = 'none';
-}
-
-// Monta a conferência (preview em tela) APENAS das NFs selecionadas.
-function gerarConferencia() {
-  const el = $('conferenciaContent');
-  const temCargasProc = !!(window.CargasDB && window.CargasDB.listProcessos && window.CargasDB.listProcessos().length);
-  if (!allItems.length && !temCargasProc) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">🧾</div><p>Carregue XMLs e/ou cadastre processos na aba Acompanhamento de Cargas para gerar a conferência.</p></div>`;
-    return;
-  }
-  if (!cfSel) return;
-  const nfsFiltro = cfSel.nfsSelecionadas();
-  if (!nfsFiltro.size) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">☝️</div><p>Selecione ao menos um item acima e clique em <b>Gerar conferência</b>.</p></div>`;
-    cfSel.gerado = false;
-    $('btnImprimirConferencia').style.display = 'none';
-    return;
-  }
-  const groups = conferenciaData(nfsFiltro);
-  let totalNfsGeral = 0, totalVolGeral = 0;
-  let h = '';
-  for (const g of groups) {
-    const totalVol = g.nfs.reduce((s,n)=>s+n.qtd, 0);
-    totalNfsGeral += g.nfs.length;
-    totalVolGeral += totalVol;
-    const temSemXml = g.nfs.some(n=>n.semXml);
-    h += `<div class="rosto-card"><div class="rosto-card-head">
-      <div class="rosto-minuta-tag${g.codigo?'':' sem'}">${g.codigo ? 'Processo '+esc(g.codigo) : 'Sem Processo'}</div>
-      <span>${g.data ? 'Coleta '+esc(g.data)+' · ' : ''}${g.nfs.length} nota(s) · ${totalVol%1===0?totalVol:totalVol.toFixed(2)} vol.${temSemXml?' · <span style="color:var(--yellow)">algumas sem XML</span>':''}</span>
-    </div>
-    <table><thead><tr><th>NF</th><th>Cliente</th><th>Cidade/UF</th><th>Minuta</th><th>Volumes</th></tr></thead><tbody>`;
-    for (const n of g.nfs) {
-      const q = n.semXml ? '—' : (n.qtd%1===0?n.qtd:n.qtd.toFixed(2));
-      h += `<tr><td class="nf">${esc(n.nf)}${n.semXml?' <span style="color:var(--yellow);font-size:10px">(s/ XML)</span>':''}</td><td class="item">${esc(n.dest)||'—'}</td>
-        <td>${esc(n.cidade)||'—'}${n.uf?' / '+esc(n.uf):''}</td><td>${esc(n.minuta)||'—'}</td><td class="qtd">${q}</td></tr>`;
-    }
-    h += `<tr class="resumo-total-row"><td colspan="4"><b>Total do processo</b></td><td class="qtd"><b>${totalVol%1===0?totalVol:totalVol.toFixed(2)}</b></td></tr>`;
-    h += '</tbody></table></div>';
-  }
-  if (groups.length > 1) {
-    h += `<div class="resumo-proc-head">Total geral da seleção: <b>${totalNfsGeral} nota(s)</b> · <b>${totalVolGeral%1===0?totalVolGeral:totalVolGeral.toFixed(2)} volume(s)</b></div>`;
-  }
-  el.innerHTML = h;
-  cfSel.gerado = true;
-  $('btnImprimirConferencia').style.display = 'inline-flex';
-}
-
-// Imprime a conferência: uma página A4 retrato por processo, com tabela de
-// NFs/volumes, total do processo e uma coluna "Conf." (quadradinho em branco)
-// para o conferente marcar à mão item a item, mais linhas de assinatura/data.
-function printConferencia() {
-  const temCargasProc = !!(window.CargasDB && window.CargasDB.listProcessos && window.CargasDB.listProcessos().length);
-  if (!allItems.length && !temCargasProc) { toast('⚠ Nenhum dado para imprimir.', true); return; }
-  if (!cfSel) return;
-  const nfsFiltro = cfSel.nfsSelecionadas();
-  if (!nfsFiltro.size) { toast('⚠ Selecione itens e gere a conferência antes de imprimir.', true); return; }
-  const groups = conferenciaData(nfsFiltro);
-  let pages = '';
-  groups.forEach(g => {
-    const totalVol = g.nfs.reduce((s,n)=>s+n.qtd, 0);
-    let rows = '';
-    g.nfs.forEach((n,i)=>{
-      const q = n.semXml ? '—' : (n.qtd%1===0?n.qtd:n.qtd.toFixed(2));
-      rows += `<tr><td>${i+1}</td><td><b>${esc(n.nf)}</b></td><td>${esc(n.dest)||'—'}</td>
-        <td>${esc(n.cidade)||'—'}${n.uf?'/'+esc(n.uf):''}</td><td>${esc(n.minuta)||'—'}</td>
-        <td class="qtd">${q}</td><td class="chk"></td></tr>`;
-    });
-    pages += `<div class="cf-page">
-      <div class="cf-head">
-        <div>
-          <h1>Folha de Conferência de Bloco</h1>
-          <div class="cf-sub">${g.codigo ? 'Processo <b>'+esc(g.codigo)+'</b>' : '<b>Sem processo vinculado</b>'}${g.data?' · Coleta '+esc(g.data):''}</div>
-        </div>
-        <div class="cf-totais">
-          <div><span>Notas</span><b>${g.nfs.length}</b></div>
-          <div><span>Volumes</span><b>${totalVol%1===0?totalVol:totalVol.toFixed(2)}</b></div>
-        </div>
-      </div>
-      <table class="cf-table">
-        <thead><tr><th>#</th><th>NF</th><th>Cliente</th><th>Cidade/UF</th><th>Minuta</th><th>Volumes</th><th>Conf.</th></tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr><td colspan="5"><b>TOTAL</b></td><td class="qtd"><b>${totalVol%1===0?totalVol:totalVol.toFixed(2)}</b></td><td></td></tr></tfoot>
-      </table>
-      <div class="cf-foot">
-        <div class="cf-assinatura"><span>Conferente</span><div class="cf-line"></div></div>
-        <div class="cf-assinatura"><span>Data</span><div class="cf-line"></div></div>
-      </div>
-    </div>`;
-  });
-  const css = `
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;color:#111}
-    .cf-page{width:210mm;min-height:297mm;padding:14mm;display:flex;flex-direction:column}
-    .cf-page + .cf-page{page-break-before:always;break-before:page}
-    .cf-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:4mm;margin-bottom:6mm}
-    .cf-head h1{font-size:16pt}
-    .cf-sub{font-size:11pt;margin-top:2mm}
-    .cf-totais{display:flex;gap:8mm}
-    .cf-totais div{text-align:center}
-    .cf-totais span{display:block;font-size:8pt;text-transform:uppercase;color:#555}
-    .cf-totais b{font-size:16pt}
-    .cf-table{width:100%;border-collapse:collapse;font-size:10pt}
-    .cf-table th,.cf-table td{border:1px solid #999;padding:2mm 2.5mm;text-align:left}
-    .cf-table th{background:#eee;font-size:8pt;text-transform:uppercase}
-    .cf-table td.qtd{text-align:right}
-    .cf-table td.chk{width:10mm;text-align:center}
-    .cf-table td.chk::after{content:'';display:inline-block;width:5mm;height:5mm;border:1.3px solid #000}
-    .cf-table tfoot td{border-top:2px solid #000;background:#f5f5f5}
-    tr{page-break-inside:avoid}
-    .cf-foot{display:flex;gap:20mm;margin-top:auto;padding-top:14mm}
-    .cf-assinatura{flex:1}
-    .cf-assinatura span{font-size:9pt;color:#555}
-    .cf-line{border-bottom:1px solid #000;height:9mm;margin-top:2mm}
-    @page{size:A4 portrait;margin:0}`;
-  const win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Conferência de Bloco</title>
-    <style>${css}</style></head><body>${pages}
-    <script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script>
-    </body></html>`);
-  win.document.close();
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
 // SIGLA LOOKUP
 // ══════════════════════════════════════════════════════════════════════════════
 function norm(s) {
@@ -2631,8 +2418,6 @@ function criarSeletor(prefix, onGerar){
 // diretamente, então aqui o callback apenas delega).
 var rsSel = criarSeletor('rs', ()=>gerarResumo());
 var roSel = criarSeletor('ro', ()=>gerarRosto());
-var cfSel = criarSeletor('cf', ()=>gerarConferencia());
-cfSel.modo = 'processo'; // a conferência de bloco é feita por processo por padrão
 
 // Monta a lista de parâmetros de cada etiqueta. Se nfsFiltro (Set) for
 // fornecido, gera apenas as etiquetas das NFs selecionadas.
@@ -2996,6 +2781,17 @@ window.getNfeMetaBatch = function(nfsArr){
   });
   return out;
 };
+// Quantidade de peças (soma das quantidades dos itens do XML) por NF.
+// Retorna {nf: qtd} apenas das NFs que têm XML carregado.
+window.getNfeQtdBatch = function(nfsArr){
+  const set = nfsArr ? new Set(nfsArr) : null;
+  const out = {};
+  for (const it of allItems){
+    if (set && !set.has(it.nf)) continue;
+    out[it.nf] = (out[it.nf]||0) + it.qtd;
+  }
+  return out;
+};
 
 // Chamado pela aba Acompanhamento de Cargas após importar minutas: preenche
 // cliente/cidade/uf das notas no Conversor, mas SÓ onde o campo estiver vazio
@@ -3019,7 +2815,6 @@ window.mergeMetaFromCargas = function(entradas){
     try{
       if ($('tabResumo') && $('tabResumo').style.display !== 'none') { if (rsSel && rsSel.gerado) gerarResumo(); }
       if ($('tabRosto') && $('tabRosto').style.display !== 'none') { if (roSel && roSel.gerado) gerarRosto(); }
-      if ($('tabConferencia') && $('tabConferencia').style.display !== 'none') { if (cfSel && cfSel.gerado) gerarConferencia(); }
       if ($('tabDados') && $('tabDados').style.display !== 'none') renderTable();
     }catch(e){}
   }
@@ -4386,12 +4181,19 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
   const datas = Object.keys(porData).sort();
 
   // resumo geral: contagem de NOTAS por status
-  let tProc=0, tNfs=0, tMin=0;
+  let tProc=0, tNfs=0, tMin=0, tItens=0;
   const tSt = {NAO_COLETADA:0, NAO_PROCESSADA:0, SEPARANDO:0, AGUARDANDO_EXP:0, EXPEDIDA:0};
+  // quantidades de peças (XML) de todas as NFs do relatório
+  let qtdGeral = {};
+  try{
+    const todasNfs = [...new Set(procsFiltrados.flatMap(p=>p.nfs))];
+    if(window.getNfeQtdBatch) qtdGeral = window.getNfeQtdBatch(todasNfs) || {};
+  }catch(e){ qtdGeral = {}; }
   procsFiltrados.forEach(p=>{
     tProc++;
     tNfs += p.nfs.length;
     tMin += p.nfs.filter(nf=>nfToMinuta[nf]).length;
+    tItens += p.nfs.reduce((s,nf)=>s+(qtdGeral[nf]||0),0);
     const c = sepCounts(p);
     SEP_ORDER.forEach(k=>tSt[k]+=c[k]);
   });
@@ -4412,7 +4214,7 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
       <div class="pr-sub">Emitido em ${agoraStr}</div>
     </div>
     <div class="pr-resumo">
-      <strong>Resumo:</strong> ${tProc} processo(s) · ${tNfs} NF(s) · ${tMin} com minuta · Notas por status: ${resumoStatus}
+      <strong>Resumo:</strong> ${tProc} processo(s) · ${tNfs} NF(s) · ${tItens%1===0?tItens:tItens.toFixed(2)} itens · ${tMin} com minuta · Notas por status: ${resumoStatus}
     </div>`;
 
   datas.forEach(dk=>{
@@ -4423,12 +4225,21 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
       const info = prazoInfo(p);
       const prazo = fmtDate(prazoDate(p));
       const resumoP = SEP_ORDER.filter(k=>c[k]>0).map(k=>`${c[k]} ${SEP_STATUS[k].label.toLowerCase()}`).join(' / ');
+
+      // Dados vindos da NF-e (XML), via ponte com o Conversor:
+      //  • metaNfe: destinatário/cidade/uf por NF
+      //  • qtdNfe: quantidade de peças (itens do XML) por NF
+      let metaNfe = {}, qtdNfe = {};
+      try{ if(window.getNfeMetaBatch) metaNfe = window.getNfeMetaBatch(p.nfs) || {}; }catch(e){}
+      try{ if(window.getNfeQtdBatch)  qtdNfe  = window.getNfeQtdBatch(p.nfs)  || {}; }catch(e){}
+      const totalItensProc = p.nfs.reduce((s,nf)=> s + (qtdNfe[nf]||0), 0);
+
       html += `
       <div class="pr-proc">
         <div class="pr-proc-head">
           <span class="cod">${p.codigo}</span>
           <span class="meta">
-            ${p.nfs.length} NFs · Prazo: <strong>${prazo}</strong> · ${resumoP}
+            ${p.nfs.length} NFs · <strong>${totalItensProc%1===0?totalItensProc:totalItensProc.toFixed(2)}</strong> itens · Prazo: <strong>${prazo}</strong> · ${resumoP}
             ${info.cls==='vencido' ? ' · <strong style="color:#C0392B;">PRAZO VENCIDO</strong>' : ''}
             ${info.cls==='hoje' ? ' · <strong style="color:#B5790A;">VENCE HOJE</strong>' : ''}
             ${info.cls==='concluido' ? ' · <strong style="color:#1E8E5A;">EXPEDIDA</strong>' : ''}
@@ -4448,14 +4259,22 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
       sortedNfs.forEach(nf=>{
         const m = nfToMinuta[nf];
         const stnf = SEP_STATUS[getStatusNf(p,nf)];
+        const mn = metaNfe[nf] || {};
+        // Destinatário: prioridade NF-e, senão minuta
+        const dest = mn.dest || (m ? (m.destinatario||'') : '');
+        // Cidade destino: prioridade NF-e (monta "CIDADE - UF"), senão minuta
+        let cidade = m ? (m.cidadeDestino||'') : '';
+        if (mn.cidade || mn.uf) cidade = mn.cidade + (mn.uf ? ' - ' + mn.uf : '');
+        // Volume por NF: soma das peças do XML dessa nota
+        const vol = (nf in qtdNfe) ? (qtdNfe[nf]%1===0?qtdNfe[nf]:qtdNfe[nf].toFixed(2)) : (m ? (m.volumes||'—') : '—');
         html += `<tr>
           <td><strong>${nf}</strong></td>
           <td><span class="st-print" style="background:${stnf.cor}; color:${stnf.txt};">${stnf.label}</span></td>
           <td>${m ? (m.id||'sim') : '—'}</td>
           <td>${m ? (m.placaColeta||'—') : '—'}</td>
-          <td>${m ? (m.destinatario||'—') : '—'}</td>
-          <td>${m ? (m.cidadeDestino||'—') : '—'}</td>
-          <td>${m ? (m.volumes||'—') : '—'}</td>
+          <td>${dest||'—'}</td>
+          <td>${cidade||'—'}</td>
+          <td>${vol}</td>
           <td>${m ? (m.prevEmbarque||m.prevEntrega||'—') : '—'}</td>
           <td>${m ? (m.ocorrencia||'—') : '—'}</td>
         </tr>`;
