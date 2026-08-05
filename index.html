@@ -7,8 +7,6 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Conversor de NF-e — Portoexpress</title>
-<!-- v19 - 2026-08-03 - Acompanhamento de Cargas: novo relatório "Romaneio por Cidade" ao lado da Impressão de Relatórios -->
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -575,23 +573,6 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
   }
 #printArea .pr-assin div{flex:1; border-top:1px solid #666; padding-top:4px; font-size:10px; text-align:center; color:#444;}
 
-/* Romaneio por Cidade — tabela única com células mescladas por coleta/processo/cidade */
-#printArea table.pr-romaneio{font-size:9.5px; margin-bottom:16px;}
-#printArea table.pr-romaneio th, #printArea table.pr-romaneio td{border:1px solid #999; padding:4px 6px; vertical-align:middle;}
-#printArea table.pr-romaneio thead th{background:#1A3A6E; color:#fff; font-size:9px; text-transform:uppercase; text-align:left;}
-#printArea table.pr-romaneio thead th.pr-total-header{
-    background:#fff; color:#1A3A6E; font-size:16px; font-weight:800; text-align:center; border:2px solid #1A3A6E;
-  }
-#printArea table.pr-romaneio td.pr-coleta-cell{font-weight:700; text-align:center; background:#F7F8FA;}
-#printArea table.pr-romaneio td.pr-proc-cell{font-weight:700; color:#1A3A6E; background:#EEF1F6;}
-#printArea table.pr-romaneio td.pr-prazo-cell{text-align:center; background:#EEF1F6;}
-#printArea table.pr-romaneio td.pr-cidade-cell, #printArea table.pr-romaneio td.pr-uf-cell{background:#F7F8FA;}
-#printArea table.pr-romaneio td.pr-uf-cell{text-align:center;}
-#printArea table.pr-romaneio td.pr-vol-cell{text-align:right; font-variant-numeric:tabular-nums;}
-#printArea table.pr-romaneio td.pr-total-cell{
-    text-align:center; font-size:18px; font-weight:800; color:#1A3A6E; background:#fff; border:2px solid #1A3A6E;
-  }
-
 @media print{
 body *{visibility:hidden;}
 #printArea, #printArea *{visibility:visible;}
@@ -1022,7 +1003,6 @@ body *{visibility:hidden;}
         Ocultar notas expedidas
       </label>
       <button class="btn-primary" id="printBtn">Imprimir</button>
-      <button class="btn-outline" id="printRomaneioBtn" title="Relatório em tabela única, agrupado por coleta/processo/cidade, com totais de volumes">📋 Romaneio por Cidade</button>
       <span class="msg" id="printMsg"></span>
     </div>
   </div>
@@ -4312,167 +4292,6 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
   return html;
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// ROMANEIO POR CIDADE — tabela única, mesclando COLETA_EM/PROCESSO/PRAZO por
-// processo e MINUTA/CIDADE/UF por sequência de notas, com total de volumes
-// por processo e um total geral no canto superior direito.
-// ══════════════════════════════════════════════════════════════════════════
-
-// separa "CIDADE - UF" ou "CIDADE/UF" em partes (mesma regra usada ao enviar
-// meta das minutas pro Conversor de NF-e)
-function splitCidadeUf(str){
-  let cidade = (str||'').trim(), uf = '';
-  const mm = cidade.match(/^(.*?)[\s]*[-\/][\s]*([A-Za-z]{2})$/);
-  if(mm){ cidade = mm[1].trim(); uf = mm[2].toUpperCase(); }
-  return {cidade, uf};
-}
-
-// formata número no padrão pt-BR (milhar com ponto; decimais só quando necessário)
-function fmtNumBR(n){
-  n = Number(n)||0;
-  return n%1===0 ? n.toLocaleString('pt-BR') : n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-
-// marca, em uma lista já ordenada, o início de cada sequência consecutiva de
-// mesma chave (usado para calcular os rowspans das colunas mescladas)
-function markGroups(rows, keyFn, propRowspan, propFirst){
-  for(let i=0; i<rows.length; i++){
-    if(i>0 && keyFn(rows[i])===keyFn(rows[i-1])){
-      rows[i][propFirst] = false;
-    } else {
-      rows[i][propFirst] = true;
-      let span = 1;
-      for(let j=i+1; j<rows.length && keyFn(rows[j])===keyFn(rows[i]); j++) span++;
-      rows[i][propRowspan] = span;
-    }
-  }
-}
-
-function buildRomaneioHTML(procsFiltrados, tituloFiltro, hideExpedidos){
-  if(hideExpedidos){
-    procsFiltrados = procsFiltrados.filter(p=>{
-      const c = sepCounts(p);
-      return c.EXPEDIDA < p.nfs.length;
-    });
-  }
-  if(procsFiltrados.length===0) return null;
-
-  // agrupar por data de coleta (mesma base usada no relatório detalhado)
-  const porData = {};
-  procsFiltrados.forEach(p=>{
-    const k = dateKey(p.dia,p.mes,p.ano);
-    (porData[k] = porData[k] || []).push(p);
-  });
-  const datas = Object.keys(porData).sort();
-
-  // monta uma linha por NF, na ordem coleta → processo → nota (a ordem das
-  // notas dentro do processo é preservada, o que mantém as notas de uma
-  // mesma minuta juntas — é assim que elas chegam do import de minutas)
-  let linhas = [];
-  let grandTotal = 0;
-
-  datas.forEach(dk=>{
-    porData[dk].sort((a,b)=>a.codigo.localeCompare(b.codigo)).forEach(p=>{
-      let metaNfe = {}, qtdNfe = {};
-      try{ if(window.getNfeMetaBatch) metaNfe = window.getNfeMetaBatch(p.nfs) || {}; }catch(e){}
-      try{ if(window.getNfeQtdBatch)  qtdNfe  = window.getNfeQtdBatch(p.nfs)  || {}; }catch(e){}
-
-      let nfsOrdenadas = [...p.nfs];
-      if(hideExpedidos) nfsOrdenadas = nfsOrdenadas.filter(nf=>getStatusNf(p,nf)!=='EXPEDIDA');
-      if(nfsOrdenadas.length===0) return;
-
-      const prazoStr = fmtDate(prazoDate(p));
-
-      nfsOrdenadas.forEach(nf=>{
-        const m = nfToMinuta[nf];
-        const mn = metaNfe[nf] || {};
-        const dest = mn.dest || (m ? (m.destinatario||'') : '');
-        let cidade = '', uf = '';
-        if(mn.cidade || mn.uf){ cidade = mn.cidade||''; uf = mn.uf||''; }
-        else if(m && m.cidadeDestino){ const s = splitCidadeUf(m.cidadeDestino); cidade = s.cidade; uf = s.uf; }
-        const vol = (nf in qtdNfe) ? qtdNfe[nf] : (m ? (Number(m.volumes)||0) : 0);
-        grandTotal += (Number(vol)||0);
-
-        linhas.push({
-          dataKey: dk, dia:p.dia, mes:p.mes, ano:p.ano,
-          procCodigo: p.codigo, prazoStr,
-          nf, minutaId: m ? ('m_'+(m.id||nf)) : ('n_'+nf), minutaLabel: m ? (m.id||'—') : '—',
-          dest: dest || '—', cidade: cidade || '—', uf: uf || '',
-          vol
-        });
-      });
-    });
-  });
-
-  if(linhas.length===0) return null;
-
-  // calcula os rowspans das colunas mescladas
-  markGroups(linhas, l=>l.dataKey,                                                  'coletaRowspan','coletaFirst');
-  markGroups(linhas, l=>l.dataKey+'|'+l.procCodigo,                                  'procRowspan',  'procFirst');
-  markGroups(linhas, l=>l.dataKey+'|'+l.procCodigo+'|'+l.minutaId,                   'minutaRowspan','minutaFirst');
-  markGroups(linhas, l=>l.dataKey+'|'+l.procCodigo+'|'+l.cidade+'|'+l.uf,            'cidadeRowspan','cidadeFirst');
-
-  // total de volumes por processo (para a célula grande mesclada da direita)
-  const totalPorProc = {};
-  linhas.forEach(l=>{
-    const k = l.dataKey+'|'+l.procCodigo;
-    totalPorProc[k] = (totalPorProc[k]||0) + (Number(l.vol)||0);
-  });
-
-  const agora = new Date();
-  const agoraStr = agora.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-
-  let html = `
-    <div class="pr-header">
-      <div>
-        <h1>Romaneio por Cidade — Mattel</h1>
-        <div class="pr-sub">${tituloFiltro}${hideExpedidos ? ' · (sem notas expedidas)' : ''}${casoAtual ? ' · Caso: '+casoAtual : ''}</div>
-      </div>
-      <div class="pr-sub">Emitido em ${agoraStr}</div>
-    </div>
-    <table class="pr-romaneio">
-      <thead>
-        <tr>
-          <th>Coleta em</th><th>Processo</th><th>Prazo</th><th>NF</th><th>Minuta</th>
-          <th>Destinatário</th><th>Cidade</th><th>UF</th><th>Volumes</th>
-          <th class="pr-total-header">${fmtNumBR(grandTotal)}</th>
-        </tr>
-      </thead>
-      <tbody>`;
-
-  linhas.forEach(l=>{
-    html += '<tr>';
-    if(l.coletaFirst) html += `<td rowspan="${l.coletaRowspan}" class="pr-coleta-cell">${String(l.dia).padStart(2,'0')}/${String(l.mes).padStart(2,'0')}/${l.ano}</td>`;
-    if(l.procFirst){
-      html += `<td rowspan="${l.procRowspan}" class="pr-proc-cell">${l.procCodigo}</td>`;
-      html += `<td rowspan="${l.procRowspan}" class="pr-prazo-cell">${l.prazoStr}</td>`;
-    }
-    html += `<td>${l.nf}</td>`;
-    if(l.minutaFirst) html += `<td rowspan="${l.minutaRowspan}">${l.minutaLabel}</td>`;
-    html += `<td>${l.dest}</td>`;
-    if(l.cidadeFirst){
-      html += `<td rowspan="${l.cidadeRowspan}" class="pr-cidade-cell">${l.cidade}</td>`;
-      html += `<td rowspan="${l.cidadeRowspan}" class="pr-uf-cell">${l.uf||'—'}</td>`;
-    }
-    html += `<td class="pr-vol-cell">${fmtNumBR(l.vol)}</td>`;
-    if(l.procFirst){
-      const k = l.dataKey+'|'+l.procCodigo;
-      html += `<td rowspan="${l.procRowspan}" class="pr-total-cell">${fmtNumBR(totalPorProc[k])}</td>`;
-    }
-    html += '</tr>';
-  });
-
-  html += `</tbody></table>`;
-
-  html += `
-    <div class="pr-assin">
-      <div>Responsável pela separação</div>
-      <div>Conferente</div>
-      <div>Coordenação de Logística</div>
-    </div>`;
-  return html;
-}
-
 function atualizarPrintProcSelect(){
   const sel = document.getElementById('printProc');
   const codigos = Object.keys(processos).sort();
@@ -4490,12 +4309,9 @@ document.getElementById('printTipo').addEventListener('change', ()=>{
   if(t==='processo') atualizarPrintProcSelect();
 });
 
-// Resolve o filtro atual (tipo/dia/período/processo) em {filtrados, titulo},
-// compartilhado pelos dois botões de impressão (relatório detalhado e
-// romaneio por cidade). Retorna null se faltar preencher algo — já deixando
-// a mensagem de erro no elemento passado.
-function resolverFiltroImpressao(msg){
+document.getElementById('printBtn').addEventListener('click', ()=>{
   const t = document.getElementById('printTipo').value;
+  const msg = document.getElementById('printMsg');
   msg.textContent='';
   let filtrados = [];
   let titulo = '';
@@ -4506,7 +4322,7 @@ function resolverFiltroImpressao(msg){
   }
   else if(t==='dia'){
     const v = document.getElementById('printDia').value;
-    if(!v){ msg.textContent='Selecione o dia.'; msg.className='msg err'; return null; }
+    if(!v){ msg.textContent='Selecione o dia.'; msg.className='msg err'; return; }
     const [ano,mes,dia] = v.split('-').map(Number);
     filtrados = Object.values(processos).filter(p=>p.dia===dia && p.mes===mes && p.ano===ano);
     titulo = `Relatório do dia ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}`;
@@ -4514,10 +4330,10 @@ function resolverFiltroImpressao(msg){
   else if(t==='periodo'){
     const de = document.getElementById('printDe').value;
     const ate = document.getElementById('printAte').value;
-    if(!de || !ate){ msg.textContent='Preencha as duas datas.'; msg.className='msg err'; return null; }
+    if(!de || !ate){ msg.textContent='Preencha as duas datas.'; msg.className='msg err'; return; }
     const dDe = new Date(de+'T00:00:00');
     const dAte = new Date(ate+'T23:59:59');
-    if(dDe > dAte){ msg.textContent='Data inicial maior que a final.'; msg.className='msg err'; return null; }
+    if(dDe > dAte){ msg.textContent='Data inicial maior que a final.'; msg.className='msg err'; return; }
     filtrados = Object.values(processos).filter(p=>{
       const d = procDateObj(p);
       return d >= dDe && d <= dAte;
@@ -4527,33 +4343,13 @@ function resolverFiltroImpressao(msg){
   }
   else if(t==='processo'){
     const cod = document.getElementById('printProc').value;
-    if(!cod){ msg.textContent='Nenhum processo disponível.'; msg.className='msg err'; return null; }
+    if(!cod){ msg.textContent='Nenhum processo disponível.'; msg.className='msg err'; return; }
     filtrados = processos[cod] ? [processos[cod]] : [];
     titulo = `Relatório do processo ${cod}`;
   }
 
-  return {filtrados, titulo};
-}
-
-document.getElementById('printBtn').addEventListener('click', ()=>{
-  const msg = document.getElementById('printMsg');
-  const r = resolverFiltroImpressao(msg);
-  if(!r) return;
-
   const hideExp = document.getElementById('printHideExp').checked;
-  const html = buildPrintHTML(r.filtrados, r.titulo, hideExp);
-  if(!html){ msg.textContent = hideExp ? 'Nada a exibir (todas as notas do filtro estão expedidas).' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
-  document.getElementById('printArea').innerHTML = html;
-  window.print();
-});
-
-document.getElementById('printRomaneioBtn').addEventListener('click', ()=>{
-  const msg = document.getElementById('printMsg');
-  const r = resolverFiltroImpressao(msg);
-  if(!r) return;
-
-  const hideExp = document.getElementById('printHideExp').checked;
-  const html = buildRomaneioHTML(r.filtrados, r.titulo, hideExp);
+  const html = buildPrintHTML(filtrados, titulo, hideExp);
   if(!html){ msg.textContent = hideExp ? 'Nada a exibir (todas as notas do filtro estão expedidas).' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
   document.getElementById('printArea').innerHTML = html;
   window.print();
