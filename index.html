@@ -190,6 +190,8 @@ td.qtd{text-align:right;font-weight:600}
   grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;
   overflow:hidden;flex-shrink:0;
 }
+.etiqueta-intervalo{display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
+.etiqueta-intervalo .et-intervalo-txt{font-size:34pt;font-weight:900;letter-spacing:3px;color:#000;text-align:center}
 /* Row 1: NFE ocupa todo o espaço à esquerda (Volume(NFE) foi para a Row 6) */
 .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
 .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
@@ -564,6 +566,14 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #printArea table{width:100%; border-collapse:collapse; font-size:9.5px;}
 #printArea th, #printArea td{border:1px solid #CCC; padding:3px 5px; text-align:left; vertical-align:top;}
 #printArea th{background:#EEF1F6; color:#1A3A6E; font-size:8.5px; text-transform:uppercase;}
+#printArea .pr-romaneio{width:100%; border-collapse:collapse; font-size:9.5px;}
+#printArea .pr-romaneio th, #printArea .pr-romaneio td{border:1px solid #999; padding:3px 5px; text-align:left; vertical-align:middle;}
+#printArea .pr-romaneio th{background:#EEF1F6; color:#1A3A6E; font-size:8.5px; text-transform:uppercase; text-align:center;}
+#printArea .pr-romaneio .rz-center{text-align:center;}
+#printArea .pr-romaneio .rz-proc{font-weight:800; color:#1A3A6E; text-align:center;}
+#printArea .pr-romaneio .rz-total{font-weight:800; text-align:center; background:#F4F7FB; color:#1A3A6E; font-size:11px;}
+#printArea .pr-romaneio .rz-total-head{background:#1A3A6E; color:#fff;}
+#printArea .pr-romaneio .rz-total-head span{font-size:12px; font-weight:800;}
 #printArea .pr-resumo{
     font-size:10px; color:#333; margin-bottom:10px; border:1px solid #DDD; border-radius:4px; padding:6px 8px;
     background:#F7F8FA;
@@ -817,6 +827,7 @@ body *{visibility:hidden;}
         </div>
       </div>
     </div>
+    <div id="rostoResumoGeral"></div>
     <div id="rostoContent">
       <div class="empty-state"><div class="icon">📄</div>
         <p>Escolha um critério acima (nota, processo, data ou minuta), selecione os itens e clique em <b>Gerar folha rosto</b>.</p>
@@ -872,7 +883,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">relatorio dados nfe + total itens v21</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">romaneio por cidade v24</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1003,6 +1014,7 @@ body *{visibility:hidden;}
         Ocultar notas expedidas
       </label>
       <button class="btn-primary" id="printBtn">Imprimir</button>
+      <button class="btn-primary" id="printRomaneioBtn">📋 Romaneio por Cidade</button>
       <span class="msg" id="printMsg"></span>
     </div>
   </div>
@@ -2011,6 +2023,7 @@ function rostoData(nfsFiltro) {
 function renderRosto() {
   if (typeof roSel !== 'undefined' && roSel) roSel.render();
   const btn = $('btnImprimirRosto'); if (btn && !(roSel && roSel.gerado)) btn.style.display = 'none';
+  const rg = $('rostoResumoGeral'); if (rg) rg.innerHTML = buildResumoCombinado();
 }
 
 // Monta a folha rosto APENAS das NFs selecionadas.
@@ -2171,6 +2184,14 @@ function getCidadeSigla(cidade) {
 // LABEL BUILD
 // ══════════════════════════════════════════════════════════════════════════════
 function buildLabel(p) {
+  // Etiqueta de INTERVALO: separador visual entre SKUs, sem código de barras
+  // nem numeração. Ocupa o mesmo espaço de uma etiqueta normal.
+  if (p._intervalo) {
+    return `
+<div class="etiqueta etiqueta-intervalo">
+  <div class="et-intervalo-txt">***INTERVALO***</div>
+</div>`;
+  }
   // Barcode: NF + MINUTA + COD + volume-produto (3 dígitos)
   const bcVal = `${p.nf}${p.minuta||''}${p.cod}${String(p.volProd).padStart(3,'0')}`;
   const bcId  = `bc_${p.nf}_${p.cod.replace(/\W/g,'')}_${p.volProd}`;
@@ -2342,7 +2363,7 @@ function labelNfsSelecionadas() {
 
 function atualizarContagemSelecao() {
   const nfs = labelNfsSelecionadas();
-  const count = buildLabelParams(nfs).length;
+  const count = buildLabelParams(nfs).filter(l=>!l._intervalo).length;
   $('labelCount').textContent = count;
 }
 
@@ -2456,6 +2477,20 @@ function buildLabelParams(nfsFiltro) {
   // rapidamente uma etiqueta específica em caso de reimpressão avulsa.
   const totalLabels = labels.length;
   labels.forEach((l, idx) => { l.seq = idx + 1; l.totalLabels = totalLabels; });
+
+  // No modo Código/SKU, insere uma ETIQUETA DE INTERVALO entre um SKU e o
+  // próximo — só ENTRE os grupos (nunca antes do primeiro nem após o último).
+  // Ela é apenas um separador visual: não recebe numeração nem conta no total.
+  if (labelSortMode === 'cod' && labels.length > 1) {
+    const comIntervalos = [];
+    for (let i=0; i<labels.length; i++){
+      if (i>0 && String(labels[i].cod) !== String(labels[i-1].cod)) {
+        comIntervalos.push({ _intervalo:true });
+      }
+      comIntervalos.push(labels[i]);
+    }
+    return comIntervalos;
+  }
   return labels;
 }
 
@@ -2475,7 +2510,8 @@ function gerarEtiquetas() {
   }
   const labels = buildLabelParams(nfs);
   grid.innerHTML = labels.map(buildLabel).join('');
-  $('labelCount').textContent = labels.length;
+  const reais = labels.filter(l=>!l._intervalo).length;
+  $('labelCount').textContent = reais;
   renderBarcodes(grid);
   labelGerado = true;
   $('btnImprimirEtq').style.display = 'inline-flex';
@@ -2515,6 +2551,8 @@ function labelPrintCss() {
     body{background:#fff;font-family:Arial,sans-serif}
     .labels-grid{display:block}
     .etiqueta{width:148mm;height:105mm;border:1.5px solid #000;background:#fff;color:#000;font-family:Arial,sans-serif;display:grid;grid-template-columns:1fr 40mm;grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;overflow:hidden;page-break-after:always;break-after:page}
+    .etiqueta-intervalo{display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
+    .etiqueta-intervalo .et-intervalo-txt{font-size:34pt;font-weight:900;letter-spacing:3px;color:#000;text-align:center}
     .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
     .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
     .et-nfe-num .lbl{font-size:7pt;color:#000}
@@ -4292,6 +4330,125 @@ function buildPrintHTML(procsFiltrados, tituloFiltro, hideExpedidos){
   return html;
 }
 
+// ── ROMANEIO POR CIDADE ─────────────────────────────────────────────────────
+// Monta uma tabela única no formato do romaneio: COLETA_EM, PROCESSO, PRAZO,
+// NF, MINUTA, DESTINATÁRIO, CIDADE, UF, VOLUMES — com mesclagem (rowspan) de
+// COLETA_EM e PROCESSO/PRAZO por processo, MINUTA por notas consecutivas da
+// mesma minuta e CIDADE/UF por sequência de mesma cidade dentro do processo.
+// Uma coluna à direita mostra o total de volumes do processo (mesclada) e o
+// cabeçalho traz o total geral.
+function buildRomaneioHTML(procsFiltrados, tituloFiltro, hideExpedidos){
+  if(!procsFiltrados || !procsFiltrados.length) return '';
+
+  const fmtNum = n => (n||0).toLocaleString('pt-BR');
+
+  // Ordena os processos por data de coleta e depois por código
+  const procs = [...procsFiltrados].sort((a,b)=>{
+    const da = procDateObj(a), db = procDateObj(b);
+    if(da-db!==0) return da-db;
+    return a.codigo.localeCompare(b.codigo);
+  });
+
+  // Todas as NFs para buscar quantidade/meta da NF-e em lote
+  const todasNfs = [...new Set(procs.flatMap(p=>p.nfs))];
+  let qtdNfe = {}, metaNfe = {};
+  try{ if(window.getNfeQtdBatch)  qtdNfe  = window.getNfeQtdBatch(todasNfs)  || {}; }catch(e){}
+  try{ if(window.getNfeMetaBatch) metaNfe = window.getNfeMetaBatch(todasNfs) || {}; }catch(e){}
+
+  // Monta as linhas (uma por NF), já resolvendo minuta/dest/cidade/uf/volume
+  const linhasPorProc = []; // [{proc, prazo, coletaEm, total, linhas:[{nf,minuta,dest,cidade,uf,vol}]}]
+  let grandTotal = 0;
+
+  procs.forEach(p=>{
+    const coletaEm = `${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}`;
+    const prazo = fmtDate(prazoDate(p));
+    let nfs = [...p.nfs].sort((a,b)=>Number(a)-Number(b));
+    if(hideExpedidos) nfs = nfs.filter(nf=>getStatusNf(p,nf)!=='EXPEDIDA');
+    if(!nfs.length) return;
+
+    const linhas = nfs.map(nf=>{
+      const m = nfToMinuta[nf];
+      const mn = metaNfe[nf] || {};
+      const dest = mn.dest || (m ? (m.destinatario||'') : '');
+      // cidade/uf: prioridade NF-e; senão separa da minuta ("CIDADE - UF")
+      let cidade = mn.cidade || '', uf = mn.uf || '';
+      if(!cidade && m && m.cidadeDestino){
+        const mm = String(m.cidadeDestino).match(/^(.*?)[\s]*[-\/][\s]*([A-Za-z]{2})$/);
+        if(mm){ cidade = mm[1].trim(); uf = mm[2].toUpperCase(); }
+        else cidade = m.cidadeDestino;
+      }
+      const vol = qtdNfe[nf] || 0;
+      grandTotal += vol;
+      return { nf, minuta: m ? (m.id||'') : '', dest, cidade: cidade||'—', uf: uf||'—', vol };
+    });
+    const total = linhas.reduce((s,l)=>s+l.vol,0);
+    linhasPorProc.push({ proc:p.codigo, prazo, coletaEm, total, linhas });
+  });
+
+  if(!linhasPorProc.length) return '';
+
+  // helper: calcula grupos de rowspan consecutivos por uma chave
+  const gruposConsecutivos = (arr, keyFn) => {
+    const spans = new Array(arr.length).fill(0);
+    let i=0;
+    while(i<arr.length){
+      let j=i+1;
+      while(j<arr.length && keyFn(arr[j])===keyFn(arr[i])) j++;
+      spans[i] = j-i; // primeira linha do grupo recebe o rowspan; as demais ficam 0
+      i=j;
+    }
+    return spans;
+  };
+
+  let body = '';
+  linhasPorProc.forEach(bloco=>{
+    const n = bloco.linhas.length;
+    // rowspans internos ao processo
+    const spanMinuta = gruposConsecutivos(bloco.linhas, l=>l.minuta);
+    const spanCidade = gruposConsecutivos(bloco.linhas, l=>l.cidade+'|'+l.uf);
+    bloco.linhas.forEach((l, idx)=>{
+      let tds = '';
+      if(idx===0){
+        tds += `<td rowspan="${n}" class="rz-center">${bloco.coletaEm}</td>`;
+        tds += `<td rowspan="${n}" class="rz-proc">${esc(bloco.proc)}</td>`;
+        tds += `<td rowspan="${n}" class="rz-center">${bloco.prazo}</td>`;
+      }
+      tds += `<td class="rz-center">${esc(l.nf)}</td>`;
+      if(spanMinuta[idx]>0) tds += `<td rowspan="${spanMinuta[idx]}" class="rz-center">${esc(l.minuta||'—')}</td>`;
+      tds += `<td>${esc(l.dest)||'—'}</td>`;
+      if(spanCidade[idx]>0){
+        tds += `<td rowspan="${spanCidade[idx]}">${esc(l.cidade)}</td>`;
+        tds += `<td rowspan="${spanCidade[idx]}" class="rz-center">${esc(l.uf)}</td>`;
+      }
+      tds += `<td class="rz-center">${l.vol?fmtNum(l.vol):'—'}</td>`;
+      if(idx===0){
+        tds += `<td rowspan="${n}" class="rz-total">${fmtNum(bloco.total)}</td>`;
+      }
+      body += `<tr>${tds}</tr>`;
+    });
+  });
+
+  const totalNfs = linhasPorProc.reduce((s,b)=>s+b.linhas.length,0);
+
+  return `
+    <div class="pr-header">
+      <div>
+        <h1>Romaneio por Cidade</h1>
+        <div class="pr-sub">${esc(tituloFiltro)} · ${linhasPorProc.length} processo(s) · ${totalNfs} NF(s) · gerado em ${new Date().toLocaleString('pt-BR')}</div>
+      </div>
+    </div>
+    <table class="pr-romaneio">
+      <thead>
+        <tr>
+          <th>Coleta em</th><th>Processo</th><th>Prazo</th><th>NF</th><th>Minuta</th>
+          <th>Destinatário</th><th>Cidade</th><th>UF</th><th>Vol.</th>
+          <th class="rz-total-head">Total<br><span>${fmtNum(grandTotal)}</span></th>
+        </tr>
+      </thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
 function atualizarPrintProcSelect(){
   const sel = document.getElementById('printProc');
   const codigos = Object.keys(processos).sort();
@@ -4309,47 +4466,64 @@ document.getElementById('printTipo').addEventListener('change', ()=>{
   if(t==='processo') atualizarPrintProcSelect();
 });
 
-document.getElementById('printBtn').addEventListener('click', ()=>{
+// Resolve o filtro selecionado no card de impressão, retornando
+// { filtrados:[processos], titulo, erro }. Compartilhado pelos dois relatórios
+// (Relatório detalhado e Romaneio por Cidade).
+function resolverFiltroImpressao(){
   const t = document.getElementById('printTipo').value;
-  const msg = document.getElementById('printMsg');
-  msg.textContent='';
-  let filtrados = [];
-  let titulo = '';
-
   if(t==='geral'){
-    filtrados = Object.values(processos);
-    titulo = 'Relatório Geral — todos os processos';
+    return { filtrados: Object.values(processos), titulo: 'Relatório Geral — todos os processos' };
   }
-  else if(t==='dia'){
+  if(t==='dia'){
     const v = document.getElementById('printDia').value;
-    if(!v){ msg.textContent='Selecione o dia.'; msg.className='msg err'; return; }
+    if(!v) return { erro:'Selecione o dia.' };
     const [ano,mes,dia] = v.split('-').map(Number);
-    filtrados = Object.values(processos).filter(p=>p.dia===dia && p.mes===mes && p.ano===ano);
-    titulo = `Relatório do dia ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}`;
+    return {
+      filtrados: Object.values(processos).filter(p=>p.dia===dia && p.mes===mes && p.ano===ano),
+      titulo: `Relatório do dia ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}`
+    };
   }
-  else if(t==='periodo'){
+  if(t==='periodo'){
     const de = document.getElementById('printDe').value;
     const ate = document.getElementById('printAte').value;
-    if(!de || !ate){ msg.textContent='Preencha as duas datas.'; msg.className='msg err'; return; }
+    if(!de || !ate) return { erro:'Preencha as duas datas.' };
     const dDe = new Date(de+'T00:00:00');
     const dAte = new Date(ate+'T23:59:59');
-    if(dDe > dAte){ msg.textContent='Data inicial maior que a final.'; msg.className='msg err'; return; }
-    filtrados = Object.values(processos).filter(p=>{
-      const d = procDateObj(p);
-      return d >= dDe && d <= dAte;
-    });
+    if(dDe > dAte) return { erro:'Data inicial maior que a final.' };
     const f = s=>{const [a,m,d]=s.split('-'); return `${d}/${m}/${a}`;};
-    titulo = `Relatório do período ${f(de)} a ${f(ate)}`;
+    return {
+      filtrados: Object.values(processos).filter(p=>{ const d=procDateObj(p); return d>=dDe && d<=dAte; }),
+      titulo: `Relatório do período ${f(de)} a ${f(ate)}`
+    };
   }
-  else if(t==='processo'){
+  if(t==='processo'){
     const cod = document.getElementById('printProc').value;
-    if(!cod){ msg.textContent='Nenhum processo disponível.'; msg.className='msg err'; return; }
-    filtrados = processos[cod] ? [processos[cod]] : [];
-    titulo = `Relatório do processo ${cod}`;
+    if(!cod) return { erro:'Nenhum processo disponível.' };
+    return { filtrados: processos[cod] ? [processos[cod]] : [], titulo: `Relatório do processo ${cod}` };
   }
+  return { filtrados: [], titulo: '' };
+}
 
+document.getElementById('printBtn').addEventListener('click', ()=>{
+  const msg = document.getElementById('printMsg');
+  msg.textContent='';
+  const { filtrados, titulo, erro } = resolverFiltroImpressao();
+  if(erro){ msg.textContent=erro; msg.className='msg err'; return; }
   const hideExp = document.getElementById('printHideExp').checked;
   const html = buildPrintHTML(filtrados, titulo, hideExp);
+  if(!html){ msg.textContent = hideExp ? 'Nada a exibir (todas as notas do filtro estão expedidas).' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
+  document.getElementById('printArea').innerHTML = html;
+  window.print();
+});
+
+// ── ROMANEIO POR CIDADE ────────────────────────────────────────────────────
+document.getElementById('printRomaneioBtn').addEventListener('click', ()=>{
+  const msg = document.getElementById('printMsg');
+  msg.textContent='';
+  const { filtrados, titulo, erro } = resolverFiltroImpressao();
+  if(erro){ msg.textContent=erro; msg.className='msg err'; return; }
+  const hideExp = document.getElementById('printHideExp').checked;
+  const html = buildRomaneioHTML(filtrados, titulo, hideExp);
   if(!html){ msg.textContent = hideExp ? 'Nada a exibir (todas as notas do filtro estão expedidas).' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
   document.getElementById('printArea').innerHTML = html;
   window.print();
