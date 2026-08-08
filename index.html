@@ -190,8 +190,9 @@ td.qtd{text-align:right;font-weight:600}
   grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;
   overflow:hidden;flex-shrink:0;
 }
-.etiqueta-intervalo{display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
+.etiqueta-intervalo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6mm;border:3px dashed #000;background:#fff}
 .etiqueta-intervalo .et-intervalo-txt{font-size:34pt;font-weight:900;letter-spacing:3px;color:#000;text-align:center}
+.etiqueta-intervalo .et-intervalo-proc{font-size:102pt;font-weight:900;letter-spacing:1px;color:#000;text-align:center;line-height:1}
 /* Row 1: NFE ocupa todo o espaço à esquerda (Volume(NFE) foi para a Row 6) */
 .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
 .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
@@ -776,6 +777,7 @@ body *{visibility:hidden;}
             <div class="tabs">
               <button class="tab-btn active" id="btnSortNf"  onclick="setLabelSort('nf')">Nota Fiscal</button>
               <button class="tab-btn"        id="btnSortCod" onclick="setLabelSort('cod')">Código (SKU)</button>
+              <button class="tab-btn"        id="btnSortCodDesc" onclick="setLabelSort('codDesc')">Código (Z→A)</button>
             </div>
           </div>
           <div class="label-count-badge">Etiquetas na seleção: <b id="labelCount">0</b></div>
@@ -2183,13 +2185,32 @@ function getCidadeSigla(cidade) {
 // ══════════════════════════════════════════════════════════════════════════════
 // LABEL BUILD
 // ══════════════════════════════════════════════════════════════════════════════
+// Mapa NF -> código do PROCESSO (da aba Acompanhamento de Cargas)
+function buildNfProcessoMap() {
+  const map = {};
+  if (window.CargasDB && window.CargasDB._ready && window.CargasDB.listProcessos) {
+    try {
+      window.CargasDB.listProcessos().forEach(p => {
+        (p.nfs || []).forEach(nf => { if (map[nf] === undefined) map[nf] = p.codigo; });
+      });
+    } catch (e) {}
+  }
+  return map;
+}
+// Últimas 3 letras/caracteres do código do processo (ex.: 202607PRTEXPU -> XPU)
+function proc3(codigo) {
+  return String(codigo == null ? '' : codigo).trim().toUpperCase().slice(-3);
+}
+
 function buildLabel(p) {
   // Etiqueta de INTERVALO: separador visual entre SKUs, sem código de barras
   // nem numeração. Ocupa o mesmo espaço de uma etiqueta normal.
   if (p._intervalo) {
+    const proc3d = proc3(p.processo);
     return `
 <div class="etiqueta etiqueta-intervalo">
   <div class="et-intervalo-txt">***INTERVALO***</div>
+  ${ proc3d ? `<div class="et-intervalo-proc">${esc(proc3d)}</div>` : '' }
 </div>`;
   }
   // Barcode: NF + MINUTA + COD + volume-produto (3 dígitos)
@@ -2255,6 +2276,8 @@ function setLabelSort(mode) {
   labelSortMode = mode;
   $('btnSortNf').classList.toggle('active', mode==='nf');
   $('btnSortCod').classList.toggle('active', mode==='cod');
+  const btnDesc = $('btnSortCodDesc');
+  if (btnDesc) btnDesc.classList.toggle('active', mode==='codDesc');
   if (labelGerado) gerarEtiquetas(); // re-gera na nova ordem só se já foi gerado
 }
 
@@ -2445,6 +2468,7 @@ var roSel = criarSeletor('ro', ()=>gerarRosto());
 function buildLabelParams(nfsFiltro) {
   let nfOrder = [...new Set(allItems.map(i=>i.nf))];
   if (nfsFiltro && nfsFiltro.size) nfOrder = nfOrder.filter(nf=>nfsFiltro.has(nf));
+  const procMap = buildNfProcessoMap();
   const labels = [];
   for (const nf of nfOrder) {
     const nfItems  = allItems.filter(i=>i.nf===nf);
@@ -2452,6 +2476,7 @@ function buildLabelParams(nfsFiltro) {
     const totalNfe = nfItems.reduce((s,i)=>s+Math.max(1,Math.floor(i.qtd)),0);
     const sigla    = getCidadeSigla(meta.cidade||'');
     const minuta   = nfMinutas[nf]||'';
+    const processo = procMap[nf] || '';
     let volNfe=0;
     for (const item of nfItems) {
       const totalProd = Math.max(1, Math.floor(item.qtd));
@@ -2459,14 +2484,15 @@ function buildLabelParams(nfsFiltro) {
         volNfe++;
         labels.push({ nf, dest:meta.dest||'', cidade:meta.cidade||'',
           uf:meta.uf||'', sigla, cod:item.cod, sku:item.sku,
-          item:item.item, volNfe, totalNfe, volProd:vp, totalProd, minuta });
+          item:item.item, volNfe, totalNfe, volProd:vp, totalProd, minuta, processo });
       }
     }
   }
-  if (labelSortMode === 'cod') {
+  if (labelSortMode === 'cod' || labelSortMode === 'codDesc') {
+    const dir = labelSortMode === 'codDesc' ? -1 : 1;
     labels.sort((a,b) => {
       const c = String(a.cod).localeCompare(String(b.cod), undefined, { numeric:true, sensitivity:'base' });
-      if (c !== 0) return c;
+      if (c !== 0) return c * dir;
       const n = String(a.nf).localeCompare(String(b.nf), undefined, { numeric:true });
       if (n !== 0) return n;
       return a.volProd - b.volProd;
@@ -2481,11 +2507,11 @@ function buildLabelParams(nfsFiltro) {
   // No modo Código/SKU, insere uma ETIQUETA DE INTERVALO entre um SKU e o
   // próximo — só ENTRE os grupos (nunca antes do primeiro nem após o último).
   // Ela é apenas um separador visual: não recebe numeração nem conta no total.
-  if (labelSortMode === 'cod' && labels.length > 1) {
+  if ((labelSortMode === 'cod' || labelSortMode === 'codDesc') && labels.length > 1) {
     const comIntervalos = [];
     for (let i=0; i<labels.length; i++){
       if (i>0 && String(labels[i].cod) !== String(labels[i-1].cod)) {
-        comIntervalos.push({ _intervalo:true });
+        comIntervalos.push({ _intervalo:true, processo: labels[i].processo });
       }
       comIntervalos.push(labels[i]);
     }
@@ -2551,8 +2577,9 @@ function labelPrintCss() {
     body{background:#fff;font-family:Arial,sans-serif}
     .labels-grid{display:block}
     .etiqueta{width:148mm;height:105mm;border:1.5px solid #000;background:#fff;color:#000;font-family:Arial,sans-serif;display:grid;grid-template-columns:1fr 40mm;grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;overflow:hidden;page-break-after:always;break-after:page}
-    .etiqueta-intervalo{display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
+    .etiqueta-intervalo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6mm;border:3px dashed #000;background:#fff}
     .etiqueta-intervalo .et-intervalo-txt{font-size:34pt;font-weight:900;letter-spacing:3px;color:#000;text-align:center}
+    .etiqueta-intervalo .et-intervalo-proc{font-size:102pt;font-weight:900;letter-spacing:1px;color:#000;text-align:center;line-height:1}
     .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
     .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
     .et-nfe-num .lbl{font-size:7pt;color:#000}
