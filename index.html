@@ -192,7 +192,7 @@ td.qtd{text-align:right;font-weight:600}
   overflow:hidden;flex-shrink:0;
 }
 .etiqueta-intervalo{display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
-.etiqueta-intervalo .et-intervalo-txt{font-size:34pt;font-weight:900;letter-spacing:3px;color:#000;text-align:center}
+.etiqueta-intervalo .et-intervalo-txt{font-size:150pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#000;text-align:center;line-height:1}
 /* Row 1: NFE ocupa todo o espaço à esquerda (Volume(NFE) foi para a Row 6) */
 .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
 .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
@@ -802,6 +802,7 @@ body *{visibility:hidden;}
               <button class="tab-btn active" id="btnSortNf"  onclick="setLabelSort('nf')">Nota Fiscal</button>
               <button class="tab-btn"        id="btnSortCod" onclick="setLabelSort('cod')">Código (SKU)</button>
             </div>
+            <button class="tab-btn" id="btnSortDir" onclick="toggleLabelSortDir()" title="Inverter a ordem (crescente / decrescente)" style="margin-left:6px;">↓ A-Z</button>
           </div>
           <div class="label-count-badge">Etiquetas na seleção: <b id="labelCount">0</b></div>
           <button class="btn-purple" onclick="gerarEtiquetas()">✨ Gerar etiquetas</button>
@@ -908,7 +909,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">dash comparativo coletado x expedido v26</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">separador letras processo 150pt v29</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -2264,12 +2265,14 @@ function getCidadeSigla(cidade) {
 // LABEL BUILD
 // ══════════════════════════════════════════════════════════════════════════════
 function buildLabel(p) {
-  // Etiqueta de INTERVALO: separador visual entre SKUs, sem código de barras
-  // nem numeração. Ocupa o mesmo espaço de uma etiqueta normal.
+  // Etiqueta SEPARADORA entre SKUs: mostra as 3 últimas letras do processo,
+  // centralizadas, no estilo da sigla da cidade porém 200% maior (o triplo).
+  // Sem código de barras e sem numeração.
   if (p._intervalo) {
+    const tag = p.procTag || '***';
     return `
 <div class="etiqueta etiqueta-intervalo">
-  <div class="et-intervalo-txt">***INTERVALO***</div>
+  <div class="et-intervalo-txt">${esc(tag)}</div>
 </div>`;
   }
   // Barcode: NF + MINUTA + COD + volume-produto (3 dígitos)
@@ -2327,6 +2330,7 @@ function buildLabel(p) {
 // ORDENAÇÃO DAS ETIQUETAS (por Nota Fiscal ou por Código/SKU)
 // ══════════════════════════════════════════════════════════════════════════════
 let labelSortMode = 'nf'; // 'nf' | 'cod'
+let labelSortDir = 'asc';  // 'asc' (A-Z / crescente) | 'desc' (Z-A / decrescente)
 let labelGenMode = 'nota'; // 'nota' | 'processo' | 'data' | 'minuta'
 let labelSelecionados = new Set(); // chaves marcadas no seletor atual
 let labelGerado = false; // já foi gerada a pré-visualização?
@@ -2336,6 +2340,17 @@ function setLabelSort(mode) {
   $('btnSortNf').classList.toggle('active', mode==='nf');
   $('btnSortCod').classList.toggle('active', mode==='cod');
   if (labelGerado) gerarEtiquetas(); // re-gera na nova ordem só se já foi gerado
+}
+
+// Inverte a ordem (crescente A-Z ↔ decrescente Z-A). Vale para os dois modos.
+function toggleLabelSortDir() {
+  labelSortDir = (labelSortDir === 'asc') ? 'desc' : 'asc';
+  const b = $('btnSortDir');
+  if (b) {
+    b.textContent = labelSortDir === 'asc' ? '↓ A-Z' : '↑ Z-A';
+    b.classList.toggle('active', labelSortDir === 'desc');
+  }
+  if (labelGerado) gerarEtiquetas();
 }
 
 // Alterna o critério de geração (nota, processo, data, minuta) e repopula as opções
@@ -2543,6 +2558,9 @@ function buildLabelParams(nfsFiltro) {
       }
     }
   }
+  // Ordenação base (crescente). No modo Nota Fiscal, ordena por número da NF;
+  // no modo Código, por código e depois NF. A direção (asc/desc) é aplicada
+  // logo em seguida invertendo a lista final.
   if (labelSortMode === 'cod') {
     labels.sort((a,b) => {
       const c = String(a.cod).localeCompare(String(b.cod), undefined, { numeric:true, sensitivity:'base' });
@@ -2551,21 +2569,42 @@ function buildLabelParams(nfsFiltro) {
       if (n !== 0) return n;
       return a.volProd - b.volProd;
     });
+  } else {
+    // modo Nota Fiscal: ordena por número da NF, mantendo a sequência de volumes
+    labels.sort((a,b) => {
+      const n = String(a.nf).localeCompare(String(b.nf), undefined, { numeric:true });
+      if (n !== 0) return n;
+      return a.volNfe - b.volNfe;
+    });
   }
-  // Numeração global da sequência de impressão (1/1700, 2/1700...), calculada
-  // já na ordem final em que as etiquetas serão impressas — usada para achar
-  // rapidamente uma etiqueta específica em caso de reimpressão avulsa.
+  // Direção Z-A: inverte a ordem final das etiquetas.
+  if (labelSortDir === 'desc') labels.reverse();
+
+  // Numeração global da sequência de impressão, já na ordem final (após a
+  // eventual inversão) — para achar rapidamente uma etiqueta específica.
   const totalLabels = labels.length;
   labels.forEach((l, idx) => { l.seq = idx + 1; l.totalLabels = totalLabels; });
 
-  // No modo Código/SKU, insere uma ETIQUETA DE INTERVALO entre um SKU e o
+  // No modo Código/SKU, insere uma ETIQUETA SEPARADORA entre um SKU e o
   // próximo — só ENTRE os grupos (nunca antes do primeiro nem após o último).
-  // Ela é apenas um separador visual: não recebe numeração nem conta no total.
+  // A etiqueta mostra as 3 últimas letras do PROCESSO do SKU seguinte.
   if (labelSortMode === 'cod' && labels.length > 1) {
+    // mapa NF → código do processo (via ponte com o Acompanhamento de Cargas)
+    const nfParaProc = {};
+    let procList = [];
+    if (window.CargasDB && window.CargasDB.listProcessos) {
+      try { procList = window.CargasDB.listProcessos(); } catch(e){ procList = []; }
+    }
+    procList.forEach(p=>{ (p.nfs||[]).forEach(nf=>{ nfParaProc[nf] = p.codigo; }); });
+    // 3 últimas letras do processo (ex.: 202607PRTEXOR → XOR)
+    const tresLetras = nf => {
+      const cod = nfParaProc[nf] || '';
+      return cod ? cod.slice(-3).toUpperCase() : '';
+    };
     const comIntervalos = [];
     for (let i=0; i<labels.length; i++){
       if (i>0 && String(labels[i].cod) !== String(labels[i-1].cod)) {
-        comIntervalos.push({ _intervalo:true });
+        comIntervalos.push({ _intervalo:true, procTag: tresLetras(labels[i].nf) });
       }
       comIntervalos.push(labels[i]);
     }
@@ -2632,7 +2671,7 @@ function labelPrintCss() {
     .labels-grid{display:block}
     .etiqueta{width:148mm;height:105mm;border:1.5px solid #000;background:#fff;color:#000;font-family:Arial,sans-serif;display:grid;grid-template-columns:1fr 40mm;grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;overflow:hidden;page-break-after:always;break-after:page}
     .etiqueta-intervalo{display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
-    .etiqueta-intervalo .et-intervalo-txt{font-size:34pt;font-weight:900;letter-spacing:3px;color:#000;text-align:center}
+    .etiqueta-intervalo .et-intervalo-txt{font-size:150pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#000;text-align:center;line-height:1}
     .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
     .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
     .et-nfe-num .lbl{font-size:7pt;color:#000}
