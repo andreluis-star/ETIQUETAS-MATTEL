@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- Firebase (compat) — base de dados compartilhada em tempo real para a aba Acompanhamento de Cargas -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -190,9 +191,8 @@ td.qtd{text-align:right;font-weight:600}
   grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;
   overflow:hidden;flex-shrink:0;
 }
-.etiqueta-intervalo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6mm;border:3px dashed #000;background:#fff}
+.etiqueta-intervalo{display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
 .etiqueta-intervalo .et-intervalo-txt{font-size:34pt;font-weight:900;letter-spacing:3px;color:#000;text-align:center}
-.etiqueta-intervalo .et-intervalo-proc{font-size:102pt;font-weight:900;letter-spacing:1px;color:#000;text-align:center;line-height:1}
 /* Row 1: NFE ocupa todo o espaço à esquerda (Volume(NFE) foi para a Row 6) */
 .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
 .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
@@ -242,6 +242,29 @@ td.qtd{text-align:right;font-weight:600}
 
 /* ── RESUMO TAB ────────────────────────────────────────────────────────────── */
 .resumo-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.dash-wrap{max-width:1200px;margin:0 auto;padding:20px}
+.dash-head h2{font-size:20px;margin-bottom:2px}
+.dash-head span{font-size:13px;color:var(--muted)}
+.dash-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin:16px 0}
+.dash-filters label{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.dash-filters select,.dash-filters input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:6px 9px;font-size:13px}
+.dash-scope{font-size:12px;color:var(--accent);font-weight:600}
+.dash-scope.err{color:var(--red)}
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.dash-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.dash-kpi-val{font-size:28px;font-weight:800;color:var(--accent)}
+.dash-kpi-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+.dash-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+@media(max-width:820px){.dash-charts{grid-template-columns:1fr}}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.dash-card h3{font-size:14px;margin-bottom:12px;color:var(--text)}
+.dash-card canvas{max-height:260px}
+.dash-table-wrap{overflow-x:auto}
+.dash-table{width:100%;border-collapse:collapse;font-size:13px}
+.dash-table th{background:var(--surface2);padding:9px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.dash-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.dash-table .dash-total td{background:var(--surface2);border-top:2px solid var(--accent);font-size:14px}
+.dash-empty{padding:30px;text-align:center;color:var(--muted);font-size:14px}
 .resumo-combinado{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:18px}
 .resumo-combinado h3{font-size:15px;margin-bottom:12px}
 .rc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
@@ -609,6 +632,7 @@ body *{visibility:hidden;}
 <div class="app-switch">
   <button class="app-switch-btn active" id="btnSectionNfe"    onclick="switchSection('nfe')">📄 Conversor de NF-e</button>
   <button class="app-switch-btn"        id="btnSectionCargas" onclick="switchSection('cargas')">🚚 Acompanhamento de Cargas</button>
+  <button class="app-switch-btn"        id="btnSectionDash"   onclick="switchSection('dash')">📈 Dashboard</button>
 </div>
 
 <div class="container" id="appNfe">
@@ -777,7 +801,6 @@ body *{visibility:hidden;}
             <div class="tabs">
               <button class="tab-btn active" id="btnSortNf"  onclick="setLabelSort('nf')">Nota Fiscal</button>
               <button class="tab-btn"        id="btnSortCod" onclick="setLabelSort('cod')">Código (SKU)</button>
-              <button class="tab-btn"        id="btnSortCodDesc" onclick="setLabelSort('codDesc')">Código (Z→A)</button>
             </div>
           </div>
           <div class="label-count-badge">Etiquetas na seleção: <b id="labelCount">0</b></div>
@@ -885,7 +908,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">romaneio por cidade v24</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">dash comparativo coletado x expedido v26</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1058,6 +1081,61 @@ body *{visibility:hidden;}
 <div id="printArea"></div>
 
 </div><!-- /tabCargas -->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     DASHBOARD — desempenho operacional (fotografia atual por data/período)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tabDash" style="display:none">
+  <div class="dash-wrap">
+    <div class="dash-head">
+      <h2>📈 Dashboard Operacional</h2>
+      <span>Fotografia atual dos processos, notas, minutas, volumes e SKUs — da coleta à expedição.</span>
+    </div>
+
+    <div class="dash-filters">
+      <label>Filtro:
+        <select id="dashTipo">
+          <option value="geral">Geral (tudo)</option>
+          <option value="dia">Por dia</option>
+          <option value="periodo">Por período</option>
+          <option value="processo">Por processo</option>
+          <option value="minuta">Por minuta</option>
+        </select>
+      </label>
+      <span id="dashDiaWrap" style="display:none;"><label>Dia: <input type="date" id="dashDia"></label></span>
+      <span id="dashPeriodoWrap" style="display:none;">
+        <label>De: <input type="date" id="dashDe"></label>
+        <label>Até: <input type="date" id="dashAte"></label>
+      </span>
+      <span id="dashProcWrap" style="display:none;"><label>Processo: <select id="dashProc"></select></label></span>
+      <span id="dashMinutaWrap" style="display:none;"><label>Minuta: <select id="dashMinuta"></select></label></span>
+      <button class="btn-primary" id="dashAplicarBtn">Aplicar</button>
+      <span class="dash-scope" id="dashScope"></span>
+    </div>
+
+    <!-- KPIs -->
+    <div class="dash-kpis" id="dashKpis"></div>
+
+    <!-- Gráficos -->
+    <div class="dash-charts">
+      <div class="dash-card">
+        <h3>Distribuição por status (notas)</h3>
+        <canvas id="dashStatusChart" height="220"></canvas>
+      </div>
+      <div class="dash-card">
+        <h3>Volumes por data de coleta — Coletado × Expedido</h3>
+        <canvas id="dashVolChart" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- Tabela por data -->
+    <div class="dash-card">
+      <h3>Detalhamento por data de coleta</h3>
+      <div class="dash-table-wrap"><table class="dash-table" id="dashTable"></table></div>
+    </div>
+  </div>
+</div>
+
 
 <div class="toast" id="toast"></div>
 <div id="labelBatchModal" class="lb-modal-wrap" style="display:none"></div>
@@ -2185,32 +2263,13 @@ function getCidadeSigla(cidade) {
 // ══════════════════════════════════════════════════════════════════════════════
 // LABEL BUILD
 // ══════════════════════════════════════════════════════════════════════════════
-// Mapa NF -> código do PROCESSO (da aba Acompanhamento de Cargas)
-function buildNfProcessoMap() {
-  const map = {};
-  if (window.CargasDB && window.CargasDB._ready && window.CargasDB.listProcessos) {
-    try {
-      window.CargasDB.listProcessos().forEach(p => {
-        (p.nfs || []).forEach(nf => { if (map[nf] === undefined) map[nf] = p.codigo; });
-      });
-    } catch (e) {}
-  }
-  return map;
-}
-// Últimas 3 letras/caracteres do código do processo (ex.: 202607PRTEXPU -> XPU)
-function proc3(codigo) {
-  return String(codigo == null ? '' : codigo).trim().toUpperCase().slice(-3);
-}
-
 function buildLabel(p) {
   // Etiqueta de INTERVALO: separador visual entre SKUs, sem código de barras
   // nem numeração. Ocupa o mesmo espaço de uma etiqueta normal.
   if (p._intervalo) {
-    const proc3d = proc3(p.processo);
     return `
 <div class="etiqueta etiqueta-intervalo">
   <div class="et-intervalo-txt">***INTERVALO***</div>
-  ${ proc3d ? `<div class="et-intervalo-proc">${esc(proc3d)}</div>` : '' }
 </div>`;
   }
   // Barcode: NF + MINUTA + COD + volume-produto (3 dígitos)
@@ -2276,8 +2335,6 @@ function setLabelSort(mode) {
   labelSortMode = mode;
   $('btnSortNf').classList.toggle('active', mode==='nf');
   $('btnSortCod').classList.toggle('active', mode==='cod');
-  const btnDesc = $('btnSortCodDesc');
-  if (btnDesc) btnDesc.classList.toggle('active', mode==='codDesc');
   if (labelGerado) gerarEtiquetas(); // re-gera na nova ordem só se já foi gerado
 }
 
@@ -2468,7 +2525,6 @@ var roSel = criarSeletor('ro', ()=>gerarRosto());
 function buildLabelParams(nfsFiltro) {
   let nfOrder = [...new Set(allItems.map(i=>i.nf))];
   if (nfsFiltro && nfsFiltro.size) nfOrder = nfOrder.filter(nf=>nfsFiltro.has(nf));
-  const procMap = buildNfProcessoMap();
   const labels = [];
   for (const nf of nfOrder) {
     const nfItems  = allItems.filter(i=>i.nf===nf);
@@ -2476,7 +2532,6 @@ function buildLabelParams(nfsFiltro) {
     const totalNfe = nfItems.reduce((s,i)=>s+Math.max(1,Math.floor(i.qtd)),0);
     const sigla    = getCidadeSigla(meta.cidade||'');
     const minuta   = nfMinutas[nf]||'';
-    const processo = procMap[nf] || '';
     let volNfe=0;
     for (const item of nfItems) {
       const totalProd = Math.max(1, Math.floor(item.qtd));
@@ -2484,15 +2539,14 @@ function buildLabelParams(nfsFiltro) {
         volNfe++;
         labels.push({ nf, dest:meta.dest||'', cidade:meta.cidade||'',
           uf:meta.uf||'', sigla, cod:item.cod, sku:item.sku,
-          item:item.item, volNfe, totalNfe, volProd:vp, totalProd, minuta, processo });
+          item:item.item, volNfe, totalNfe, volProd:vp, totalProd, minuta });
       }
     }
   }
-  if (labelSortMode === 'cod' || labelSortMode === 'codDesc') {
-    const dir = labelSortMode === 'codDesc' ? -1 : 1;
+  if (labelSortMode === 'cod') {
     labels.sort((a,b) => {
       const c = String(a.cod).localeCompare(String(b.cod), undefined, { numeric:true, sensitivity:'base' });
-      if (c !== 0) return c * dir;
+      if (c !== 0) return c;
       const n = String(a.nf).localeCompare(String(b.nf), undefined, { numeric:true });
       if (n !== 0) return n;
       return a.volProd - b.volProd;
@@ -2507,11 +2561,11 @@ function buildLabelParams(nfsFiltro) {
   // No modo Código/SKU, insere uma ETIQUETA DE INTERVALO entre um SKU e o
   // próximo — só ENTRE os grupos (nunca antes do primeiro nem após o último).
   // Ela é apenas um separador visual: não recebe numeração nem conta no total.
-  if ((labelSortMode === 'cod' || labelSortMode === 'codDesc') && labels.length > 1) {
+  if (labelSortMode === 'cod' && labels.length > 1) {
     const comIntervalos = [];
     for (let i=0; i<labels.length; i++){
       if (i>0 && String(labels[i].cod) !== String(labels[i-1].cod)) {
-        comIntervalos.push({ _intervalo:true, processo: labels[i].processo });
+        comIntervalos.push({ _intervalo:true });
       }
       comIntervalos.push(labels[i]);
     }
@@ -2577,9 +2631,8 @@ function labelPrintCss() {
     body{background:#fff;font-family:Arial,sans-serif}
     .labels-grid{display:block}
     .etiqueta{width:148mm;height:105mm;border:1.5px solid #000;background:#fff;color:#000;font-family:Arial,sans-serif;display:grid;grid-template-columns:1fr 40mm;grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;overflow:hidden;page-break-after:always;break-after:page}
-    .etiqueta-intervalo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6mm;border:3px dashed #000;background:#fff}
+    .etiqueta-intervalo{display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
     .etiqueta-intervalo .et-intervalo-txt{font-size:34pt;font-weight:900;letter-spacing:3px;color:#000;text-align:center}
-    .etiqueta-intervalo .et-intervalo-proc{font-size:102pt;font-weight:900;letter-spacing:1px;color:#000;text-align:center;line-height:1}
     .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
     .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
     .et-nfe-num .lbl{font-size:7pt;color:#000}
@@ -2858,6 +2911,22 @@ window.getNfeQtdBatch = function(nfsArr){
   return out;
 };
 
+// Retorna o conjunto de SKUs (códigos) por NF e a contagem global de SKUs
+// distintos entre as NFs informadas — usado pelo Dashboard.
+window.getNfeSkusInfo = function(nfsArr){
+  const set = nfsArr ? new Set(nfsArr) : null;
+  const porNf = {};        // nf -> Set de códigos
+  const distintos = new Set();
+  for (const it of allItems){
+    if (set && !set.has(it.nf)) continue;
+    (porNf[it.nf] = porNf[it.nf] || new Set()).add(it.cod);
+    distintos.add(it.cod);
+  }
+  const skusPorNf = {};
+  Object.keys(porNf).forEach(nf=>{ skusPorNf[nf] = porNf[nf].size; });
+  return { skusPorNf, totalSkusDistintos: distintos.size };
+};
+
 // Chamado pela aba Acompanhamento de Cargas após importar minutas: preenche
 // cliente/cidade/uf das notas no Conversor, mas SÓ onde o campo estiver vazio
 // (o que veio do XML tem prioridade e nunca é sobrescrito).
@@ -2908,16 +2977,221 @@ document.addEventListener('DOMContentLoaded', ()=>{ $('siglasCount').textContent
 // ══════════════════════════════════════════════════════════════════════════════
 // ALTERNÂNCIA DE SEÇÃO: Conversor de NF-e  ⇄  Acompanhamento de Cargas
 // ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD OPERACIONAL
+// ──────────────────────────────────────────────────────────────────────────────
+// Fotografia atual: consolida processos/minutas (via CargasDB.dashData) com
+// volumes/SKUs por NF (via pontes do conversor), aplicando filtros de data/
+// período/processo/minuta. Renderiza KPIs, gráficos (Chart.js) e tabela por data.
+let dashStatusChartObj = null, dashVolChartObj = null;
+
+function dashSetup(){
+  const tipo = $('dashTipo');
+  if(!tipo || tipo._wired) return;
+  tipo._wired = true;
+  tipo.addEventListener('change', ()=>{
+    const t = tipo.value;
+    $('dashDiaWrap').style.display     = t==='dia'      ? 'inline' : 'none';
+    $('dashPeriodoWrap').style.display = t==='periodo'  ? 'inline' : 'none';
+    $('dashProcWrap').style.display    = t==='processo' ? 'inline' : 'none';
+    $('dashMinutaWrap').style.display  = t==='minuta'   ? 'inline' : 'none';
+    if(t==='processo') dashPreencherProc();
+    if(t==='minuta')   dashPreencherMinuta();
+  });
+  $('dashAplicarBtn').addEventListener('click', dashRender);
+}
+
+function dashGetData(){
+  let d = { processos:[], minutas:[], statusOrder:[], statusInfo:{} };
+  if(window.CargasDB && window.CargasDB.dashData){
+    try{ d = window.CargasDB.dashData(); }catch(e){}
+  }
+  return d;
+}
+
+function dashPreencherProc(){
+  const d = dashGetData();
+  const sel = $('dashProc'); if(!sel) return;
+  sel.innerHTML = d.processos
+    .slice().sort((a,b)=> (a.ano-b.ano)||(a.mes-b.mes)||(a.dia-b.dia)||a.codigo.localeCompare(b.codigo))
+    .map(p=>`<option value="${p.codigo}">${p.codigo} (${p.data})</option>`).join('');
+}
+function dashPreencherMinuta(){
+  const d = dashGetData();
+  const sel = $('dashMinuta'); if(!sel) return;
+  sel.innerHTML = d.minutas
+    .slice().sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}))
+    .map(m=>`<option value="${m.id}">Minuta ${m.id} (${m.nfs.length} NF)</option>`).join('');
+}
+
+// Aplica o filtro selecionado e devolve os processos + o conjunto de NFs válidas.
+function dashResolverFiltro(d){
+  const t = $('dashTipo').value;
+  let procs = d.processos, nfsPermitidas = null, escopo = 'Geral — todos os processos';
+  if(t==='dia'){
+    const v = $('dashDia').value;
+    if(!v) return { erro:'Selecione o dia.' };
+    procs = d.processos.filter(p=>p.dateKey===v);
+    const [a,m,dia]=v.split('-'); escopo = `Dia ${dia}/${m}/${a}`;
+  } else if(t==='periodo'){
+    const de=$('dashDe').value, ate=$('dashAte').value;
+    if(!de||!ate) return { erro:'Preencha as duas datas.' };
+    if(de>ate) return { erro:'Data inicial maior que a final.' };
+    procs = d.processos.filter(p=>p.dateKey>=de && p.dateKey<=ate);
+    const f=s=>{const[a,m,dd]=s.split('-');return `${dd}/${m}/${a}`;};
+    escopo = `Período ${f(de)} a ${f(ate)}`;
+  } else if(t==='processo'){
+    const cod=$('dashProc').value;
+    procs = d.processos.filter(p=>p.codigo===cod);
+    escopo = `Processo ${cod||'—'}`;
+  } else if(t==='minuta'){
+    const id=$('dashMinuta').value;
+    const min = d.minutas.find(m=>String(m.id)===String(id));
+    nfsPermitidas = new Set(min ? min.nfs : []);
+    procs = d.processos.filter(p=>p.nfs.some(nf=>nfsPermitidas.has(nf)));
+    escopo = `Minuta ${id||'—'}`;
+  }
+  return { procs, nfsPermitidas, escopo };
+}
+
+function dashRender(){
+  dashSetup();
+  const d = dashGetData();
+  const scopeEl = $('dashScope');
+
+  if(!d.processos.length){
+    $('dashKpis').innerHTML = `<div class="dash-empty">Nenhum processo cadastrado no Acompanhamento de Cargas ainda.</div>`;
+    $('dashTable').innerHTML = '';
+    if(scopeEl) scopeEl.textContent = '';
+    dashDestruirGraficos();
+    return;
+  }
+
+  const filtro = dashResolverFiltro(d);
+  if(filtro.erro){ if(scopeEl){ scopeEl.textContent = filtro.erro; scopeEl.className='dash-scope err'; } return; }
+  if(scopeEl){ scopeEl.textContent = filtro.escopo; scopeEl.className='dash-scope'; }
+
+  const procs = filtro.procs;
+  const nfsPermitidas = filtro.nfsPermitidas;
+
+  const nfsSet = new Set();
+  procs.forEach(p=>p.nfs.forEach(nf=>{ if(!nfsPermitidas || nfsPermitidas.has(nf)) nfsSet.add(nf); }));
+  const nfsArr = [...nfsSet];
+
+  let qtd = {}, skusInfo = { skusPorNf:{}, totalSkusDistintos:0 };
+  try{ if(window.getNfeQtdBatch)  qtd = window.getNfeQtdBatch(nfsArr) || {}; }catch(e){}
+  try{ if(window.getNfeSkusInfo)  skusInfo = window.getNfeSkusInfo(nfsArr) || skusInfo; }catch(e){}
+
+  const minutasSet = new Set();
+  d.minutas.forEach(m=>{ if(m.nfs.some(nf=>nfsSet.has(nf))) minutasSet.add(m.id); });
+
+  const statusCount = {}; d.statusOrder.forEach(k=>statusCount[k]=0);
+  let totalVol = 0;
+  procs.forEach(p=>{
+    p.nfs.forEach(nf=>{
+      if(nfsPermitidas && !nfsPermitidas.has(nf)) return;
+      const st = p.statusPorNf[nf] || d.statusOrder[0];
+      if(st in statusCount) statusCount[st]++;
+      totalVol += (qtd[nf]||0);
+    });
+  });
+
+  const kpi = (label, valor, cor) =>
+    `<div class="dash-kpi"><div class="dash-kpi-val" ${cor?`style="color:${cor}"`:''}>${valor}</div><div class="dash-kpi-lbl">${label}</div></div>`;
+  $('dashKpis').innerHTML =
+    kpi('Processos', procs.length) +
+    kpi('Notas fiscais', nfsSet.size) +
+    kpi('Minutas', minutasSet.size) +
+    kpi('Volumes (peças)', (totalVol||0).toLocaleString('pt-BR')) +
+    kpi('SKUs distintos', skusInfo.totalSkusDistintos);
+
+  dashDestruirGraficos();
+  if(typeof Chart !== 'undefined'){
+    const labels=[], data=[], cores=[];
+    d.statusOrder.forEach(k=>{ labels.push(d.statusInfo[k].label); data.push(statusCount[k]); cores.push(d.statusInfo[k].cor); });
+    const ctx1 = document.getElementById('dashStatusChart');
+    if(ctx1) dashStatusChartObj = new Chart(ctx1, {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor:cores, borderColor:'#1a1d27', borderWidth:2 }] },
+      options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#e8eaf6', font:{size:11} } } }, responsive:true, maintainAspectRatio:false }
+    });
+
+    // Comparativo por dia: volume COLETADO (todas as notas do dia) x
+    // volume EXPEDIDO (só as notas com status EXPEDIDA naquele dia).
+    const porData = {}; // dateKey -> { coletado, expedido }
+    procs.forEach(p=>{
+      p.nfs.forEach(nf=>{
+        if(nfsPermitidas && !nfsPermitidas.has(nf)) return;
+        const v = qtd[nf]||0;
+        if(!porData[p.dateKey]) porData[p.dateKey] = { coletado:0, expedido:0 };
+        porData[p.dateKey].coletado += v;
+        if((p.statusPorNf[nf]||'') === 'EXPEDIDA') porData[p.dateKey].expedido += v;
+      });
+    });
+    const datas = Object.keys(porData).sort();
+    const ctx2 = document.getElementById('dashVolChart');
+    if(ctx2) dashVolChartObj = new Chart(ctx2, {
+      type:'bar',
+      data:{ labels: datas.map(k=>{const[a,m,dd]=k.split('-');return `${dd}/${m}`;}),
+        datasets:[
+          { label:'Coletado', data: datas.map(k=>porData[k].coletado), backgroundColor:'#4f6ef7' },
+          { label:'Expedido', data: datas.map(k=>porData[k].expedido), backgroundColor:'#22c55e' }
+        ] },
+      options:{ plugins:{ legend:{ display:true, position:'bottom', labels:{ color:'#e8eaf6', font:{size:11} } } },
+        scales:{ x:{ ticks:{ color:'#8b92b8' }, grid:{ color:'#2e3350' } }, y:{ ticks:{ color:'#8b92b8' }, grid:{ color:'#2e3350' }, beginAtZero:true } },
+        responsive:true, maintainAspectRatio:false }
+    });
+  }
+
+  const porDataTab = {};
+  procs.forEach(p=>{
+    const nfsP = p.nfs.filter(nf=>!nfsPermitidas || nfsPermitidas.has(nf));
+    if(!nfsP.length) return;
+    if(!porDataTab[p.dateKey]) porDataTab[p.dateKey] = { data:p.data, procs:new Set(), nfs:new Set(), vol:0, status:{} };
+    const e = porDataTab[p.dateKey];
+    e.procs.add(p.codigo);
+    nfsP.forEach(nf=>{ e.nfs.add(nf); e.vol += (qtd[nf]||0); const st=p.statusPorNf[nf]; e.status[st]=(e.status[st]||0)+1; });
+  });
+  const chavesData = Object.keys(porDataTab).sort();
+  let thead = `<thead><tr><th>Data coleta</th><th>Processos</th><th>NFs</th><th>Volumes</th>`;
+  d.statusOrder.forEach(k=>thead+=`<th>${d.statusInfo[k].label}</th>`);
+  thead += `</tr></thead>`;
+  let tbody = '<tbody>';
+  let tP=0,tN=0,tV=0; const tSt={}; d.statusOrder.forEach(k=>tSt[k]=0);
+  chavesData.forEach(k=>{
+    const e = porDataTab[k];
+    tP+=e.procs.size; tN+=e.nfs.size; tV+=e.vol;
+    tbody += `<tr><td>${e.data}</td><td>${e.procs.size}</td><td>${e.nfs.size}</td><td>${(e.vol||0).toLocaleString('pt-BR')}</td>`;
+    d.statusOrder.forEach(kk=>{ const v=e.status[kk]||0; tSt[kk]+=v; tbody += `<td>${v||'—'}</td>`; });
+    tbody += `</tr>`;
+  });
+  tbody += `<tr class="dash-total"><td><b>TOTAL</b></td><td><b>${tP}</b></td><td><b>${tN}</b></td><td><b>${(tV||0).toLocaleString('pt-BR')}</b></td>`;
+  d.statusOrder.forEach(k=>tbody+=`<td><b>${tSt[k]||'—'}</b></td>`);
+  tbody += `</tr></tbody>`;
+  $('dashTable').innerHTML = thead + tbody;
+}
+
+function dashDestruirGraficos(){
+  try{ if(dashStatusChartObj){ dashStatusChartObj.destroy(); dashStatusChartObj=null; } }catch(e){}
+  try{ if(dashVolChartObj){ dashVolChartObj.destroy(); dashVolChartObj=null; } }catch(e){}
+}
+
+window.DashRender = function(){ dashSetup(); dashRender(); };
+
 function switchSection(section) {
   const isCargas = section === 'cargas';
-  $('appNfe').style.display     = isCargas ? 'none'  : 'block';
+  const isDash   = section === 'dash';
+  const isNfe    = section === 'nfe';
+  $('appNfe').style.display     = isNfe    ? 'block' : 'none';
   $('tabCargas').style.display  = isCargas ? 'block' : 'none';
-  $('btnSectionNfe').classList.toggle('active', !isCargas);
+  const dashEl = $('tabDash'); if (dashEl) dashEl.style.display = isDash ? 'block' : 'none';
+  $('btnSectionNfe').classList.toggle('active', isNfe);
   $('btnSectionCargas').classList.toggle('active', isCargas);
-  // Atualiza o resumo combinado da aba que está sendo aberta (consolida os
-  // números da outra aba, que podem ter mudado).
+  const bd = $('btnSectionDash'); if (bd) bd.classList.toggle('active', isDash);
+  // Atualiza o resumo/painel da aba que está sendo aberta.
   try{
     if(isCargas){ if(window.CargasRefreshResumo) window.CargasRefreshResumo(); }
+    else if(isDash){ if(window.DashRender) window.DashRender(); }
     else { if($('tabResumo') && $('tabResumo').style.display!=='none') renderResumo(); }
   }catch(e){}
 }
@@ -3340,6 +3614,25 @@ window.CargasDB = {
       data: `${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}`,
       nfs: [...p.nfs]
     })).sort((a,b)=> (a.ano-b.ano)||(a.mes-b.mes)||(a.dia-b.dia)|| a.codigo.localeCompare(b.codigo));
+  },
+  // Dados completos para o Dashboard: processos (com data e status por NF) e
+  // minutas (id + NFs). Assim o dash calcula volumes/notas/status por data.
+  dashData(){
+    const procs = Object.values(processos).map(p=>({
+      codigo: p.codigo,
+      dia: p.dia, mes: p.mes, ano: p.ano,
+      dateKey: `${p.ano}-${String(p.mes).padStart(2,'0')}-${String(p.dia).padStart(2,'0')}`,
+      data: `${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}`,
+      nfs: [...p.nfs],
+      statusPorNf: Object.fromEntries(p.nfs.map(nf=>[nf, getStatusNf(p,nf)]))
+    }));
+    const mins = Object.values(minutas).map(m=>({ id:m.id, nfs:[...(m.nfs||[])] }));
+    return {
+      processos: procs,
+      minutas: mins,
+      statusOrder: SEP_ORDER,
+      statusInfo: Object.fromEntries(SEP_ORDER.map(k=>[k,{label:SEP_STATUS[k].label, cor:SEP_STATUS[k].cor, txt:SEP_STATUS[k].txt}]))
+    };
   },
   // Lista as DATAS de coleta distintas, com as NFs de cada data.
   listDatas(){
