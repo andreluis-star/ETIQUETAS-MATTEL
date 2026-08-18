@@ -961,6 +961,23 @@ body *{visibility:hidden;}
       <span class="msg" id="casoMsg"></span>
     </div>
     <div id="casosList"></div>
+
+    <!-- ── BACKUP / RESTAURAÇÃO ────────────────────────────────────────────
+         Salva o núcleo estruturado (processos, minutas e casos) num arquivo
+         .json. Permite aliviar o "peso" da base ativa sem perder o histórico:
+         baixe o backup, guarde-o, e reimporte quando precisar reprocessar. -->
+    <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);">
+      <div style="font-size:13px; font-weight:700; color:var(--navy); margin-bottom:2px;">🗄 Backup completo</div>
+      <div class="sub" style="font-size:12px; color:var(--muted); margin-bottom:8px;">
+        Salva NF, coleta, minuta, processo, datas e status num arquivo <b>.json</b>. Guarde-o para reprocessar a qualquer momento — depois você pode limpar a base ativa sem perder o histórico.
+      </div>
+      <div class="save-row">
+        <button class="btn-green" id="backupBtn">⬇ Baixar backup (.json)</button>
+        <button class="btn-outline" id="restaurarBtn">📤 Restaurar backup</button>
+        <input type="file" id="restaurarInput" accept="application/json,.json" style="display:none;">
+        <span class="msg" id="backupMsg"></span>
+      </div>
+    </div>
   </div>
 
   <div class="top-actions">
@@ -4535,6 +4552,109 @@ document.getElementById('novoCasoBtn').addEventListener('click', async ()=>{
     await saveProcessos(); await saveMinutas(); await saveCasoAtualNome();
   }catch(e){}
   renderAll();
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// BACKUP / RESTAURAÇÃO EM ARQUIVO .json
+// ──────────────────────────────────────────────────────────────────────────
+// O backup guarda o NÚCLEO ESTRUTURADO — processos (NF, coleta/datas, processo,
+// status por NF), minutas (minuta, destinatário, cidade, volumes) e o histórico
+// de casos. É tudo o que o app precisa para reprocessar do zero: datas, prazos,
+// dashboard e etiquetas são recalculados a partir daqui.
+// (Os XMLs de NF-e — 'notas-xml-data', que é o que mais pesa — NÃO entram no
+//  backup padrão, pois são acumulativos e podem ser recarregados dos arquivos.)
+const BACKUP_VERSION = 1;
+
+document.getElementById('backupBtn').addEventListener('click', ()=>{
+  const msg = document.getElementById('backupMsg');
+  const totalProc = Object.keys(processos).length;
+  const totalCasos = Object.keys(casos).length;
+  if(totalProc===0 && totalCasos===0){
+    msg.textContent = 'Não há dados para fazer backup.'; msg.className='msg err'; return;
+  }
+  const backup = {
+    _tipo: 'cargas-mattel-backup',
+    _versao: BACKUP_VERSION,
+    _geradoEm: new Date().toISOString(),
+    casoAtual: casoAtual,
+    processos: processos,
+    minutas: minutas,
+    casos: casos
+  };
+  const nNfsAtivas = new Set(Object.values(processos).flatMap(p=>p.nfs)).size;
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date();
+  const stamp = `${ts.getFullYear()}${String(ts.getMonth()+1).padStart(2,'0')}${String(ts.getDate()).padStart(2,'0')}_${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `backup-cargas-mattel_${stamp}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  msg.textContent = `Backup baixado — ${totalProc} processos · ${nNfsAtivas} NFs ativas · ${totalCasos} caso(s) no histórico.`;
+  msg.className='msg';
+});
+
+document.getElementById('restaurarBtn').addEventListener('click', ()=>{
+  if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); return; }
+  document.getElementById('restaurarInput').value = '';
+  document.getElementById('restaurarInput').click();
+});
+
+document.getElementById('restaurarInput').addEventListener('change', (e)=>{
+  const msg = document.getElementById('backupMsg');
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev)=>{
+    let data;
+    try{ data = JSON.parse(ev.target.result); }
+    catch(err){ msg.textContent='Arquivo inválido (não é um JSON válido).'; msg.className='msg err'; return; }
+    if(!data || data._tipo !== 'cargas-mattel-backup' || !data.processos){
+      msg.textContent='Este arquivo não é um backup válido deste sistema.'; msg.className='msg err'; return;
+    }
+    const nProc = Object.keys(data.processos||{}).length;
+    const nCasos = Object.keys(data.casos||{}).length;
+    const modo = confirm(
+      `Backup de ${data._geradoEm ? new Date(data._geradoEm).toLocaleString('pt-BR') : '(sem data)'}\n` +
+      `• ${nProc} processos\n• ${nCasos} caso(s) no histórico\n\n` +
+      `OK = SUBSTITUIR tudo o que está na base ativa por este backup.\n` +
+      `Cancelar = MESCLAR (junta os casos do backup ao histórico atual, sem apagar).`
+    );
+    try{
+      if(modo){
+        // SUBSTITUIR
+        processos = JSON.parse(JSON.stringify(data.processos||{}));
+        minutas   = JSON.parse(JSON.stringify(data.minutas||{}));
+        casos     = JSON.parse(JSON.stringify(data.casos||{}));
+        casoAtual = data.casoAtual || null;
+      } else {
+        // MESCLAR: mantém o trabalho ativo atual, só acrescenta os casos do backup
+        const merged = JSON.parse(JSON.stringify(casos));
+        Object.entries(data.casos||{}).forEach(([nome, c])=>{
+          let alvo = nome;
+          if(merged[alvo]){ alvo = `${nome} (restaurado)`; }
+          merged[alvo] = c;
+        });
+        casos = merged;
+      }
+      selectedDateKey=null; selectedProcesso=null;
+      const dd = document.getElementById('dayDetail'); if(dd) dd.style.display='none';
+      const pd = document.getElementById('procDetail'); if(pd) pd.style.display='none';
+      rebuildIndexes();
+      await saveProcessos(); await saveMinutas(); await saveCasos(); await saveCasoAtualNome();
+      renderAll();
+      msg.textContent = modo
+        ? `Backup restaurado — base ativa substituída (${nProc} processos, ${nCasos} caso(s)).`
+        : `Backup mesclado — ${nCasos} caso(s) adicionados ao histórico.`;
+      msg.className='msg';
+    }catch(err){
+      msg.textContent='Erro ao restaurar o backup.'; msg.className='msg err';
+      console.warn('[backup] restaurar falhou:', err && err.message);
+    }
+  };
+  reader.readAsText(file);
 });
 
 document.getElementById('resetBtn').addEventListener('click', async ()=>{
