@@ -103,6 +103,14 @@ td.qtd{text-align:right;font-weight:600}
 .file-badge{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--muted);margin:2px}
 .file-badge .rm{cursor:pointer;color:var(--muted);font-size:13px;background:none;border:none;padding:0;margin:0;min-width:unset}.file-badge .rm:hover{color:var(--red)}
 #file-list{display:flex;flex-wrap:wrap;margin-bottom:12px;min-height:0}
+/* Lista de arquivos colapsável: fechada mostra ~3 fileiras de badges */
+.collapsible-files{overflow:hidden;transition:max-height .25s ease}
+.collapsible-files.collapsed{max-height:96px}
+.collapsible-files.collapsed #file-list{margin-bottom:0}
+.collapsible-files.expanded{max-height:340px;overflow-y:auto}
+.files-toggle{margin:2px 0 12px}
+.files-toggle button{background:var(--surface2);border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer}
+.files-toggle button:hover{border-color:var(--accent)}
 
 /* ── MINUTA TABLE ─────────────────────────────────────────────────────────── */
 .minuta-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:18px;overflow:hidden}
@@ -151,6 +159,13 @@ td.qtd{text-align:right;font-weight:600}
 .label-gen-head h3{font-size:15px;margin-bottom:2px}
 .label-gen-head span{font-size:12px;color:var(--muted)}
 .label-gen-controls{margin-top:12px;display:flex;flex-direction:column;gap:14px}
+/* Painéis recolhíveis (Resumo / Etiquetas / Folha Rosto / Minutas) — abrem
+   resumidos para não obrigar a rolar; clique no cabeçalho para expandir. */
+.collapsible-head{cursor:pointer;display:flex;align-items:flex-start;gap:10px;user-select:none}
+.collapsible-head .chevron{margin-left:auto;font-size:15px;color:var(--accent);transition:transform .2s ease;flex-shrink:0;line-height:1.4}
+.is-collapsed .collapsible-head .chevron{transform:rotate(-90deg)}
+.collapsible-body{overflow:hidden;transition:max-height .25s ease}
+.is-collapsed .collapsible-body{max-height:0!important;margin-top:0!important}
 .lg-modo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .lg-lbl{font-size:12px;color:var(--muted);font-weight:600}
 .lg-sel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
@@ -624,7 +639,7 @@ body *{visibility:hidden;}
 <header>
   <div class="logo">📄</div>
   <div>
-    <h1>Conversor de NF-e</h1>
+    <h1>SISTEMA INTERNO DE GESTÃO PORTOEX &amp; MATTEL</h1>
     <span>Portoexpress Logística — Extração de itens · Minutas · Etiquetas</span>
   </div>
 </header>
@@ -645,7 +660,12 @@ body *{visibility:hidden;}
     <input type="file" id="fileInput" accept=".xml,.zip,application/zip,text/xml,application/xml" multiple>
   </label>
 
-  <div id="file-list"></div>
+  <div id="file-list-wrap" class="collapsible-files collapsed">
+    <div id="file-list"></div>
+  </div>
+  <div id="file-list-toggle" class="files-toggle" style="display:none">
+    <button type="button" onclick="toggleFileList()"><span id="fileToggleLabel">▾ Ver todos os arquivos</span></button>
+  </div>
 
   <!-- Aviso de arquivos bloqueados por divergência entre nome e nNF do XML -->
   <div id="divergenciaBox" class="divergencia-box" style="display:none"></div>
@@ -676,7 +696,27 @@ body *{visibility:hidden;}
       <input type="search" id="searchBox" placeholder="🔍  Filtrar por NF, cód, SKU ou descrição..." oninput="renderTable()">
       <button class="btn-primary" onclick="copiarTSV()">📋 Copiar TSV</button>
       <button class="btn-green"   onclick="exportarExcel()">⬇ Excel</button>
-      <button class="btn-outline" onclick="limpar()">🗑 Limpar</button>
+      <button class="btn-outline" onclick="togglePeriodoPanel()">🗓 Limpar por período</button>
+      <button class="btn-outline" onclick="limpar()">🗑 Limpar tudo</button>
+    </div>
+
+    <!-- ── LIMPAR XMLs POR PERÍODO ──────────────────────────────────────────
+         Remove do banco de XMLs apenas as NFs cujos PROCESSOS (aba Cargas)
+         têm data de coleta dentro do intervalo escolhido. Ideal para aliviar
+         o peso mantendo os recentes; o backup .json permite reprocessar depois. -->
+    <div id="periodoPanel" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin:0 0 14px;">
+      <div style="font-size:13px; font-weight:700; margin-bottom:4px;">🗓 Limpar XMLs por período de coleta</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:10px; line-height:1.5;">
+        Apaga do banco de notas só os XMLs das NFs coletadas no intervalo. A data vem dos <b>processos</b> da aba Acompanhamento de Cargas.
+        <b>Faça um backup antes</b> (aba Cargas → Backup) se quiser poder restaurar.
+      </div>
+      <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+        <label style="font-size:12px; color:var(--muted);">De<br><input type="date" id="periodoDe" style="margin-top:3px; padding:6px 8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text);"></label>
+        <label style="font-size:12px; color:var(--muted);">Até<br><input type="date" id="periodoAte" style="margin-top:3px; padding:6px 8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text);"></label>
+        <button class="btn-outline" onclick="previewPeriodo()">🔍 Ver o que será apagado</button>
+        <button class="btn-danger" id="periodoConfirmBtn" onclick="limparPorPeriodo()" style="display:none;">🗑 Confirmar exclusão</button>
+      </div>
+      <div id="periodoInfo" style="font-size:12px; margin-top:10px; color:var(--muted);"></div>
     </div>
     <div id="tableArea">
       <div class="empty-state"><div class="icon">📋</div>
@@ -687,12 +727,15 @@ body *{visibility:hidden;}
 
   <!-- ── TAB: RESUMO ───────────────────────────────────────────────────────── -->
   <div id="tabResumo" style="display:none">
-    <div class="label-gen-panel">
-      <div class="label-gen-head">
-        <h3>📊 Gerar resumo</h3>
-        <span>Escolha o critério e os itens; o resumo é montado só do que você selecionar.</span>
+    <div class="label-gen-panel is-collapsed" id="panelResumo">
+      <div class="label-gen-head collapsible-head" onclick="togglePanel('panelResumo')">
+        <div>
+          <h3>📊 Gerar resumo</h3>
+          <span>Escolha o critério e os itens; o resumo é montado só do que você selecionar.</span>
+        </div>
+        <span class="chevron">▾</span>
       </div>
-      <div class="label-gen-controls">
+      <div class="label-gen-controls collapsible-body">
         <div class="lg-modo">
           <span class="lg-lbl">Gerar por:</span>
           <div class="tabs">
@@ -758,24 +801,30 @@ body *{visibility:hidden;}
     </div>
 
     <!-- Minuta por NF -->
-    <div class="minuta-panel" id="minutaPanel">
-      <div class="minuta-panel-head">
-        <h3>Minutas por Nota Fiscal</h3>
-        <span>Preencha a minuta de cada NF — ela aparecerá nas etiquetas</span>
+    <div class="minuta-panel is-collapsed" id="panelMinutas">
+      <div class="minuta-panel-head collapsible-head" onclick="togglePanel('panelMinutas')">
+        <div>
+          <h3>Minutas por Nota Fiscal</h3>
+          <span>Preencha a minuta de cada NF — ela aparecerá nas etiquetas</span>
+        </div>
+        <span class="chevron">▾</span>
       </div>
-      <div id="minutaRows">
+      <div id="minutaRows" class="collapsible-body">
         <div class="empty-state" style="padding:28px"><div class="icon" style="font-size:28px">📥</div>
           <p>Carregue XMLs para preencher as minutas.</p></div>
       </div>
     </div>
 
     <!-- Seletor de geração de etiquetas -->
-    <div class="label-gen-panel">
-      <div class="label-gen-head">
-        <h3>🏷 Gerar etiquetas</h3>
-        <span>Escolha o critério e os itens; as etiquetas só aparecem depois de gerar.</span>
+    <div class="label-gen-panel is-collapsed" id="panelEtiquetas">
+      <div class="label-gen-head collapsible-head" onclick="togglePanel('panelEtiquetas')">
+        <div>
+          <h3>🏷 Gerar etiquetas</h3>
+          <span>Escolha o critério e os itens; as etiquetas só aparecem depois de gerar.</span>
+        </div>
+        <span class="chevron">▾</span>
       </div>
-      <div class="label-gen-controls">
+      <div class="label-gen-controls collapsible-body">
         <div class="lg-modo">
           <span class="lg-lbl">Gerar por:</span>
           <div class="tabs">
@@ -821,12 +870,15 @@ body *{visibility:hidden;}
 
   <!-- ── TAB: FOLHA ROSTO ─────────────────────────────────────────────────── -->
   <div id="tabRosto" style="display:none">
-    <div class="label-gen-panel">
-      <div class="label-gen-head">
-        <h3>📄 Gerar folha rosto</h3>
-        <span>Uma página por Minuta, com letra gigante. Escolha o critério e os itens; a folha só aparece depois de gerar.</span>
+    <div class="label-gen-panel is-collapsed" id="panelRosto">
+      <div class="label-gen-head collapsible-head" onclick="togglePanel('panelRosto')">
+        <div>
+          <h3>📄 Gerar folha rosto</h3>
+          <span>Uma página por Minuta, com letra gigante. Escolha o critério e os itens; a folha só aparece depois de gerar.</span>
+        </div>
+        <span class="chevron">▾</span>
       </div>
-      <div class="label-gen-controls">
+      <div class="label-gen-controls collapsible-body">
         <div class="lg-modo">
           <span class="lg-lbl">Gerar por:</span>
           <div class="tabs">
@@ -1563,6 +1615,52 @@ function addFileBadge(name) {
   b.innerHTML = `<span title="${name}">📄 ${short}</span>
     <button class="rm" onclick="removeFile('${safe}')">×</button>`;
   $('file-list').appendChild(b);
+  refreshFileListToggle();
+}
+
+// Mostra o botão "ver todos" só quando a lista fechada não cabe (excede a
+// altura de ~3 fileiras). Mantém o estado colapsado por padrão.
+function refreshFileListToggle(){
+  const wrap = $('file-list-wrap');
+  const toggle = $('file-list-toggle');
+  const list = $('file-list');
+  if(!wrap || !toggle || !list) return;
+  // mede a altura real do conteúdo vs. a altura fechada
+  const precisa = list.scrollHeight > 100; // ~3 fileiras (96px) + folga
+  toggle.style.display = precisa ? 'block' : 'none';
+  if(!precisa){
+    // pouca coisa: nada a esconder, deixa tudo visível sem trava
+    wrap.classList.remove('collapsed'); wrap.classList.remove('expanded');
+  } else if(!wrap.classList.contains('expanded')){
+    wrap.classList.add('collapsed');
+  }
+}
+
+function toggleFileList(){
+  const wrap = $('file-list-wrap');
+  const label = $('fileToggleLabel');
+  const expandido = wrap.classList.toggle('expanded');
+  wrap.classList.toggle('collapsed', !expandido);
+  if(label) label.textContent = expandido ? '▴ Recolher arquivos' : '▾ Ver todos os arquivos';
+}
+
+// Recolhe/expande um painel (Resumo, Etiquetas, Folha Rosto, Minutas). Abrem
+// resumidos por padrão (classe is-collapsed no HTML) para evitar rolagem.
+function togglePanel(id){
+  const panel = document.getElementById(id);
+  if(!panel) return;
+  const body = panel.querySelector('.collapsible-body');
+  const colapsado = panel.classList.toggle('is-collapsed');
+  if(body){
+    if(colapsado){
+      body.style.maxHeight = '0';
+    } else {
+      // expande até a altura real do conteúdo; depois libera para crescer
+      body.style.maxHeight = body.scrollHeight + 'px';
+      const alvo = (body.id === 'minutaRows') ? '500px' : 'none';
+      setTimeout(()=>{ if(!panel.classList.contains('is-collapsed')) body.style.maxHeight = alvo; }, 260);
+    }
+  }
 }
 
 function removeFile(name) {
@@ -1577,6 +1675,7 @@ function removeFile(name) {
   }
   const badge = $('file-list').querySelector(`[data-fname="${CSS.escape(name)}"]`);
   if (badge) badge.remove();
+  refreshFileListToggle();
   updateStats(); renderTable(); renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
   const has = allItems.length > 0;
   $('statsBar').style.display = has ? 'flex' : 'none';
@@ -1692,10 +1791,121 @@ function limpar() {
   if (!allItems.length||!confirm('Limpar todos os dados? Isso também apaga o banco de notas salvo (compartilhado com o time).')) return;
   allItems=[];nfMeta={};nfMinutas={};loadedFiles.clear();fileItemsMap.clear();
   $('file-list').innerHTML='';
+  refreshFileListToggle();
   $('statsBar').style.display='none';$('tabsBar').style.display='none';
   renderTable();renderMinutaInputs();renderLabels();renderResumo();renderRosto();
   salvarBancoNotas(); // grava o estado vazio (limpa o banco compartilhado)
   toast('Dados limpos.',false);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LIMPAR XMLs POR PERÍODO
+// ──────────────────────────────────────────────────────────────────────────────
+// O XML não carrega a data de coleta; ela vem dos PROCESSOS (aba Cargas). Aqui
+// montamos NF → dateKey a partir dos processos e removemos do banco de notas só
+// as NFs coletadas no intervalo escolhido. Assim aliviamos o peso mantendo os
+// XMLs recentes — e o backup .json permite reprocessar tudo depois, se preciso.
+function togglePeriodoPanel(){
+  const p = $('periodoPanel');
+  if(!p) return;
+  const abrindo = p.style.display === 'none';
+  p.style.display = abrindo ? 'block' : 'none';
+  if(abrindo){ $('periodoInfo').innerHTML=''; $('periodoConfirmBtn').style.display='none'; }
+}
+
+// Constrói { nfNormalizada -> "YYYY-MM-DD" } a partir dos processos do Cargas.
+// Uma NF pode estar em mais de um processo; guardamos todas as datas por NF.
+function _mapaNfDatas(){
+  const map = {};
+  let procs = [];
+  if(window.CargasDB && window.CargasDB.listProcessos){
+    try{ procs = window.CargasDB.listProcessos(); }catch(e){ procs = []; }
+  }
+  procs.forEach(p=>{
+    const dateKey = `${p.ano}-${String(p.mes).padStart(2,'0')}-${String(p.dia).padStart(2,'0')}`;
+    (p.nfs||[]).forEach(nf=>{
+      const k = String(nf).replace(/\D/g,'').replace(/^0+/,'') || String(nf);
+      (map[k] = map[k] || new Set()).add(dateKey);
+    });
+  });
+  return map;
+}
+const _normNf = nf => String(nf).replace(/\D/g,'').replace(/^0+/,'') || String(nf);
+
+// Descobre quais NFs do banco de XMLs caem no intervalo [de, ate].
+function _nfsNoPeriodo(de, ate){
+  const mapa = _mapaNfDatas();
+  const nfsBanco = new Set(allItems.map(i=>_normNf(i.nf)));
+  const dentro = new Set(), semData = new Set();
+  nfsBanco.forEach(nf=>{
+    const datas = mapa[nf];
+    if(!datas){ semData.add(nf); return; }
+    // se QUALQUER data de coleta da NF cai no intervalo, ela é elegível
+    let ok = false;
+    datas.forEach(dk=>{ if(dk>=de && dk<=ate) ok = true; });
+    if(ok) dentro.add(nf);
+  });
+  return { dentro, semData, totalBanco: nfsBanco.size };
+}
+
+function previewPeriodo(){
+  const de = $('periodoDe').value, ate = $('periodoAte').value;
+  const info = $('periodoInfo');
+  if(!allItems.length){ info.innerHTML = '<span style="color:var(--yellow)">Não há XMLs carregados.</span>'; $('periodoConfirmBtn').style.display='none'; return; }
+  if(!de || !ate){ info.innerHTML = '<span style="color:var(--yellow)">Escolha as duas datas (De e Até).</span>'; $('periodoConfirmBtn').style.display='none'; return; }
+  if(de > ate){ info.innerHTML = '<span style="color:var(--red)">A data inicial é maior que a final.</span>'; $('periodoConfirmBtn').style.display='none'; return; }
+
+  const { dentro, semData, totalBanco } = _nfsNoPeriodo(de, ate);
+  const nItens = allItems.filter(i=>dentro.has(_normNf(i.nf))).length;
+  const fmt = s => s.split('-').reverse().join('/');
+
+  if(dentro.size === 0){
+    info.innerHTML = `Nenhuma NF do banco tem coleta entre <b>${fmt(de)}</b> e <b>${fmt(ate)}</b>.` +
+      (semData.size ? `<br><span style="color:var(--muted)">Obs.: ${semData.size} NF(s) do banco não têm processo com data na aba Cargas — não entram em nenhum período.</span>` : '');
+    $('periodoConfirmBtn').style.display='none';
+    return;
+  }
+  info.innerHTML =
+    `Serão apagadas <b>${dentro.size}</b> NF(s) (${nItens} item(ns)) coletadas entre <b>${fmt(de)}</b> e <b>${fmt(ate)}</b>.<br>` +
+    `Restarão ${totalBanco - dentro.size} NF(s) no banco.` +
+    (semData.size ? `<br><span style="color:var(--muted)">${semData.size} NF(s) sem data de processo permanecem (não são afetadas).</span>` : '');
+  $('periodoConfirmBtn').style.display='inline-flex';
+}
+
+function limparPorPeriodo(){
+  const de = $('periodoDe').value, ate = $('periodoAte').value;
+  if(!de || !ate || de > ate){ return; }
+  const { dentro } = _nfsNoPeriodo(de, ate);
+  if(dentro.size === 0) return;
+  const fmt = s => s.split('-').reverse().join('/');
+  if(!confirm(`Apagar ${dentro.size} NF(s) coletadas entre ${fmt(de)} e ${fmt(ate)} do banco de XMLs?\n\nIsto NÃO afeta os processos, minutas nem os casos salvos — só remove os XMLs dessas notas. Se tiver backup, pode restaurá-los depois.`)) return;
+
+  // Remove itens, metadados e minutas-de-XML das NFs no período
+  allItems = allItems.filter(i => !dentro.has(_normNf(i.nf)));
+  const nfsRestantes = new Set(allItems.map(i=>_normNf(i.nf)));
+  Object.keys(nfMeta).forEach(nf=>{ if(!nfsRestantes.has(_normNf(nf))) delete nfMeta[nf]; });
+  Object.keys(nfMinutas).forEach(nf=>{ if(!nfsRestantes.has(_normNf(nf))) delete nfMinutas[nf]; });
+
+  // Reconstrói o rastreio de arquivos: fileItemsMap guarda arrays de ITENS
+  // ({nf,cod,...}); mantém só os itens cujas NFs continuam no banco e descarta
+  // arquivos que ficaram sem nenhum item.
+  const novosFileItems = new Map();
+  fileItemsMap.forEach((itens, fname)=>{
+    const restam = (Array.isArray(itens)?itens:[]).filter(it=>nfsRestantes.has(_normNf(it.nf)));
+    if(restam.length) novosFileItems.set(fname, restam);
+  });
+  fileItemsMap = novosFileItems;
+  loadedFiles = new Set([...loadedFiles].filter(f=>fileItemsMap.has(f)));
+  const fl = $('file-list'); if(fl){ fl.innerHTML=''; [...loadedFiles].forEach(addFileBadge); }
+
+  const has = allItems.length > 0;
+  $('statsBar').style.display = has ? 'flex' : 'none';
+  $('tabsBar').style.display  = has ? 'flex' : 'none';
+  updateStats(); renderTable(); renderMinutaInputs(); renderLabels(); renderResumo(); renderRosto();
+  salvarBancoNotas();
+  $('periodoInfo').innerHTML = `<span style="color:var(--green)">✓ ${dentro.size} NF(s) removidas. Banco agora com ${nfsRestantes.size} NF(s).</span>`;
+  $('periodoConfirmBtn').style.display='none';
+  toast(`✓ XMLs do período removidos (${dentro.size} NF).`, false);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
