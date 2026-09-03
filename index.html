@@ -207,8 +207,9 @@ td.qtd{text-align:right;font-weight:600}
   overflow:hidden;flex-shrink:0;
 }
 .etiqueta-intervalo{display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
-.etiqueta-intervalo .et-intervalo-txt{font-size:150pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#000;text-align:center;line-height:1}
-.etiqueta-intervalo .et-intervalo-num{font-size:60pt;font-weight:800;color:#000;line-height:1;margin-top:6mm}
+.etiqueta-intervalo .et-intervalo-sku{font-size:60pt;font-weight:800;color:#000;line-height:1;text-align:center;margin-bottom:-8mm}
+.etiqueta-intervalo .et-intervalo-txt{font-size:130pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#000;text-align:center;line-height:1}
+.etiqueta-intervalo .et-intervalo-num{font-size:60pt;font-weight:800;color:#000;line-height:1;margin-top:-8mm}
 /* Row 1: NFE ocupa todo o espaço à esquerda (Volume(NFE) foi para a Row 6) */
 .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
 .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
@@ -964,7 +965,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">separador com numeracao crescente v34</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">separador SKU aproximado v35</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -2502,6 +2503,7 @@ function buildLabel(p) {
     const tag = p.procTag || '***';
     return `
 <div class="etiqueta etiqueta-intervalo">
+  ${p.intervaloSku ? `<div class="et-intervalo-sku">${esc(p.intervaloSku)}</div>` : ''}
   <div class="et-intervalo-txt">${esc(tag)}</div>
   ${p.intervaloNum ? `<div class="et-intervalo-num">${p.intervaloNum}</div>` : ''}
 </div>`;
@@ -2850,7 +2852,7 @@ function buildLabelParams(nfsFiltro) {
     for (let i=0; i<labels.length; i++){
       if (i>0 && String(labels[i].cod) !== String(labels[i-1].cod)) {
         intervaloSeq++;    // começa em 2 (a 1ª geração de SKUs não tem separador)
-        comIntervalos.push({ _intervalo:true, procTag: tresLetras(labels[i].nf), intervaloNum: intervaloSeq });
+        comIntervalos.push({ _intervalo:true, procTag: tresLetras(labels[i].nf), intervaloSku: labels[i].cod, intervaloNum: intervaloSeq });
       }
       comIntervalos.push(labels[i]);
     }
@@ -2917,8 +2919,9 @@ function labelPrintCss() {
     .labels-grid{display:block}
     .etiqueta{width:148mm;height:105mm;border:1.5px solid #000;background:#fff;color:#000;font-family:Arial,sans-serif;display:grid;grid-template-columns:1fr 40mm;grid-template-rows:21mm 12mm 14mm 22mm 7mm 17mm 9mm;overflow:hidden;page-break-after:always;break-after:page}
     .etiqueta-intervalo{display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
-    .etiqueta-intervalo .et-intervalo-txt{font-size:150pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#000;text-align:center;line-height:1}
-    .etiqueta-intervalo .et-intervalo-num{font-size:60pt;font-weight:800;color:#000;line-height:1;margin-top:6mm}
+    .etiqueta-intervalo .et-intervalo-sku{font-size:60pt;font-weight:800;color:#000;line-height:1;text-align:center;margin-bottom:-8mm}
+    .etiqueta-intervalo .et-intervalo-txt{font-size:130pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#000;text-align:center;line-height:1}
+    .etiqueta-intervalo .et-intervalo-num{font-size:60pt;font-weight:800;color:#000;line-height:1;margin-top:-8mm}
     .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
     .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
     .et-nfe-num .lbl{font-size:7pt;color:#000}
