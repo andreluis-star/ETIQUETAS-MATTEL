@@ -965,7 +965,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">separador SKU aproximado v35</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">fix meta cidade+minuta em removeFile v36</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1669,14 +1669,18 @@ function togglePanel(id){
 
 function removeFile(name) {
   fileItemsMap.delete(name); loadedFiles.delete(name);
-  allItems = []; nfMeta = {}; nfMinutas = {};
-  for (const items of fileItemsMap.values()) {
-    allItems.push(...items);
-    for (const it of items) {
-      nfMeta[it.nf] = nfMeta[it.nf] || { dest:'', cidade:'', uf:'' };
-      if (!(it.nf in nfMinutas)) nfMinutas[it.nf] = '';
-    }
-  }
+  // Reconstrói allItems a partir dos arquivos restantes, mas PRESERVA nfMeta
+  // (destinatário/cidade/UF do XML) e nfMinutas já existentes. Apenas cria
+  // defaults para NFs novas e remove o que ficou órfão.
+  allItems = [];
+  for (const items of fileItemsMap.values()) allItems.push(...items);
+  const nfsRestantes = new Set(allItems.map(it=>it.nf));
+  nfsRestantes.forEach(nf=>{
+    if (!nfMeta[nf]) nfMeta[nf] = { dest:'', cidade:'', uf:'' };
+    if (!(nf in nfMinutas)) nfMinutas[nf] = '';
+  });
+  Object.keys(nfMeta).forEach(nf=>{ if(!nfsRestantes.has(nf)) delete nfMeta[nf]; });
+  Object.keys(nfMinutas).forEach(nf=>{ if(!nfsRestantes.has(nf)) delete nfMinutas[nf]; });
   const badge = $('file-list').querySelector(`[data-fname="${CSS.escape(name)}"]`);
   if (badge) badge.remove();
   refreshFileListToggle();
