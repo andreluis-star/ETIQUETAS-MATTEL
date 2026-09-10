@@ -965,7 +965,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">fix meta cidade+minuta em removeFile v36</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">fallback cidade/UF via Cargas nas etiquetas v37</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -2789,10 +2789,30 @@ function buildLabelParams(nfsFiltro) {
     nfParaProcTag[nf] = p.codigo ? String(p.codigo).slice(-3).toUpperCase() : '';
   }); });
 
+  // Fallback de destinatário/cidade/UF a partir do Acompanhamento de Cargas.
+  // Usado quando o nfMeta (vindo do XML) está vazio — ex.: notas cujos
+  // metadados se perderam no banco antes da correção do removeFile.
+  const metaCargas = {};
+  if (window.CargasDB && window.CargasDB.listMinutas) {
+    try {
+      window.CargasDB.listMinutas().forEach(m=>{
+        (m.nfs||[]).forEach(nf=>{
+          metaCargas[nf] = { dest: m.destinatario||'', cidade: m.cidade||'', uf: m.uf||'' };
+        });
+      });
+    } catch(e){}
+  }
+
   const labels = [];
   for (const nf of nfOrder) {
     const nfItems  = allItems.filter(i=>i.nf===nf);
-    const meta     = nfMeta[nf]||{};
+    const metaXml  = nfMeta[nf]||{};
+    const metaCrg  = metaCargas[nf]||{};
+    const meta     = {
+      dest:   metaXml.dest   || metaCrg.dest   || '',
+      cidade: metaXml.cidade || metaCrg.cidade || '',
+      uf:     metaXml.uf     || metaCrg.uf     || ''
+    };
     const totalNfe = nfItems.reduce((s,i)=>s+Math.max(1,Math.floor(i.qtd)),0);
     const sigla    = getCidadeSigla(meta.cidade||'');
     const minuta   = nfMinutas[nf]||'';
