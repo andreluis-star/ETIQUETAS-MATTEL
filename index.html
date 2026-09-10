@@ -965,7 +965,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">fallback cidade/UF via Cargas nas etiquetas v37</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status EXPEDIDA por ocorrencia na importacao de minutas v38</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -3992,6 +3992,36 @@ function rebuildIndexes(){
   });
 }
 
+// Regra de expedição automática: quando a MINUTA importada traz a ocorrência
+// "1 - ENTREGA REALIZADA NORMALMENTE", todas as NFs dessa minuta passam para o
+// status EXPEDIDA no Acompanhamento de Cargas, SOBRESCREVENDO o que estiver lá
+// (inclusive ajustes manuais). Qualquer outra ocorrência é ignorada — o status
+// cadastrado manualmente permanece como está.
+function ocorrenciaEntregaNormal(oc){
+  const t = String(oc||'')
+    .toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')  // remove acentos
+    .replace(/\s+/g,' ').trim();
+  // aceita "1 - ENTREGA REALIZADA NORMALMENTE" e pequenas variações de espaço/hífen
+  return /^1\s*[-–]\s*ENTREGA REALIZADA NORMALMENTE$/.test(t);
+}
+function aplicarStatusExpedidaPorOcorrencia(){
+  let alteradas = 0;
+  Object.values(minutas).forEach(m=>{
+    if(!ocorrenciaEntregaNormal(m.ocorrencia)) return;
+    (m.nfs||[]).forEach(nf=>{
+      // marca EXPEDIDA em todo processo que contenha esta NF
+      Object.values(processos).forEach(p=>{
+        if(p.nfs && p.nfs.includes(nf) && getStatusNf(p,nf)!=='EXPEDIDA'){
+          setStatusNf(p, nf, 'EXPEDIDA');
+          alteradas++;
+        }
+      });
+    });
+  });
+  return alteradas;
+}
+
 // ---------- PARSE COLETAS ----------
 function parseColetas(text){
   const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
@@ -4050,10 +4080,12 @@ function parseMinutas(text){
       destinatario: (cols[14]||'').trim(),
       cidadeDestino: (cols[15]||'').trim(),
       trecho: (cols[16]||'').trim(),
-      prevEntrega: (cols[17]||'').trim(),
-      respEntrega: (cols[18]||'').trim(),
-      ocorrencia: (cols[20]||'').trim(),
-      dataStatus: (cols[21]||'').trim()
+      agendamento: (cols[17]||'').trim(),
+      prevEntrega: (cols[18]||'').trim(),
+      respEntrega: (cols[19]||'').trim(),
+      dataOcorrencia: (cols[20]||'').trim(),
+      ocorrencia: (cols[21]||'').trim(),
+      dataStatus: (cols[22]||'').trim()
     };
 
     // SUBSTITUI a minuta de mesmo número (as demais permanecem intactas).
@@ -4702,10 +4734,15 @@ document.getElementById('processarMinutas').addEventListener('click', async ()=>
   const n = parseMinutas(txt);
   if(n===0){ msg.textContent='Nenhuma linha reconhecida.'; msg.className='msg err'; return; }
   rebuildIndexes();
+  // Marca como EXPEDIDA as NFs cujas minutas vieram com ocorrência
+  // "1 - ENTREGA REALIZADA NORMALMENTE" (sobrescreve status manual).
+  const expedidas = aplicarStatusExpedidaPorOcorrencia();
   enviarMetaAoConversor(); // propaga cliente/cidade/uf para a aba Conversor
   try{
     await saveMinutas();
-    msg.textContent = `${n} minuta(s) processada(s) e salvas.`;
+    if(expedidas) { try{ await saveProcessos(); }catch(e){} }
+    msg.textContent = `${n} minuta(s) processada(s) e salvas.`
+      + (expedidas ? ` · ${expedidas} nota(s) marcada(s) como EXPEDIDA.` : '');
     msg.className='msg';
     document.getElementById('minutasInput').value='';
     renderAll();
