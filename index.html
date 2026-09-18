@@ -481,6 +481,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #tabCargas.readonly .top-actions{opacity:.5; pointer-events:none;}
 #tabCargas.readonly .sep-select{pointer-events:none; opacity:.7;}
 #tabCargas.readonly .caso-acoes{opacity:.5; pointer-events:none;}
+#tabCargas.readonly #bulkGlobalCard{opacity:.55; pointer-events:none;}
 #tabCargas .sync-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
 #tabCargas .sync-card h2{font-size:14px; margin:0; color:var(--navy);}
 #tabCargas .sync-status{display:inline-block; font-size:11px; border-radius:12px; padding:2px 10px; font-weight:700; margin-left:6px; vertical-align:middle; background:var(--line); color:var(--muted);}
@@ -965,7 +966,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status EXPEDIDA por ocorrencia na importacao de minutas v38</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status em massa por dia/processo/periodo v40</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -1082,6 +1083,55 @@ body *{visibility:hidden;}
     <div class="status-legend" id="statusLegend"></div>
     <div class="cal-grid" id="dowRow"></div>
     <div class="cal-grid" id="calGrid" style="margin-top:6px;"></div>
+  </div>
+
+  <!-- STATUS EM MASSA — aplica um status a todas as notas de vários processos,
+       com seleção por dia, por processo (multi) ou por período. -->
+  <div class="cal-card" id="bulkGlobalCard">
+    <h2 style="font-size:14px; margin:0 0 4px; color:var(--navy);">⚡ Status em massa — aplicar a vários processos</h2>
+    <div class="sub" style="font-size:12px; color:var(--muted); margin-bottom:12px;">
+      Escolha o alcance (por dia, por processo ou por período), o status desejado e clique em aplicar. Afeta todas as NFs dos processos selecionados.
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+      <label style="font-size:12px; color:var(--muted);">Selecionar por<br>
+        <select id="bulkScope" class="sep-select" style="margin-top:3px;">
+          <option value="dia">Dia</option>
+          <option value="processo">Processo</option>
+          <option value="periodo">Período</option>
+        </select>
+      </label>
+
+      <span id="bulkDiaWrap" style="font-size:12px; color:var(--muted);">Dia<br>
+        <select id="bulkDiaSel" class="sep-select" style="margin-top:3px; min-width:160px;"></select>
+      </span>
+
+      <span id="bulkPeriodoWrap" style="display:none; font-size:12px; color:var(--muted);">
+        De<br>
+        <input type="date" id="bulkPeriodoDe" class="sep-select" style="margin-top:3px;">
+      </span>
+      <span id="bulkPeriodoAteWrap" style="display:none; font-size:12px; color:var(--muted);">
+        Até<br>
+        <input type="date" id="bulkPeriodoAte" class="sep-select" style="margin-top:3px;">
+      </span>
+
+      <label style="font-size:12px; color:var(--muted);">Status a aplicar<br>
+        <select id="bulkGlobalStatusSel" class="sep-select" style="margin-top:3px;"></select>
+      </label>
+
+      <button class="btn-navy btn-sm" id="bulkGlobalBtn" style="height:34px;">aplicar</button>
+      <span class="msg" id="bulkGlobalMsg" style="font-size:12px;"></span>
+    </div>
+
+    <div id="bulkProcessoWrap" style="display:none; margin-top:12px;">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:6px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        Processos (marque um ou mais):
+        <button class="btn-navy btn-sm" id="bulkProcAll" type="button" style="padding:2px 8px;">todos</button>
+        <button class="btn-navy btn-sm" id="bulkProcNone" type="button" style="padding:2px 8px; background:var(--surface2); color:var(--navy); border:1px solid var(--line);">nenhum</button>
+      </div>
+      <div id="bulkProcList" style="max-height:200px; overflow:auto; border:1px solid var(--line); border-radius:8px; padding:8px; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:4px;"></div>
+    </div>
+
+    <div id="bulkGlobalInfo" style="font-size:12px; color:var(--muted); margin-top:10px;"></div>
   </div>
 
   <div class="print-card">
@@ -3580,6 +3630,8 @@ const Sync = {
   applyingRemote: false,   // evita eco: quando aplicamos dado remoto, não reenviar
   onRemoteUpdate: null,    // callback quando dados remotos mudam (recarrega a tela)
   statusEl: null,
+  _hydrated: false,        // já recebemos o 1º snapshot do servidor?
+  _pushPending: false,     // houve schedulePush antes de hidratar? envia após hidratar
 
   isConfigured(){ return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.databaseURL); },
 
@@ -3611,12 +3663,18 @@ const Sync = {
   schedulePush(){
     if(!this.enabled || !this.ref) return;
     if(this.applyingRemote) return;   // não reenviar o que acabou de chegar
+    // TRAVA DE SEGURANÇA: enquanto não recebemos o 1º snapshot do servidor,
+    // NÃO enviamos nada. Evita que um push com o cache local ainda vazio
+    // (base remota não carregada) sobrescreva o nó do Firebase e apague os
+    // dados de todos. O push fica pendente e dispara ao hidratar.
+    if(!this._hydrated){ this._pushPending = true; return; }
     clearTimeout(this.pushTimer);
     this.pushTimer = setTimeout(()=>this.push(), PUSH_DEBOUNCE_MS);
   },
 
   async push(){
     if(!this.enabled || !this.ref) return;
+    if(!this._hydrated){ this._pushPending = true; return; }
     this.setStatus('syncing','salvando…');
     try{
       await this.ref.set(this.snapshotLocal());
@@ -3653,6 +3711,13 @@ const Sync = {
           this.applyToLocal(val);
           this.applyingRemote = false;
           if(this.onRemoteUpdate) this.onRemoteUpdate();
+        }
+        // 1º retorno do servidor concluído → a partir daqui é seguro enviar.
+        // Se val é null, a base remota está vazia (primeiro uso); ainda assim
+        // consideramos hidratado para permitir o bootstrap inicial.
+        if(!this._hydrated){
+          this._hydrated = true;
+          if(this._pushPending){ this._pushPending = false; this.schedulePush(); }
         }
         this.setStatus('on','conectado');
       }, (err)=>{
@@ -4184,6 +4249,8 @@ function renderAll(){
   renderCasos();
   renderPrazos();
   renderCalendar();
+  wireBulkGlobal();
+  renderBulkGlobal();
   if(selectedDateKey) renderDayDetail(selectedDateKey);
   if(selectedProcesso) renderProcDetail(selectedProcesso);
   // Reaplica o modo de acesso: selects de status e botões de casos são
@@ -4430,6 +4497,151 @@ function renderCalendar(){
     }
     grid.appendChild(cell);
   }
+}
+
+// ---------- STATUS EM MASSA (por dia / processo / período) ----------
+// Preserva as escolhas do usuário entre re-renders.
+let bulkState = { scope:'dia', dia:'', de:'', ate:'', status:'EXPEDIDA', procSel:{} };
+
+// Lista de processos ordenada por data (mais recente primeiro) + código
+function bulkProcessosOrdenados(){
+  return Object.values(processos).slice().sort((a,b)=>
+    (b.ano-a.ano)||(b.mes-a.mes)||(b.dia-a.dia)||a.codigo.localeCompare(b.codigo));
+}
+function bulkDateKey(p){
+  return `${p.ano}-${String(p.mes).padStart(2,'0')}-${String(p.dia).padStart(2,'0')}`;
+}
+function bulkDateLabel(p){
+  return `${String(p.dia).padStart(2,'0')}/${String(p.mes).padStart(2,'0')}/${p.ano}`;
+}
+
+// Retorna os processos que caem no alcance atualmente selecionado
+function bulkProcessosNoAlcance(){
+  const procs = bulkProcessosOrdenados();
+  if(bulkState.scope==='dia'){
+    if(!bulkState.dia) return [];
+    return procs.filter(p=>bulkDateKey(p)===bulkState.dia);
+  }
+  if(bulkState.scope==='periodo'){
+    if(!bulkState.de || !bulkState.ate) return [];
+    const de=bulkState.de, ate=bulkState.ate;
+    return procs.filter(p=>{ const k=bulkDateKey(p); return k>=de && k<=ate; });
+  }
+  // processo (multi-seleção)
+  return procs.filter(p=>bulkState.procSel[p.codigo]);
+}
+
+function renderBulkGlobal(){
+  const card = document.getElementById('bulkGlobalCard');
+  if(!card) return;
+
+  // Status dropdown (uma vez, com as opções na ordem oficial)
+  const stSel = document.getElementById('bulkGlobalStatusSel');
+  if(stSel && !stSel.dataset.filled){
+    stSel.innerHTML = SEP_ORDER.map(k=>`<option value="${k}">${SEP_STATUS[k].label}</option>`).join('');
+    stSel.dataset.filled = '1';
+  }
+  if(stSel) stSel.value = bulkState.status;
+
+  // Alterna os campos conforme o alcance
+  const scope = bulkState.scope;
+  document.getElementById('bulkDiaWrap').style.display        = scope==='dia'      ? '' : 'none';
+  document.getElementById('bulkPeriodoWrap').style.display    = scope==='periodo'  ? '' : 'none';
+  document.getElementById('bulkPeriodoAteWrap').style.display = scope==='periodo'  ? '' : 'none';
+  document.getElementById('bulkProcessoWrap').style.display   = scope==='processo' ? '' : 'none';
+  const scopeSel = document.getElementById('bulkScope'); if(scopeSel) scopeSel.value = scope;
+
+  // Select de dias (datas distintas existentes)
+  const diaSel = document.getElementById('bulkDiaSel');
+  if(diaSel){
+    const dias = [...new Set(bulkProcessosOrdenados().map(p=>bulkDateKey(p)))];
+    diaSel.innerHTML = dias.length
+      ? dias.map(k=>{ const [y,m,d]=k.split('-'); return `<option value="${k}">${d}/${m}/${y}</option>`; }).join('')
+      : '<option value="">— sem datas —</option>';
+    if(bulkState.dia && dias.includes(bulkState.dia)) diaSel.value = bulkState.dia;
+    else { bulkState.dia = diaSel.value; }
+  }
+
+  // Datas do período
+  const deInp=document.getElementById('bulkPeriodoDe'), ateInp=document.getElementById('bulkPeriodoAte');
+  if(deInp) deInp.value = bulkState.de;
+  if(ateInp) ateInp.value = bulkState.ate;
+
+  // Lista de checkboxes de processos
+  const list = document.getElementById('bulkProcList');
+  if(list){
+    const procs = bulkProcessosOrdenados();
+    list.innerHTML = procs.length ? procs.map(p=>{
+      const checked = bulkState.procSel[p.codigo] ? 'checked' : '';
+      return `<label style="display:flex; gap:6px; align-items:center; font-size:12px; color:var(--navy); cursor:pointer;">
+        <input type="checkbox" class="bulk-proc-cb" value="${p.codigo}" ${checked}>
+        <span><strong>${p.codigo}</strong> · ${bulkDateLabel(p)} · ${p.nfs.length} NF</span>
+      </label>`;
+    }).join('') : '<span style="color:var(--muted); font-size:12px;">Nenhum processo cadastrado.</span>';
+  }
+
+  // Info: quantos processos e NFs seriam afetados
+  const alvos = bulkProcessosNoAlcance();
+  const totalNf = alvos.reduce((s,p)=>s+p.nfs.length,0);
+  const info = document.getElementById('bulkGlobalInfo');
+  if(info){
+    info.innerHTML = alvos.length
+      ? `Alcance atual: <b>${alvos.length}</b> processo(s) · <b>${totalNf}</b> NF(s) serão marcadas como <b>${SEP_STATUS[bulkState.status].label}</b>.`
+      : '<span style="color:var(--yellow)">Nenhum processo no alcance selecionado.</span>';
+  }
+}
+
+// Liga os eventos do card de status em massa (uma única vez)
+function wireBulkGlobal(){
+  const card = document.getElementById('bulkGlobalCard');
+  if(!card || card.dataset.wired) return;
+  card.dataset.wired = '1';
+
+  document.getElementById('bulkScope').addEventListener('change', e=>{
+    bulkState.scope = e.target.value; renderBulkGlobal();
+  });
+  document.getElementById('bulkDiaSel').addEventListener('change', e=>{
+    bulkState.dia = e.target.value; renderBulkGlobal();
+  });
+  document.getElementById('bulkPeriodoDe').addEventListener('change', e=>{
+    bulkState.de = e.target.value; renderBulkGlobal();
+  });
+  document.getElementById('bulkPeriodoAte').addEventListener('change', e=>{
+    bulkState.ate = e.target.value; renderBulkGlobal();
+  });
+  document.getElementById('bulkGlobalStatusSel').addEventListener('change', e=>{
+    bulkState.status = e.target.value; renderBulkGlobal();
+  });
+  // Checkboxes (delegação)
+  document.getElementById('bulkProcList').addEventListener('change', e=>{
+    const cb = e.target.closest('.bulk-proc-cb'); if(!cb) return;
+    if(cb.checked) bulkState.procSel[cb.value] = true;
+    else delete bulkState.procSel[cb.value];
+    renderBulkGlobal();
+  });
+  document.getElementById('bulkProcAll').addEventListener('click', ()=>{
+    bulkProcessosOrdenados().forEach(p=>{ bulkState.procSel[p.codigo]=true; });
+    renderBulkGlobal();
+  });
+  document.getElementById('bulkProcNone').addEventListener('click', ()=>{
+    bulkState.procSel = {}; renderBulkGlobal();
+  });
+
+  // Aplicar
+  document.getElementById('bulkGlobalBtn').addEventListener('click', async ()=>{
+    const msg = document.getElementById('bulkGlobalMsg');
+    if(!Access.canEdit()){ alert('🔒 Edição bloqueada. Desbloqueie com a senha.'); return; }
+    const alvos = bulkProcessosNoAlcance();
+    if(!alvos.length){ msg.textContent='Selecione ao menos um processo no alcance.'; msg.className='msg err'; return; }
+    const status = bulkState.status;
+    const totalNf = alvos.reduce((s,p)=>s+p.nfs.length,0);
+    if(!confirm(`Aplicar status "${SEP_STATUS[status].label}" a ${totalNf} NF(s) de ${alvos.length} processo(s)?\n\nIsto sobrescreve o status atual dessas notas.`)) return;
+    alvos.forEach(p=>{ p.nfs.forEach(nf=>setStatusNf(p, nf, status)); });
+    try{ await saveProcessos(); }catch(e){}
+    msg.textContent = `✓ ${totalNf} NF(s) atualizadas.`; msg.className='msg';
+    renderAll();
+    toast(`✓ ${totalNf} NF(s) marcadas como ${SEP_STATUS[status].label}.`, false);
+  });
 }
 
 function renderDayDetail(key){
