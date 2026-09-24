@@ -966,7 +966,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">status em massa por dia/processo/periodo v40</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">IndexedDB (corrige QuotaExceeded/sync) + minuta prioriza Cargas v42</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -2353,7 +2353,7 @@ function rostoData(nfsFiltro) {
 
   for (const nf of nfList) {
     // prioridade: minuta digitada/importada no conversor; senão, a do Cargas
-    const minuta = nfMinutas[nf] || nfParaMinutaCargas[nf] || '';
+    const minuta = nfParaMinutaCargas[nf] || nfMinutas[nf] || '';
     if (!map.has(minuta)) map.set(minuta, { minuta, nfs: [] });
     // meta: prioridade para o que veio do XML (nfMeta); senão, o da minuta do Cargas
     const metaXml = nfMeta[nf] || {};
@@ -2843,11 +2843,13 @@ function buildLabelParams(nfsFiltro) {
   // Usado quando o nfMeta (vindo do XML) está vazio — ex.: notas cujos
   // metadados se perderam no banco antes da correção do removeFile.
   const metaCargas = {};
+  const minutaCargas = {};   // NF → minuta do Acompanhamento de Cargas (fonte oficial)
   if (window.CargasDB && window.CargasDB.listMinutas) {
     try {
       window.CargasDB.listMinutas().forEach(m=>{
         (m.nfs||[]).forEach(nf=>{
           metaCargas[nf] = { dest: m.destinatario||'', cidade: m.cidade||'', uf: m.uf||'' };
+          if (m.id) minutaCargas[nf] = m.id;
         });
       });
     } catch(e){}
@@ -2865,7 +2867,7 @@ function buildLabelParams(nfsFiltro) {
     };
     const totalNfe = nfItems.reduce((s,i)=>s+Math.max(1,Math.floor(i.qtd)),0);
     const sigla    = getCidadeSigla(meta.cidade||'');
-    const minuta   = nfMinutas[nf]||'';
+    const minuta   = minutaCargas[nf] || nfMinutas[nf] || '';
     const procTag  = nfParaProcTag[nf] || '';
     let volNfe=0;
     for (const item of nfItems) {
@@ -3607,6 +3609,87 @@ const NS = 'crg:';                       // prefixo do cache local de dados
 const DB_PATH = 'cargas';                // nó do Realtime Database onde os dados vivem
 const PUSH_DEBOUNCE_MS = 800;            // agrupa gravações antes de enviar
 
+// ══════════════════════════════════════════════════════════════════════════
+// ARMAZENAMENTO LOCAL EM INDEXEDDB (substitui o localStorage)
+// ──────────────────────────────────────────────────────────────────────────
+// O localStorage tem um limite de ~5 MB por origem. O banco de XML acumulado
+// (notas-xml-data) + processos + minutas ultrapassa isso e o navegador passa a
+// lançar QuotaExceededError — o que impedia a base recebida do Firebase de ser
+// gravada e, portanto, de aparecer no outro computador.
+//
+// Solução: guardamos tudo no IndexedDB (capacidade de centenas de MB) e
+// mantemos um espelho em memória (Map) para que as leituras/escritas continuem
+// SÍNCRONAS para o resto do código. As gravações no IndexedDB acontecem em
+// segundo plano. Antes de usar o app, LS.init() carrega o IndexedDB no Map.
+const LS = {
+  _mem: new Map(),          // espelho síncrono: chave completa (com NS) -> string
+  _db: null,
+  _ready: false,
+
+  _open(){
+    return new Promise((resolve)=>{
+      try{
+        const req = indexedDB.open('cargas-local', 1);
+        req.onupgradeneeded = ()=>{ req.result.createObjectStore('kv'); };
+        req.onsuccess = ()=>resolve(req.result);
+        req.onerror   = ()=>resolve(null);
+      }catch(e){ resolve(null); }
+    });
+  },
+
+  // Carrega todo o conteúdo do IndexedDB para o Map. Faz também uma migração
+  // única do que ainda estiver no localStorage antigo (e limpa de lá).
+  async init(){
+    if(this._ready) return;
+    this._db = await this._open();
+    if(this._db){
+      await new Promise((resolve)=>{
+        try{
+          const tx = this._db.transaction('kv','readonly');
+          const store = tx.objectStore('kv');
+          const cur = store.openCursor();
+          cur.onsuccess = (e)=>{ const c=e.target.result; if(c){ this._mem.set(c.key, c.value); c.continue(); } else resolve(); };
+          cur.onerror = ()=>resolve();
+        }catch(e){ resolve(); }
+      });
+    }
+    // Migração do localStorage antigo (uma vez) — move p/ IndexedDB e limpa
+    try{
+      const antigas = Object.keys(localStorage).filter(k=>k.startsWith(NS));
+      if(antigas.length){
+        for(const k of antigas){
+          if(!this._mem.has(k)){ this._mem.set(k, localStorage.getItem(k)); this._persist(k, localStorage.getItem(k)); }
+        }
+        // libera o localStorage para não ocupar cota nem confundir
+        antigas.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+      }
+    }catch(e){}
+    this._ready = true;
+  },
+
+  _persist(fullKey, value){
+    if(!this._db) return;
+    try{
+      const tx = this._db.transaction('kv','readwrite');
+      tx.objectStore('kv').put(value, fullKey);
+    }catch(e){}
+  },
+  _removePersist(fullKey){
+    if(!this._db) return;
+    try{
+      const tx = this._db.transaction('kv','readwrite');
+      tx.objectStore('kv').delete(fullKey);
+    }catch(e){}
+  },
+
+  // API síncrona compatível com localStorage (chave já COM o NS)
+  getItem(fullKey){ return this._mem.has(fullKey) ? this._mem.get(fullKey) : null; },
+  setItem(fullKey, value){ this._mem.set(fullKey, String(value)); this._persist(fullKey, String(value)); },
+  removeItem(fullKey){ this._mem.delete(fullKey); this._removePersist(fullKey); },
+  keys(){ return [...this._mem.keys()]; }
+};
+
+
 // ┌────────────────────────────────────────────────────────────────────────┐
 // │  COLE AQUI a configuração do SEU projeto Firebase (feito uma única vez). │
 // │  Firebase Console → ⚙ Configurações do projeto → Seus apps → SDK config. │
@@ -3645,17 +3728,17 @@ const Sync = {
   // Junta todas as chaves de dados do cache local num único objeto p/ enviar
   snapshotLocal(){
     const obj = {};
-    Object.keys(localStorage).forEach(k=>{
-      if(k.startsWith(NS)) obj[k.slice(NS.length)] = localStorage.getItem(k);
+    LS.keys().forEach(k=>{
+      if(k.startsWith(NS)) obj[k.slice(NS.length)] = LS.getItem(k);
     });
     return obj;
   },
 
   // Aplica um objeto vindo do servidor no cache local (sobrescreve as chaves)
   applyToLocal(obj){
-    Object.keys(localStorage).forEach(k=>{ if(k.startsWith(NS)) localStorage.removeItem(k); });
+    LS.keys().forEach(k=>{ if(k.startsWith(NS)) LS.removeItem(k); });
     Object.entries(obj||{}).forEach(([k,v])=>{
-      localStorage.setItem(NS+k, typeof v==='string' ? v : JSON.stringify(v));
+      LS.setItem(NS+k, typeof v==='string' ? v : JSON.stringify(v));
     });
   },
 
@@ -3764,7 +3847,7 @@ const Access = {
     return (h>>>0).toString(16);
   },
 
-  storedHash(){ return localStorage.getItem(NS+'edit-pass-hash'); },
+  storedHash(){ return LS.getItem(NS+'edit-pass-hash'); },
 
   hasPassword(){ return !!this.storedHash(); },
 
@@ -3772,7 +3855,7 @@ const Access = {
   // ou quando ainda não existe senha nenhuma)
   setPassword(plain){
     const h = this.hash(plain);
-    localStorage.setItem(NS+'edit-pass-hash', h);
+    LS.setItem(NS+'edit-pass-hash', h);
     Sync.schedulePush();     // propaga a senha para a base compartilhada
     this.unlocked = true;    // quem define a senha já fica com edição liberada
     if(this.onChange) this.onChange();
@@ -3801,23 +3884,23 @@ const Access = {
 if (!window.storage) {
   window.storage = {
     async get(key) {
-      const raw = localStorage.getItem(NS + key);
+      const raw = LS.getItem(NS + key);
       if (raw === null) throw new Error('key not found: ' + key);
       return { key, value: raw, shared: false };
     },
     async set(key, value) {
-      localStorage.setItem(NS + key, value);
-      Sync.schedulePush();   // grava local na hora, envia ao Gist em background
+      LS.setItem(NS + key, value);
+      Sync.schedulePush();   // grava local na hora, envia ao Firebase em background
       return { key, value, shared: false };
     },
     async delete(key) {
-      localStorage.removeItem(NS + key);
+      LS.removeItem(NS + key);
       Sync.schedulePush();
       return { key, deleted: true, shared: false };
     },
     async list(prefix) {
       const p = NS + (prefix || '');
-      const keys = Object.keys(localStorage).filter(k => k.startsWith(p)).map(k => k.slice(NS.length));
+      const keys = LS.keys().filter(k => k.startsWith(p)).map(k => k.slice(NS.length));
       return { keys, prefix, shared: false };
     }
   };
@@ -3908,6 +3991,7 @@ function prazoInfo(proc){
 }
 
 async function loadData(){
+  await LS.init();   // garante o cache do IndexedDB carregado antes de ler
   try{
     const p = await window.storage.get('processos-data', false);
     processos = p ? JSON.parse(p.value) : {};
@@ -5532,7 +5616,11 @@ document.getElementById('printRomaneioBtn').addEventListener('click', ()=>{
 
   if(Sync.isConfigured()){
     // Firebase configurado no código → liga automaticamente para todos.
-    Sync.start();
+    // Espera o cache local (IndexedDB) carregar antes de conectar, para que o
+    // primeiro snapshot remoto seja mesclado sobre dados já hidratados.
+    LS.init().then(()=>{
+      Sync.start();
+    });
     // Se a página for fechada/ocultada com uma gravação pendente (debounce),
     // envia imediatamente para não perder a alteração mais recente.
     const flush = ()=>{ if(Sync.pushTimer){ clearTimeout(Sync.pushTimer); Sync.pushTimer=null; try{ Sync.push(); }catch(e){} } };
