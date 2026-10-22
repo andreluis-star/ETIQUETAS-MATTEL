@@ -628,12 +628,18 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #printArea .pr-assin div{flex:1; border-top:1px solid #666; padding-top:4px; font-size:10px; text-align:center; color:#444;}
 
 @media print{
-body *{visibility:hidden;}
-#printArea, #printArea *{visibility:visible;}
+/* Esconde TODO o resto de verdade (display:none) — não só visibility:hidden.
+   Com visibility:hidden os elementos continuam ocupando altura no fluxo e
+   geram páginas em branco depois do romaneio. Com display:none eles somem. */
+body > *{display:none !important;}
 #printArea{
-      display:block !important; position:absolute; left:0; top:0; width:100%;
+      display:block !important; position:static; width:100%;
       background:#fff; color:#000; font-size:11px;
     }
+#printArea, #printArea *{visibility:visible;}
+/* Evita quebra de página dentro de uma linha da tabela do romaneio */
+#printArea .pr-romaneio tr{page-break-inside:avoid;}
+#printArea .pr-romaneio thead{display:table-header-group;}
 @page{margin:12mm;}
 }
 
@@ -966,7 +972,7 @@ body *{visibility:hidden;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">IndexedDB (corrige QuotaExceeded/sync) + minuta prioriza Cargas v42</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">romaneio sem paginas em branco + prazos top5 + folha rosto minuta vazia v43</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -2454,7 +2460,7 @@ function printRosto() {
   for (const g of groups) {
     const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
     const single = g.nfs.length === 1;
-    const minutaLabel = g.minuta ? esc(g.minuta) : 'SEM MINUTA';
+    const minutaLabel = g.minuta ? esc(g.minuta) : '';
     const scale = rostoScale(g.nfs.length);
     let mid = '';
     const procItem = g.processo
@@ -4361,7 +4367,11 @@ function renderPrazos(){
   // ordena por prazo mais urgente
   pendentes.sort((a,b)=>prazoDate(a) - prazoDate(b));
   list.innerHTML='';
-  pendentes.forEach(p=>{
+
+  // Mostra só os 5 mais urgentes; o resto fica recolhido atrás de "ver mais".
+  const LIMITE = 5;
+
+  const criaItem = (p)=>{
     const c = sepCounts(p);
     const info = prazoInfo(p);
     const dots = SEP_ORDER.filter(k=>c[k]>0).map(k=>{
@@ -4386,8 +4396,37 @@ function renderPrazos(){
       renderAll();
       document.getElementById('procDetail').scrollIntoView({behavior:'smooth', block:'nearest'});
     });
-    list.appendChild(div);
-  });
+    return div;
+  };
+
+  const visiveis = pendentes.slice(0, LIMITE);
+  const ocultos  = pendentes.slice(LIMITE);
+
+  visiveis.forEach(p=> list.appendChild(criaItem(p)));
+
+  if(ocultos.length){
+    // Container dos ocultos (começa recolhido)
+    const extra = document.createElement('div');
+    extra.id = 'prazosExtra';
+    extra.style.display = 'none';
+    ocultos.forEach(p=> extra.appendChild(criaItem(p)));
+    list.appendChild(extra);
+
+    // Botão alternar
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-navy btn-sm';
+    btn.style.cssText = 'margin-top:8px; width:100%;';
+    btn.textContent = `▼ ver mais ${ocultos.length} processo(s)`;
+    btn.addEventListener('click', ()=>{
+      const aberto = extra.style.display !== 'none';
+      extra.style.display = aberto ? 'none' : 'block';
+      btn.textContent = aberto
+        ? `▼ ver mais ${ocultos.length} processo(s)`
+        : `▲ ver menos`;
+    });
+    list.appendChild(btn);
+  }
 }
 
 function renderCasos(){
