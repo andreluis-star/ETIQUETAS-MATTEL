@@ -628,18 +628,10 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
 #printArea .pr-assin div{flex:1; border-top:1px solid #666; padding-top:4px; font-size:10px; text-align:center; color:#444;}
 
 @media print{
-/* Esconde TODO o resto de verdade (display:none) — não só visibility:hidden.
-   Com visibility:hidden os elementos continuam ocupando altura no fluxo e
-   geram páginas em branco depois do romaneio. Com display:none eles somem. */
-body > *{display:none !important;}
-#printArea{
-      display:block !important; position:static; width:100%;
-      background:#fff; color:#000; font-size:11px;
-    }
-#printArea, #printArea *{visibility:visible;}
-/* Evita quebra de página dentro de uma linha da tabela do romaneio */
-#printArea .pr-romaneio tr{page-break-inside:avoid;}
-#printArea .pr-romaneio thead{display:table-header-group;}
+/* Os relatórios (detalhado e romaneio) e a folha de rosto agora abrem numa
+   aba própria e imprimem a partir de lá — não há mais impressão inline pelo
+   #printArea, então não é preciso esconder a página aqui. */
+#printArea{display:none !important;}
 @page{margin:12mm;}
 }
 
@@ -972,7 +964,7 @@ body > *{display:none !important;}
 <header>
   <div class="brand">
     <h1>Acompanhamento de Cargas</h1>
-    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">romaneio sem paginas em branco + prazos top5 + folha rosto minuta vazia v43</span></div>
+    <div class="tag">Mattel · Coletas &amp; Minutas por processo · <span style="opacity:.6;">relatorios imprimem em aba propria (sem travar) + folha rosto ok v45</span></div>
   </div>
   <div class="tag" id="summaryTag">—</div>
 </header>
@@ -2447,8 +2439,11 @@ function gerarRosto() {
 // cheio; a partir de 8 NFs reduz progressivamente para garantir que tudo
 // caiba em uma única página impressa, mesmo com muitas notas na mesma minuta.
 function rostoScale(n) {
-  if (n <= 8) return 1;
-  return Math.max(0.4, 8 / n);
+  // Reduz o conteúdo conforme o número de NFs, para caber melhor na folha.
+  // A partir de 6 NFs começa a encolher; a página agora cresce para uma 2ª
+  // folha se ainda assim não couber, então não precisa ir a extremos.
+  if (n <= 6) return 1;
+  return Math.max(0.5, 6 / n);
 }
 
 function printRosto() {
@@ -2492,7 +2487,7 @@ function printRosto() {
     pages += `<div class="rosto-page" style="--rp-scale:${scale}">
       <div class="rp-minuta">
         <div class="rp-paletes"><span class="rp-paletes-lbl">PALETES</span><span class="rp-paletes-val">&nbsp;&nbsp;/&nbsp;&nbsp;</span></div>
-        <span class="rp-minuta-lbl">MINUTA</span><span class="rp-minuta-val">${minutaLabel}</span>
+        <span class="rp-minuta-lbl">MINUTA</span><span class="rp-minuta-val">${minutaLabel || '&nbsp;'}</span>
       </div>
       ${mid}
     </div>`;
@@ -2503,12 +2498,17 @@ function printRosto() {
     /* Uma página por minuta, com altura fixa (não min-height) para garantir que
        cada minuta ocupe exatamente uma folha impressa — o conteúdo é escalado
        via --rp-scale para caber mesmo com muitas NFs. */
-    .rosto-page{--rp-scale:1;width:297mm;height:210mm;padding:8mm;display:flex;flex-direction:column;overflow:hidden}
+    /* min-height (nao height fixo) para que, quando houver muitas NFs, a tabela
+       continue numa segunda folha em vez de ser cortada. Cada minuta ainda
+       comeca numa pagina nova (page-break-before). */
+    .rosto-page{--rp-scale:1;width:297mm;min-height:210mm;padding:8mm;display:flex;flex-direction:column}
     .rosto-page + .rosto-page{page-break-before:always;break-before:page}
     /* Sem fundo preto: apenas contorno preto, fundo branco e texto preto */
     .rp-minuta{position:relative;background:#fff;color:#000;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(5mm*max(var(--rp-scale),.7));border-radius:4mm;margin-bottom:calc(5mm*max(var(--rp-scale),.6))}
     .rp-minuta-lbl{font-size:20pt;letter-spacing:6px;font-weight:700;color:#000}
-    .rp-minuta-val{font-size:calc(100pt*max(var(--rp-scale),.7));font-weight:900;line-height:1.05;color:#000}
+    /* min-height reserva o espaco do numero mesmo quando a minuta esta vazia,
+       para o campo nao encolher (o usuario escreve a minuta a mao). */
+    .rp-minuta-val{font-size:calc(100pt*max(var(--rp-scale),.7));font-weight:900;line-height:1.05;color:#000;min-height:calc(100pt*max(var(--rp-scale),.7));display:block}
     /* Paletes (preenchimento à mão) — dentro do mesmo campo da Minuta, no canto direito, sempre na mesma página */
     .rp-paletes{position:absolute;top:5mm;right:8mm;display:flex;flex-direction:column;align-items:center;color:#000}
     .rp-paletes-lbl{font-size:13pt;font-weight:700;letter-spacing:2px;color:#000}
@@ -2524,7 +2524,9 @@ function printRosto() {
     .rp-info-lbl{display:block;font-size:calc(13pt*max(var(--rp-scale),.8));color:#000;font-weight:700;text-transform:uppercase;letter-spacing:1px}
     .rp-info-val{display:block;font-size:calc(30pt*max(var(--rp-scale),.8));font-weight:900;color:#000}
     .rp-info-val-text{font-size:calc(22pt*max(var(--rp-scale),.8))}
-    .rp-table{width:100%;border-collapse:collapse;font-size:calc(12pt*var(--rp-scale));margin-top:2mm;flex:1;overflow:hidden}
+    .rp-table{width:100%;border-collapse:collapse;font-size:calc(12pt*var(--rp-scale));margin-top:2mm}
+    .rp-table tr{page-break-inside:avoid}
+    .rp-table thead{display:table-header-group}
     .rp-table th,.rp-table td{border:1px solid #000;padding:calc(2mm*var(--rp-scale)) calc(3mm*var(--rp-scale));text-align:left;color:#000}
     .rp-table th{background:#fff;text-transform:uppercase;font-size:calc(10pt*var(--rp-scale));font-weight:700}
     @page{size:A4 landscape;margin:0}`;
@@ -5614,6 +5616,54 @@ function resolverFiltroImpressao(){
   return { filtrados: [], titulo: '' };
 }
 
+// CSS usado nas janelas de impressão de relatório/romaneio (mesmas classes do
+// #printArea, sem o prefixo, porque agora cada relatório abre numa aba própria —
+// mais rápido e sem travar a página principal com window.print() inline).
+function relatorioPrintCss(){
+  return `
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;color:#000;font-size:11px;padding:0;}
+    .pr-header{border-bottom:3px solid #1A3A6E;padding-bottom:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end;}
+    .pr-header h1{font-size:17px;margin:0;color:#1A3A6E;}
+    .pr-header .pr-sub{font-size:10.5px;color:#555;}
+    .pr-dia{background:#1A3A6E;color:#fff;font-size:13px;font-weight:700;padding:5px 10px;border-radius:4px;margin:14px 0 8px;page-break-after:avoid;}
+    .pr-proc{border:1px solid #BBB;border-radius:5px;padding:8px 10px;margin-bottom:10px;page-break-inside:avoid;}
+    .pr-proc-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;border-bottom:1px solid #DDD;padding-bottom:5px;margin-bottom:6px;}
+    .pr-proc-head .cod{font-size:13px;font-weight:800;color:#1A3A6E;}
+    .pr-proc-head .meta{font-size:10px;color:#444;}
+    .st-print{font-weight:800;padding:2px 8px;border-radius:10px;font-size:9px;white-space:nowrap;border:1px solid rgba(0,0,0,.25);text-transform:uppercase;}
+    table{width:100%;border-collapse:collapse;font-size:9.5px;}
+    th,td{border:1px solid #CCC;padding:3px 5px;text-align:left;vertical-align:top;}
+    th{background:#EEF1F6;color:#1A3A6E;font-size:8.5px;text-transform:uppercase;}
+    .pr-romaneio{width:100%;border-collapse:collapse;font-size:9.5px;}
+    .pr-romaneio th,.pr-romaneio td{border:1px solid #999;padding:3px 5px;text-align:left;vertical-align:middle;}
+    .pr-romaneio th{background:#EEF1F6;color:#1A3A6E;font-size:8.5px;text-transform:uppercase;text-align:center;}
+    .pr-romaneio .rz-center{text-align:center;}
+    .pr-romaneio .rz-proc{font-weight:800;color:#1A3A6E;text-align:center;}
+    .pr-romaneio .rz-total{font-weight:800;text-align:center;background:#F4F7FB;color:#1A3A6E;font-size:11px;}
+    .pr-romaneio .rz-total-head{background:#1A3A6E;color:#fff;}
+    .pr-romaneio .rz-total-head span{font-size:12px;font-weight:800;}
+    .pr-romaneio tr{page-break-inside:avoid;}
+    .pr-romaneio thead{display:table-header-group;}
+    .pr-resumo{font-size:10px;color:#333;margin-bottom:10px;border:1px solid #DDD;border-radius:4px;padding:6px 8px;background:#F7F8FA;}
+    .pr-assin{margin-top:26px;display:flex;gap:40px;}
+    .pr-assin div{flex:1;border-top:1px solid #666;padding-top:4px;font-size:10px;text-align:center;color:#444;}
+    @page{margin:12mm;}`;
+}
+
+// Abre o relatório numa aba nova e dispara a impressão quando a página carrega.
+// Mais rápido e confiável do que renderizar no #printArea e chamar
+// window.print() na própria página (que, com relatórios grandes, travava).
+function abrirImpressaoRelatorio(html){
+  const win = window.open('', '_blank');
+  if(!win){ alert('⚠ O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.'); return; }
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório</title>
+    <style>${relatorioPrintCss()}</style></head><body>${html}
+    <script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
 document.getElementById('printBtn').addEventListener('click', ()=>{
   const msg = document.getElementById('printMsg');
   msg.textContent='';
@@ -5622,8 +5672,7 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
   const hideExp = document.getElementById('printHideExp').checked;
   const html = buildPrintHTML(filtrados, titulo, hideExp);
   if(!html){ msg.textContent = hideExp ? 'Nada a exibir (todas as notas do filtro estão expedidas).' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
-  document.getElementById('printArea').innerHTML = html;
-  window.print();
+  abrirImpressaoRelatorio(html);
 });
 
 // ── ROMANEIO POR CIDADE ────────────────────────────────────────────────────
@@ -5635,8 +5684,7 @@ document.getElementById('printRomaneioBtn').addEventListener('click', ()=>{
   const hideExp = document.getElementById('printHideExp').checked;
   const html = buildRomaneioHTML(filtrados, titulo, hideExp);
   if(!html){ msg.textContent = hideExp ? 'Nada a exibir (todas as notas do filtro estão expedidas).' : 'Nenhum processo encontrado para esse filtro.'; msg.className='msg err'; return; }
-  document.getElementById('printArea').innerHTML = html;
-  window.print();
+  abrirImpressaoRelatorio(html);
 });
 
 // ══════════════════════════════════════════════════════════════════════════
