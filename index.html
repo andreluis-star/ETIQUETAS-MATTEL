@@ -210,6 +210,9 @@ td.qtd{text-align:right;font-weight:600}
 .etiqueta-intervalo .et-intervalo-sku{font-size:60pt;font-weight:800;color:#000;line-height:1;text-align:center;margin-bottom:-8mm}
 .etiqueta-intervalo .et-intervalo-txt{font-size:130pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#000;text-align:center;line-height:1}
 .etiqueta-intervalo .et-intervalo-num{font-size:60pt;font-weight:800;color:#000;line-height:1;margin-top:-8mm}
+.etiqueta-minuta-sep{position:relative;display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
+.etiqueta-minuta-sep .et-minsep-lbl{position:absolute;top:4mm;left:0;right:0;text-align:center;font-size:14pt;font-weight:700;letter-spacing:3px;color:#000}
+.etiqueta-minuta-sep .et-minsep-num{font-weight:900;color:#000;line-height:1;text-align:center;white-space:nowrap;font-family:Arial,sans-serif;transform:scaleY(1.6)}
 /* Row 1: NFE ocupa todo o espaço à esquerda (Volume(NFE) foi para a Row 6) */
 .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
 .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
@@ -2562,6 +2565,17 @@ function buildLabel(p) {
   // Etiqueta SEPARADORA entre SKUs: mostra as 3 últimas letras do processo,
   // centralizadas, no estilo da sigla da cidade porém 200% maior (o triplo).
   // Sem código de barras e sem numeração.
+  // Etiqueta SEPARADORA entre MINUTAS: número da minuta bem grande,
+  // centralizado na vertical e na horizontal.
+  if (p._intervalo && p._minutaSep) {
+    const txt = p.minutaSep || 'SEM MINUTA';
+    const pt  = txt.length <= 6 ? 94 : Math.floor(520 / txt.length); // cabe na largura de 148 mm
+    return `
+<div class="etiqueta etiqueta-minuta-sep">
+  <div class="et-minsep-lbl">MINUTA</div>
+  <div class="et-minsep-num" style="font-size:${pt}pt">${esc(txt)}</div>
+</div>`;
+  }
   if (p._intervalo) {
     const tag = p.procTag || '***';
     return `
@@ -2957,6 +2971,19 @@ function buildLabelParams(nfsFiltro) {
     }
     return comIntervalos;
   }
+
+  // No modo Minuta, insere uma ETIQUETA SEPARADORA com o número da minuta
+  // seguinte — só ENTRE os grupos (nunca antes da primeira nem após a última).
+  if (labelSortMode === 'minuta' && labels.length > 1) {
+    const comSep = [];
+    for (let i=0; i<labels.length; i++){
+      if (i>0 && String(labels[i].minuta||'') !== String(labels[i-1].minuta||'')) {
+        comSep.push({ _intervalo:true, _minutaSep:true, minutaSep: labels[i].minuta||'' });
+      }
+      comSep.push(labels[i]);
+    }
+    return comSep;
+  }
   return labels;
 }
 
@@ -3021,6 +3048,9 @@ function labelPrintCss() {
     .etiqueta-intervalo .et-intervalo-sku{font-size:60pt;font-weight:800;color:#000;line-height:1;text-align:center;margin-bottom:-8mm}
     .etiqueta-intervalo .et-intervalo-txt{font-size:130pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#000;text-align:center;line-height:1}
     .etiqueta-intervalo .et-intervalo-num{font-size:60pt;font-weight:800;color:#000;line-height:1;margin-top:-8mm}
+    .etiqueta-minuta-sep{position:relative;display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
+    .etiqueta-minuta-sep .et-minsep-lbl{position:absolute;top:4mm;left:0;right:0;text-align:center;font-size:14pt;font-weight:700;letter-spacing:3px;color:#000}
+    .etiqueta-minuta-sep .et-minsep-num{font-weight:900;color:#000;line-height:1;text-align:center;white-space:nowrap;font-family:Arial,sans-serif;transform:scaleY(1.6)}
     .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
     .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
     .et-nfe-num .lbl{font-size:7pt;color:#000}
