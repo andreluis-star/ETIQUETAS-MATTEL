@@ -853,6 +853,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
             <div class="tabs">
               <button class="tab-btn active" id="btnSortNf"  onclick="setLabelSort('nf')">Nota Fiscal</button>
               <button class="tab-btn"        id="btnSortCod" onclick="setLabelSort('cod')">Código (SKU)</button>
+              <button class="tab-btn"        id="btnSortMin" onclick="setLabelSort('minuta')" title="Agrupa as etiquetas por minuta (dentro de cada minuta, por NF)">Minuta</button>
             </div>
             <button class="tab-btn" id="btnSortDir" onclick="toggleLabelSortDir()" title="Inverter a ordem (crescente / decrescente)" style="margin-left:6px;">↓ A-Z</button>
           </div>
@@ -2624,7 +2625,7 @@ function buildLabel(p) {
 // ══════════════════════════════════════════════════════════════════════════════
 // ORDENAÇÃO DAS ETIQUETAS (por Nota Fiscal ou por Código/SKU)
 // ══════════════════════════════════════════════════════════════════════════════
-let labelSortMode = 'nf'; // 'nf' | 'cod'
+let labelSortMode = 'nf'; // 'nf' | 'cod' | 'minuta'
 let labelSortDir = 'asc';  // 'asc' (A-Z / crescente) | 'desc' (Z-A / decrescente)
 let labelGenMode = 'nota'; // 'nota' | 'processo' | 'data' | 'minuta'
 let labelSelecionados = new Set(); // chaves marcadas no seletor atual
@@ -2634,6 +2635,7 @@ function setLabelSort(mode) {
   labelSortMode = mode;
   $('btnSortNf').classList.toggle('active', mode==='nf');
   $('btnSortCod').classList.toggle('active', mode==='cod');
+  if ($('btnSortMin')) $('btnSortMin').classList.toggle('active', mode==='minuta');
   if (labelGerado) gerarEtiquetas(); // re-gera na nova ordem só se já foi gerado
 }
 
@@ -2898,6 +2900,19 @@ function buildLabelParams(nfsFiltro) {
       const n = String(a.nf).localeCompare(String(b.nf), undefined, { numeric:true });
       if (n !== 0) return n;
       return a.volProd - b.volProd;
+    });
+  } else if (labelSortMode === 'minuta') {
+    // modo Minuta: agrupa por minuta (crescente) e, dentro dela, por NF e
+    // sequência de volumes — igual ao modo Nota Fiscal. NFs sem minuta vão
+    // para o fim.
+    labels.sort((a,b) => {
+      const ma = String(a.minuta||''), mb = String(b.minuta||'');
+      if (!ma !== !mb) return ma ? -1 : 1;
+      const m = ma.localeCompare(mb, undefined, { numeric:true, sensitivity:'base' });
+      if (m !== 0) return m;
+      const n = String(a.nf).localeCompare(String(b.nf), undefined, { numeric:true });
+      if (n !== 0) return n;
+      return a.volNfe - b.volNfe;
     });
   } else {
     // modo Nota Fiscal: ordena por número da NF, mantendo a sequência de volumes
