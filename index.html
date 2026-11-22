@@ -213,6 +213,7 @@ td.qtd{text-align:right;font-weight:600}
 .etiqueta-minuta-sep{position:relative;display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
 .etiqueta-minuta-sep .et-minsep-lbl{position:absolute;top:4mm;left:0;right:0;text-align:center;font-size:14pt;font-weight:700;letter-spacing:3px;color:#000}
 .etiqueta-minuta-sep .et-minsep-num{font-weight:900;color:#000;line-height:1;text-align:center;white-space:nowrap;font-family:Arial,sans-serif;transform:scaleY(1.6)}
+.etiqueta-minuta-sep .et-minsep-fig{position:absolute;top:4mm;width:24mm;height:24mm}.etiqueta-minuta-sep .et-minsep-fig-l{left:5mm}.etiqueta-minuta-sep .et-minsep-fig-r{right:5mm}
 /* Row 1: NFE ocupa todo o espaço à esquerda (Volume(NFE) foi para a Row 6) */
 .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
 .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
@@ -225,6 +226,7 @@ td.qtd{text-align:right;font-weight:600}
 /* Sigla: filho direto do grid externo — extremidade direita, do teto até sobre o campo Cód (linhas 1 a 4), letra maior */
 .et-city{grid-column:2;grid-row:1/5;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #000}
 .et-city-text{font-size:61.6pt;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);text-transform:uppercase;color:#000}
+.et-city--fig{flex-direction:column;justify-content:space-evenly}.et-city--fig .et-city-text{font-size:46pt}.et-city-fig{width:32mm;height:32mm;flex-shrink:0;display:block}
 .et-row2{grid-row:2;grid-column:1;padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;border-bottom:1.5px solid #000}
 .et-row2 .lbl{font-size:7pt;font-weight:700;margin-bottom:.8mm;color:#000}
 .et-row2 .val{font-size:9.5pt;font-weight:700;line-height:1.2;color:#000}
@@ -2561,6 +2563,39 @@ function getCidadeSigla(cidade) {
 // ══════════════════════════════════════════════════════════════════════════════
 // LABEL BUILD
 // ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// FIGURAS DAS MINUTAS — sinal visual para notar uma etiqueta fora do grupo.
+// Pretas e chapadas (impressora térmica). A ordem alterna formas bem
+// diferentes, para que minutas vizinhas (1ª, 2ª, 3ª...) nunca se pareçam.
+// ══════════════════════════════════════════════════════════════════════════════
+const MINUTA_FIGURAS = [
+  { nome:'Círculo',            svg:'<circle cx="50" cy="50" r="46"/>' },
+  { nome:'Triângulo',          svg:'<polygon points="50,4 96,92 4,92"/>' },
+  { nome:'Quadrado',           svg:'<rect x="8" y="8" width="84" height="84"/>' },
+  { nome:'Estrela',            svg:'<polygon points="50,3 61,37 97,37 68,59 79,94 50,72 21,94 32,59 3,37 39,37"/>' },
+  { nome:'Cruz',               svg:'<polygon points="36,4 64,4 64,36 96,36 96,64 64,64 64,96 36,96 36,64 4,64 4,36 36,36"/>' },
+  { nome:'Losango',            svg:'<polygon points="50,2 98,50 50,98 2,50"/>' },
+  { nome:'Coração',            svg:'<path d="M50 94 L10 52 A22 22 0 0 1 50 20 A22 22 0 0 1 90 52 Z"/>' },
+  { nome:'Xis',                svg:'<polygon points="20,4 50,34 80,4 96,20 66,50 96,80 80,96 50,66 20,96 4,80 34,50 4,20"/>' },
+  { nome:'Hexágono',           svg:'<polygon points="27,6 73,6 96,50 73,94 27,94 4,50"/>' },
+  { nome:'Lua',                svg:'<path fill-rule="evenodd" d="M50 4 A46 46 0 1 0 50 96 A46 46 0 1 0 50 4 Z M66 10 A36 36 0 1 1 66 90 A36 36 0 1 1 66 10 Z"/>' },
+  { nome:'Triângulo invertido',svg:'<polygon points="4,8 96,8 50,96"/>' },
+  { nome:'Anel',               svg:'<path fill-rule="evenodd" d="M50 4 A46 46 0 1 0 50 96 A46 46 0 1 0 50 4 Z M50 28 A22 22 0 1 1 50 72 A22 22 0 1 1 50 28 Z"/>' },
+  { nome:'Seta',               svg:'<polygon points="4,36 54,36 54,8 96,50 54,92 54,64 4,64"/>' },
+  { nome:'Raio',               svg:'<polygon points="60,2 16,56 46,56 36,98 84,40 54,40 66,2"/>' },
+  { nome:'Quadrado vazado',    svg:'<path fill-rule="evenodd" d="M6 6 H94 V94 H6 Z M28 28 V72 H72 V28 Z"/>' },
+  { nome:'Ampulheta',          svg:'<polygon points="6,4 94,4 50,50 94,96 6,96 50,50"/>' },
+  { nome:'Meia-lua',           svg:'<path d="M4 34 H96 A46 46 0 0 1 4 34 Z"/>' },
+  { nome:'Três barras',        svg:'<rect x="4" y="6" width="92" height="20"/><rect x="4" y="40" width="92" height="20"/><rect x="4" y="74" width="92" height="20"/>' },
+  { nome:'Triângulo vazado',   svg:'<path fill-rule="evenodd" d="M50 4 L96 92 H4 Z M50 40 L28 80 H72 Z"/>' },
+  { nome:'Xadrez',             svg:'<rect x="6" y="6" width="44" height="44"/><rect x="50" y="50" width="44" height="44"/><rect x="6" y="6" width="88" height="88" fill="none" stroke="#000" stroke-width="6"/>' }
+];
+function minutaFiguraSvg(idx, cls) {
+  if (idx == null || idx < 0) return '';
+  const f = MINUTA_FIGURAS[idx % MINUTA_FIGURAS.length];
+  return `<svg class="${cls}" viewBox="0 0 100 100" fill="#000" role="img" aria-label="${f.nome}"><title>${f.nome}</title>${f.svg}</svg>`;
+}
+
 function buildLabel(p) {
   // Etiqueta SEPARADORA entre SKUs: mostra as 3 últimas letras do processo,
   // centralizadas, no estilo da sigla da cidade porém 200% maior (o triplo).
@@ -2572,6 +2607,7 @@ function buildLabel(p) {
     const pt  = txt.length <= 6 ? 94 : Math.floor(520 / txt.length); // cabe na largura de 148 mm
     return `
 <div class="etiqueta etiqueta-minuta-sep">
+  ${minutaFiguraSvg(p.figIdx, 'et-minsep-fig et-minsep-fig-l')}${minutaFiguraSvg(p.figIdx, 'et-minsep-fig et-minsep-fig-r')}
   <div class="et-minsep-lbl">MINUTA</div>
   <div class="et-minsep-num" style="font-size:${pt}pt">${esc(txt)}</div>
 </div>`;
@@ -2596,7 +2632,7 @@ function buildLabel(p) {
       <div class="et-nfe-box">${esc(p.nf)}</div>
     </div>
   </div>
-  <div class="et-city"><span class="et-city-text">${esc(p.sigla)}</span></div>
+  <div class="et-city${p.figIdx >= 0 ? ' et-city--fig' : ''}">${minutaFiguraSvg(p.figIdx, 'et-city-fig')}<span class="et-city-text">${esc(p.sigla)}</span></div>
   <div class="et-row2">
     <span class="lbl">Destinatário</span>
     <span class="val">${esc(p.dest)}</span>
@@ -2879,6 +2915,34 @@ function buildLabelParams(nfsFiltro) {
     } catch(e){}
   }
 
+  // FIGURA DA MINUTA: cada minuta recebe uma figura conforme a sua posição
+  // (ordem crescente) entre TODAS as minutas do mesmo processo — não só das
+  // selecionadas — para que reimpressões parciais saiam com a mesma figura.
+  const minutaDaNf = nf => minutaCargas[nf] || nfMinutas[nf] || '';
+  const nfParaProcCod = {};
+  _procList.forEach(p=>{ (p.nfs||[]).forEach(nf=>{ nfParaProcCod[nf] = p.codigo || ''; }); });
+  // Uma minuta pode ter notas em mais de um processo: ela fica no processo
+  // onde tem MAIS notas, para que todas as suas etiquetas tenham a mesma figura.
+  const contagemMinProc = {};   // minuta → { processo → nº de NFs }
+  new Set([...allItems.map(i=>i.nf), ...Object.keys(minutaCargas), ..._procList.flatMap(p=>p.nfs||[])]).forEach(nf=>{
+    const m = minutaDaNf(nf); if (!m) return;
+    const g = nfParaProcCod[nf] || '';
+    const c = (contagemMinProc[String(m)] = contagemMinProc[String(m)] || {});
+    c[g] = (c[g] || 0) + 1;
+  });
+  const minutasPorProc = {};
+  for (const m in contagemMinProc) {
+    const c = contagemMinProc[m];
+    const g = Object.keys(c).sort((a,b)=> (c[b]-c[a]) || (!a - !b) || a.localeCompare(b))[0];
+    (minutasPorProc[g] = minutasPorProc[g] || []).push(m);
+  }
+  const figuraPorMinuta = {};
+  for (const g in minutasPorProc) {
+    minutasPorProc[g].sort((a,b)=>a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}))
+      .forEach((m, i) => { figuraPorMinuta[m] = i; });
+  }
+  const figuraIdx = (nf, minuta) => minuta && String(minuta) in figuraPorMinuta ? figuraPorMinuta[String(minuta)] : -1;
+
   const labels = [];
   for (const nf of nfOrder) {
     const nfItems  = allItems.filter(i=>i.nf===nf);
@@ -2893,6 +2957,7 @@ function buildLabelParams(nfsFiltro) {
     const sigla    = getCidadeSigla(meta.cidade||'');
     const minuta   = minutaCargas[nf] || nfMinutas[nf] || '';
     const procTag  = nfParaProcTag[nf] || '';
+    const figIdx   = figuraIdx(nf, minuta);
     let volNfe=0;
     for (const item of nfItems) {
       const totalProd = Math.max(1, Math.floor(item.qtd));
@@ -2900,7 +2965,7 @@ function buildLabelParams(nfsFiltro) {
         volNfe++;
         labels.push({ nf, dest:meta.dest||'', cidade:meta.cidade||'',
           uf:meta.uf||'', sigla, cod:item.cod, sku:item.sku,
-          item:item.item, volNfe, totalNfe, volProd:vp, totalProd, minuta, procTag });
+          item:item.item, volNfe, totalNfe, volProd:vp, totalProd, minuta, procTag, figIdx });
       }
     }
   }
@@ -2978,7 +3043,7 @@ function buildLabelParams(nfsFiltro) {
     const comSep = [];
     for (let i=0; i<labels.length; i++){
       if (i>0 && String(labels[i].minuta||'') !== String(labels[i-1].minuta||'')) {
-        comSep.push({ _intervalo:true, _minutaSep:true, minutaSep: labels[i].minuta||'' });
+        comSep.push({ _intervalo:true, _minutaSep:true, minutaSep: labels[i].minuta||'', figIdx: labels[i].figIdx });
       }
       comSep.push(labels[i]);
     }
@@ -3023,7 +3088,7 @@ function renderLabels() {
 
 function renderBarcodes(container) {
   container.querySelectorAll('[data-bc-id]').forEach(el => {
-    const svg = el.querySelector('svg');
+    const svg = el.querySelector('.et-row3 svg');
     const val = el.dataset.bcVal;
     if (!svg||!val) return;
     try {
@@ -3051,6 +3116,7 @@ function labelPrintCss() {
     .etiqueta-minuta-sep{position:relative;display:flex;align-items:center;justify-content:center;border:3px dashed #000;background:#fff}
     .etiqueta-minuta-sep .et-minsep-lbl{position:absolute;top:4mm;left:0;right:0;text-align:center;font-size:14pt;font-weight:700;letter-spacing:3px;color:#000}
     .etiqueta-minuta-sep .et-minsep-num{font-weight:900;color:#000;line-height:1;text-align:center;white-space:nowrap;font-family:Arial,sans-serif;transform:scaleY(1.6)}
+    .etiqueta-minuta-sep .et-minsep-fig{position:absolute;top:4mm;width:24mm;height:24mm}.etiqueta-minuta-sep .et-minsep-fig-l{left:5mm}.etiqueta-minuta-sep .et-minsep-fig-r{right:5mm}
     .et-row1{grid-row:1;grid-column:1;display:flex;align-items:center;border-bottom:1.5px solid #000}
     .et-nfe-num{padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;width:100%}
     .et-nfe-num .lbl{font-size:7pt;color:#000}
@@ -3059,6 +3125,7 @@ function labelPrintCss() {
     .et-nfe-box{background:#fff;color:#000;border:1.5px solid #000;font-size:37.4pt;font-weight:900;padding:1mm 2.5mm;text-align:center;margin-top:.5mm;letter-spacing:.5px}
     .et-city{grid-column:2;grid-row:1/5;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #000}
     .et-city-text{font-size:61.6pt;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);text-transform:uppercase;color:#000}
+    .et-city--fig{flex-direction:column;justify-content:space-evenly}.et-city--fig .et-city-text{font-size:46pt}.et-city-fig{width:32mm;height:32mm;flex-shrink:0;display:block}
     .et-row2{grid-row:2;grid-column:1;padding:2mm 3mm;display:flex;flex-direction:column;justify-content:center;border-bottom:1.5px solid #000}
     .et-row2 .lbl{font-size:7pt;font-weight:700;margin-bottom:.8mm;color:#000}.et-row2 .val{font-size:9.5pt;font-weight:700;line-height:1.2;color:#000}
     .et-row3{grid-row:3;grid-column:1;display:flex;align-items:center;justify-content:center;border-bottom:1.5px solid #000;padding:1mm 2mm;overflow:hidden}
@@ -3097,7 +3164,7 @@ function openLabelPrintWindow(html, windowTitle) {
     <div class="labels-grid">${html}</div>
     <script>window.onload=function(){setTimeout(function(){
       document.querySelectorAll('[data-bc-id]').forEach(function(el){
-        var s=el.querySelector('svg'),v=el.dataset.bcVal;
+        var s=el.querySelector('.et-row3 svg'),v=el.dataset.bcVal;
         if(!s||!v)return;
         try{JsBarcode(s,v,{format:'CODE128',width:1.5,height:42,displayValue:false,margin:2});}catch(e){}
       });
