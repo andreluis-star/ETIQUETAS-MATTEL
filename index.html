@@ -1016,7 +1016,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
       📦 Montagem e 🔍 consulta: página avulsa <a href="paletes.html" target="_blank" style="color:var(--accent)">paletes.html</a> — passe esse endereço para quem vai bipar.</div>
     <div class="idf-actions">
       <label class="idf-num-lbl">De <input type="number" id="idfEtqDe"  value="1"  min="1" max="99"></label>
-      <label class="idf-num-lbl">Até <input type="number" id="idfEtqAte" value="30" min="1" max="99"></label>
+      <label class="idf-num-lbl">Até <input type="number" id="idfEtqAte" value="60" min="1" max="99"></label>
       <button class="btn-primary" onclick="idfImprimirEtiquetas()">🖨 Imprimir etiquetas de palete</button>
     </div>
     <div class="idf-etq-preview" id="idfEtqPreview"></div>
@@ -3195,7 +3195,7 @@ function renderBarcodes(container) {
 // publica no Firebase (nó IDF_DB_PATH/catalogo) apenas o catálogo de produtos:
 // código, descrição e GTIN da caixa (cEAN). Nenhum outro dado vai para lá.
 // ══════════════════════════════════════════════════════════════════════════════
-const IDF_QTD_PADRAO = 30;
+const IDF_QTD_PADRAO = 60;
 const IDF_DB_PATH = 'idf_paletes';
 const IDF_CAT_SIG_KEY = 'idfCatalogoSig_v1';
 const idfPad = n => String(n).padStart(2, '0');
@@ -3250,19 +3250,21 @@ function idfPreviewEtiquetas(){
 }
 function idfImprimirEtiquetas(){
   const nums = idfFaixaEtq();
-  const html = nums.map(n=>`<div class="plt"><div class="plt-lbl">PALETE</div><div class="plt-num">${n}</div><svg data-v="PLT${idfPad(n)}"></svg></div>`).join('');
+  const html = nums.map(n=>`<div class="plt"><div class="plt-lbl">PALETE</div><div class="plt-num">${idfPad(n)}</div><svg data-v="PLT${idfPad(n)}"></svg></div>`).join('');
   const win = window.open('', '_blank');
   if (!win) { toast('⚠ O navegador bloqueou a janela de impressão.', true); return; }
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Etiquetas de palete ${nums[0]}-${nums[nums.length-1]}</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
     <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff;font-family:Arial,sans-serif}
-    .plt{width:148mm;height:105mm;border:1.5px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;page-break-after:always;break-after:page;overflow:hidden}
-    .plt-lbl{font-size:20pt;font-weight:800;letter-spacing:6px}
-    .plt-num{font-size:170pt;font-weight:900;line-height:.95}
-    .plt svg{width:110mm;height:24mm;margin-top:2mm}
-    @page{size:A4 portrait;margin:5mm}<\/style></head><body>${html}
+    /* Uma etiqueta por folha A4 deitada — número enorme, visível de longe */
+    .plt{width:287mm;height:200mm;border:3px solid #000;border-radius:6mm;display:flex;flex-direction:column;align-items:center;justify-content:center;page-break-after:always;break-after:page;overflow:hidden}
+    .plt:last-child{page-break-after:auto;break-after:auto}
+    .plt-lbl{font-size:54pt;font-weight:900;letter-spacing:14px;line-height:1}
+    .plt-num{font-size:370pt;font-weight:900;line-height:.82;letter-spacing:-8px;margin:1mm 0 3mm}
+    .plt svg{width:230mm;height:46mm}
+    @page{size:A4 landscape;margin:5mm}<\/style></head><body>${html}
     <script>window.onload=function(){setTimeout(function(){
-      document.querySelectorAll('svg[data-v]').forEach(function(s){try{JsBarcode(s,s.dataset.v,{format:'CODE128',width:3,height:80,displayValue:true,fontSize:20,margin:4});}catch(e){}});
+      document.querySelectorAll('svg[data-v]').forEach(function(s){try{JsBarcode(s,s.dataset.v,{format:'CODE128',width:4,height:90,displayValue:true,fontSize:26,margin:4});}catch(e){}});
       setTimeout(function(){window.print();},500);},300);};<\/script></body></html>`);
   win.document.close();
 }

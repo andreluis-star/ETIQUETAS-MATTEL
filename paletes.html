@@ -53,19 +53,21 @@ main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
 .rp.sec{background:var(--surface2);color:var(--text);border:2px solid var(--green)}.rp.sec .n{font-size:90px}
 .info{text-align:center;font-size:17px;line-height:1.6}.info .cod{font-size:38px;font-weight:900}
 .nao{background:rgba(239,68,68,.15);color:var(--red);border-radius:18px;padding:26px;text-align:center;font-size:30px;font-weight:900;margin:10px 0 14px}
-.consulta-row{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
-.consulta-row .scan{flex:1 1 260px;min-width:0;width:auto;text-transform:uppercase}
-.consulta-row .scan::placeholder{text-transform:none}
-.kbd{flex:1 0 auto;font-size:15px;font-weight:700;padding:12px 16px;border-radius:var(--r);border:2px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;white-space:nowrap}
+.campo{flex:1;display:flex;gap:8px;align-items:stretch;min-width:0}
+.campo .scan{flex:1;min-width:0;width:auto;text-transform:uppercase}
+.campo .scan::placeholder{text-transform:none}
+.kbd,.btn-go{flex:none;width:64px;border-radius:var(--r);border:2px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:22px;line-height:1}
+.kbd small,.btn-go small{font-size:10px;font-weight:700;letter-spacing:.3px}
 .kbd.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-go{flex:1 0 auto;font-size:15px;font-weight:700;padding:12px 18px;border-radius:var(--r);border:2px solid var(--green);background:var(--green);color:#fff;cursor:pointer;display:none}
-.kbd-on .btn-go{display:block}
+.btn-go{background:var(--green);border-color:var(--green);color:#fff;display:none}
+.kbd-on .btn-go{display:flex}
+.row .campo{min-width:220px}
 .sug{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
 .sug button{background:var(--surface2);border:2px solid var(--border);color:var(--text);border-radius:var(--r);padding:10px 14px;cursor:pointer;text-align:left;font-size:13px;max-width:320px}
 .sug button b{display:block;font-size:22px}
 .sug-t{text-align:center;font-size:16px;font-weight:700;color:var(--yellow);margin-top:10px}
 .lido{text-align:center;font-family:monospace;color:var(--muted);margin-top:10px;font-size:13px}
-@media (max-width:600px){.consulta-row .scan{flex-basis:100%}.rp .n{font-size:100px}.rp.sec .n{font-size:66px}.nao{font-size:22px}}
+@media (max-width:600px){.row .campo{flex-basis:100%}.rp .n{font-size:100px}.rp.sec .n{font-size:66px}.nao{font-size:22px}}
 </style>
 </head>
 <body>
@@ -83,7 +85,11 @@ main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
     <div class="help">Bipe a <b>etiqueta do PALETE</b> e em seguida as <b>caixas</b> que estão sobre ele. Para trocar de palete, basta bipar a etiqueta do próximo.</div>
     <div class="row">
       <div class="atual"><span class="lbl">PALETE ATUAL</span><span class="val" id="curPal">—</span></div>
-      <input id="scanMontar" class="scan" placeholder="Bipe aqui o palete ou a caixa…" autocomplete="off">
+      <div class="campo" id="campoMontar">
+        <input id="scanMontar" class="scan" placeholder="Bipe aqui o palete ou a caixa…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="none" enterkeyhint="send">
+        <button class="btn-go" type="button" onclick="enviar('scanMontar')">✔<small>ENVIAR</small></button>
+        <button class="kbd" type="button" onclick="alternarTeclado('scanMontar')">⌨<small>TECLADO</small></button>
+      </div>
     </div>
     <div id="fb" class="fb"></div>
     <div class="acoes">
@@ -97,11 +103,11 @@ main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
   </section>
 
   <section id="secConsultar" style="display:none">
-    <div class="help">Bipe a <b>etiqueta do sistema</b> ou o código da caixa — ou digite o <b>código do produto</b> (ex.: C1817, JLM90). Sem bipador, toque em <b>⌨ Teclado</b>.</div>
-    <div class="consulta-row" id="consultaRow">
+    <div class="help">Bipe a <b>etiqueta do sistema</b> ou o código da caixa — ou digite o <b>código do produto</b> (ex.: C1817, JLM90). Sem bipador, toque em <b>⌨ TECLADO</b>; toque de novo para fechar.</div>
+    <div class="campo" id="campoConsulta">
       <input id="scanConsulta" class="scan" placeholder="Bipe a etiqueta ou digite o código…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="none" enterkeyhint="search">
-      <button class="btn-go" type="button" onclick="enviarConsulta()">🔍 Consultar</button>
-      <button class="kbd" id="btnKbd" type="button" onclick="alternarTeclado()">⌨ Teclado</button>
+      <button class="btn-go" type="button" onclick="enviar('scanConsulta')">🔍<small>BUSCAR</small></button>
+      <button class="kbd" type="button" onclick="alternarTeclado('scanConsulta')">⌨<small>TECLADO</small></button>
     </div>
     <div id="res" class="res"></div>
   </section>
@@ -117,7 +123,7 @@ const FIREBASE_CONFIG = {
   appId: "1:835464722375:web:d312edfda4c1e063e54be2"
 };
 const DB_PATH = 'idf_paletes';
-const QTD_PADRAO = 30;
+const QTD_PADRAO = 60;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -294,23 +300,31 @@ function buscarCodigos(v){
   return [...ini, ...meio];
 }
 // Teclado na tela: por padrão fica escondido (inputmode="none") para o
-// bipador trabalhar sem o teclado cobrir a tela. O botão libera o teclado.
+// bipador trabalhar sem o teclado cobrir a tela. O botão ⌨ (ao lado do campo,
+// nas duas abas) abre o teclado; tocando de novo ele fecha.
 let tecladoOn = ls.get('plt_kbd') === '1';
 function aplicarTeclado(){
-  const el = $('scanConsulta');
-  el.setAttribute('inputmode', tecladoOn ? 'text' : 'none');
-  $('btnKbd').classList.toggle('on', tecladoOn);
-  $('btnKbd').textContent = tecladoOn ? '⌨ Fechar teclado' : '⌨ Teclado';
-  $('consultaRow').classList.toggle('kbd-on', tecladoOn);
-  el.placeholder = tecladoOn ? 'Digite o código (ex.: C1817)' : 'Bipe a etiqueta ou digite o código…';
+  [['scanMontar','campoMontar'],['scanConsulta','campoConsulta']].forEach(([inp, box]) => {
+    $(inp).setAttribute('inputmode', tecladoOn ? 'text' : 'none');
+    $(box).classList.toggle('kbd-on', tecladoOn);
+    const b = $(box).querySelector('.kbd');
+    b.classList.toggle('on', tecladoOn);
+    b.innerHTML = tecladoOn ? '✕<small>FECHAR</small>' : '⌨<small>TECLADO</small>';
+  });
+  $('scanConsulta').placeholder = tecladoOn ? 'Digite o código (ex.: C1817)' : 'Bipe a etiqueta ou digite o código…';
+  $('scanMontar').placeholder = tecladoOn ? 'Digite PLT01 ou o código da caixa' : 'Bipe aqui o palete ou a caixa…';
 }
-function alternarTeclado(){
+function alternarTeclado(id){
   tecladoOn = !tecladoOn; ls.set('plt_kbd', tecladoOn ? '1' : '0'); aplicarTeclado();
-  const el = $('scanConsulta');
+  const el = $(id);
   // blur + focus no mesmo toque: o celular reavalia o inputmode e abre/fecha o teclado
-  el.blur(); el.focus();
+  el.blur(); if (tecladoOn) el.focus(); else setTimeout(()=>el.focus(), 50);
 }
-function enviarConsulta(){ const el = $('scanConsulta'); consultar(el.value); el.value=''; el.focus(); }
+function enviar(id){
+  const el = $(id);
+  if (id === 'scanMontar') lerMontar(el.value); else consultar(el.value);
+  el.value = ''; el.focus();
+}
 function consultar(raw){
   const v = String(raw||'').trim(); if (!v) return;
   const out = $('res');
