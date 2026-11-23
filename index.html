@@ -365,6 +365,7 @@ td.nfs-list{white-space:normal;max-width:360px;font-size:12px;color:var(--muted)
 .rosto-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
 .rosto-card-head{background:var(--surface2);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border)}
 .rosto-minuta-tag{font-size:14px;font-weight:800;color:#fff;background:#111;padding:4px 12px;border-radius:6px;letter-spacing:.5px}
+.rosto-minuta-tag .rosto-minuta-fig{height:.8em;width:.8em;margin-right:6px;vertical-align:-1px;fill:#fff}
 .rosto-minuta-tag.sem{background:var(--surface2);color:var(--muted);border:1px dashed var(--border)}
 .rosto-card-head span{font-size:11px;color:var(--muted)}
 .rosto-card-body{padding:14px 16px;font-size:13px;color:var(--text)}
@@ -2476,12 +2477,13 @@ function gerarRosto() {
     return;
   }
   const groups = rostoData(nfsFiltro);
+  const figMapTela = mapaFiguraPorMinuta();
   let h = '';
   for (const g of groups) {
     const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
     const temSemXml = g.nfs.some(n=>n.semXml);
     h += `<div class="rosto-card"><div class="rosto-card-head">
-      <div class="rosto-minuta-tag${g.minuta?'':' sem'}">${g.minuta ? 'Minuta '+esc(g.minuta) : 'Sem Minuta'}</div>
+      <div class="rosto-minuta-tag${g.minuta?'':' sem'}">${g.minuta ? 'Minuta '+minutaFiguraSvg(String(g.minuta) in figMapTela ? figMapTela[String(g.minuta)] : -1, 'rosto-minuta-fig')+esc(g.minuta) : 'Sem Minuta'}</div>
       <span>${g.processo ? 'Processo '+esc(g.processo)+' · ' : ''}${g.nfs.length} nota(s) · ${totalQtd%1===0?totalQtd:totalQtd.toFixed(2)} un.${temSemXml?' · <span style="color:var(--yellow)">algumas sem XML</span>':''}</span>
     </div>`;
     if (g.nfs.length === 1) {
@@ -2520,12 +2522,15 @@ function printRosto() {
   const nfsFiltro = roSel.nfsSelecionadas();
   if (!nfsFiltro.size) { toast('⚠ Selecione itens e gere a folha rosto antes de imprimir.', true); return; }
   const groups = rostoData(nfsFiltro);
+  const figMap = mapaFiguraPorMinuta();
   let pages = '';
   for (const g of groups) {
     const totalQtd = g.nfs.reduce((s,n)=>s+n.qtd, 0);
     const single = g.nfs.length === 1;
     const minutaLabel = g.minuta ? esc(g.minuta) : '';
     const scale = rostoScale(g.nfs.length);
+    const figIdx = g.minuta && String(g.minuta) in figMap ? figMap[String(g.minuta)] : -1;
+    const figHtml = minutaFiguraSvg(figIdx, 'rp-minuta-fig');
     let mid = '';
     const procItem = g.processo
       ? `<div class="rp-info-item"><span class="rp-info-lbl">Processo</span><span class="rp-info-val">${esc(g.processo)}</span></div>`
@@ -2555,8 +2560,8 @@ function printRosto() {
     }
     pages += `<div class="rosto-page" style="--rp-scale:${scale}">
       <div class="rp-minuta">
-        <div class="rp-paletes"><span class="rp-paletes-lbl">PALETES</span><span class="rp-paletes-val">&nbsp;&nbsp;/&nbsp;&nbsp;</span></div>
-        <span class="rp-minuta-lbl">MINUTA</span><span class="rp-minuta-val">${minutaLabel || '&nbsp;'}</span>
+        <div class="rp-paletes"><span class="rp-paletes-lbl">PALETES</span><span class="rp-paletes-val">&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;</span></div>
+        <div class="rp-minuta-main"><span class="rp-minuta-lbl">MINUTA</span><span class="rp-minuta-val">${figHtml}${minutaLabel || '&nbsp;'}</span></div>
       </div>
       ${mid}
     </div>`;
@@ -2573,15 +2578,18 @@ function printRosto() {
     .rosto-page{--rp-scale:1;width:297mm;min-height:210mm;padding:8mm;display:flex;flex-direction:column}
     .rosto-page + .rosto-page{page-break-before:always;break-before:page}
     /* Sem fundo preto: apenas contorno preto, fundo branco e texto preto */
-    .rp-minuta{position:relative;background:#fff;color:#000;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(5mm*max(var(--rp-scale),.7));border-radius:4mm;margin-bottom:calc(5mm*max(var(--rp-scale),.6))}
+    .rp-minuta{position:relative;background:#fff;color:#000;border:2px solid #000;display:flex;flex-direction:row-reverse;align-items:center;justify-content:center;gap:6mm;padding:calc(5mm*max(var(--rp-scale),.7));border-radius:4mm;margin-bottom:calc(5mm*max(var(--rp-scale),.6))}
     .rp-minuta-lbl{font-size:20pt;letter-spacing:6px;font-weight:700;color:#000}
     /* min-height reserva o espaco do numero mesmo quando a minuta esta vazia,
        para o campo nao encolher (o usuario escreve a minuta a mao). */
     .rp-minuta-val{font-size:calc(100pt*max(var(--rp-scale),.7));font-weight:900;line-height:1.05;color:#000;min-height:calc(100pt*max(var(--rp-scale),.7));display:block}
+    /* Figura da minuta (a mesma da etiqueta), ao lado do número, na altura das letras */
+    .rp-minuta-fig{height:.72em;width:.72em;margin-right:.18em;vertical-align:baseline;fill:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     /* Paletes (preenchimento à mão) — dentro do mesmo campo da Minuta, no canto direito, sempre na mesma página */
-    .rp-paletes{position:absolute;top:5mm;right:8mm;display:flex;flex-direction:column;align-items:center;color:#000}
-    .rp-paletes-lbl{font-size:13pt;font-weight:700;letter-spacing:2px;color:#000}
-    .rp-paletes-val{font-size:28pt;font-weight:900;letter-spacing:4px;border-bottom:2px solid #000;padding:0 4mm;color:#000}
+    .rp-minuta-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;white-space:nowrap}
+    .rp-paletes{flex:none;align-self:flex-start;margin-right:3mm;display:flex;flex-direction:column;align-items:center;color:#000}
+    .rp-paletes-lbl{font-size:20pt;font-weight:700;letter-spacing:3px;color:#000}
+    .rp-paletes-val{font-size:54pt;font-weight:900;letter-spacing:4px;border-bottom:3px solid #000;padding:0 8mm;color:#000;line-height:1.1}
     /* Notas Fiscais (logo abaixo da Minuta) */
     .rp-nf{background:#fff;color:#000;border:2px solid #000;display:flex;align-items:center;justify-content:center;gap:8mm;padding:4mm;border-radius:4mm;margin-bottom:5mm}
     .rp-nf-lbl{font-size:16pt;font-weight:700;color:#000}
@@ -2945,6 +2953,50 @@ function criarSeletor(prefix, onGerar){
 var rsSel = criarSeletor('rs', ()=>gerarResumo());
 var roSel = criarSeletor('ro', ()=>gerarRosto());
 
+// Minuta → índice da figura (MINUTA_FIGURAS). Usada pelas etiquetas e pela
+// folha rosto, para que as duas mostrem sempre a mesma figura.
+function mapaFiguraPorMinuta(minutaCargas, _procList) {
+  if (!minutaCargas) {
+    minutaCargas = {};
+    if (window.CargasDB && window.CargasDB.listMinutas) {
+      try { window.CargasDB.listMinutas().forEach(m=>{ (m.nfs||[]).forEach(nf=>{ if (m.id) minutaCargas[nf] = m.id; }); }); } catch(e){}
+    }
+  }
+  if (!_procList) {
+    _procList = [];
+    if (window.CargasDB && window.CargasDB.listProcessos) {
+      try { _procList = window.CargasDB.listProcessos(); } catch(e){ _procList = []; }
+    }
+  }
+  // FIGURA DA MINUTA: cada minuta recebe uma figura conforme a sua posição
+  // (ordem crescente) entre TODAS as minutas do mesmo processo — não só das
+  // selecionadas — para que reimpressões parciais saiam com a mesma figura.
+  const minutaDaNf = nf => minutaCargas[nf] || nfMinutas[nf] || '';
+  const nfParaProcCod = {};
+  _procList.forEach(p=>{ (p.nfs||[]).forEach(nf=>{ nfParaProcCod[nf] = p.codigo || ''; }); });
+  // Uma minuta pode ter notas em mais de um processo: ela fica no processo
+  // onde tem MAIS notas, para que todas as suas etiquetas tenham a mesma figura.
+  const contagemMinProc = {};   // minuta → { processo → nº de NFs }
+  new Set([...allItems.map(i=>i.nf), ...Object.keys(minutaCargas), ..._procList.flatMap(p=>p.nfs||[])]).forEach(nf=>{
+    const m = minutaDaNf(nf); if (!m) return;
+    const g = nfParaProcCod[nf] || '';
+    const c = (contagemMinProc[String(m)] = contagemMinProc[String(m)] || {});
+    c[g] = (c[g] || 0) + 1;
+  });
+  const minutasPorProc = {};
+  for (const m in contagemMinProc) {
+    const c = contagemMinProc[m];
+    const g = Object.keys(c).sort((a,b)=> (c[b]-c[a]) || (!a - !b) || a.localeCompare(b))[0];
+    (minutasPorProc[g] = minutasPorProc[g] || []).push(m);
+  }
+  const figuraPorMinuta = {};
+  for (const g in minutasPorProc) {
+    minutasPorProc[g].sort((a,b)=>a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}))
+      .forEach((m, i) => { figuraPorMinuta[m] = i; });
+  }
+  return figuraPorMinuta;
+}
+
 // Monta a lista de parâmetros de cada etiqueta. Se nfsFiltro (Set) for
 // fornecido, gera apenas as etiquetas das NFs selecionadas.
 function buildLabelParams(nfsFiltro) {
@@ -2978,32 +3030,8 @@ function buildLabelParams(nfsFiltro) {
     } catch(e){}
   }
 
-  // FIGURA DA MINUTA: cada minuta recebe uma figura conforme a sua posição
-  // (ordem crescente) entre TODAS as minutas do mesmo processo — não só das
-  // selecionadas — para que reimpressões parciais saiam com a mesma figura.
-  const minutaDaNf = nf => minutaCargas[nf] || nfMinutas[nf] || '';
-  const nfParaProcCod = {};
-  _procList.forEach(p=>{ (p.nfs||[]).forEach(nf=>{ nfParaProcCod[nf] = p.codigo || ''; }); });
-  // Uma minuta pode ter notas em mais de um processo: ela fica no processo
-  // onde tem MAIS notas, para que todas as suas etiquetas tenham a mesma figura.
-  const contagemMinProc = {};   // minuta → { processo → nº de NFs }
-  new Set([...allItems.map(i=>i.nf), ...Object.keys(minutaCargas), ..._procList.flatMap(p=>p.nfs||[])]).forEach(nf=>{
-    const m = minutaDaNf(nf); if (!m) return;
-    const g = nfParaProcCod[nf] || '';
-    const c = (contagemMinProc[String(m)] = contagemMinProc[String(m)] || {});
-    c[g] = (c[g] || 0) + 1;
-  });
-  const minutasPorProc = {};
-  for (const m in contagemMinProc) {
-    const c = contagemMinProc[m];
-    const g = Object.keys(c).sort((a,b)=> (c[b]-c[a]) || (!a - !b) || a.localeCompare(b))[0];
-    (minutasPorProc[g] = minutasPorProc[g] || []).push(m);
-  }
-  const figuraPorMinuta = {};
-  for (const g in minutasPorProc) {
-    minutasPorProc[g].sort((a,b)=>a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}))
-      .forEach((m, i) => { figuraPorMinuta[m] = i; });
-  }
+  // FIGURA DA MINUTA: regra única em mapaFiguraPorMinuta() (também usada na folha rosto).
+  const figuraPorMinuta = mapaFiguraPorMinuta(minutaCargas, _procList);
   const figuraIdx = (nf, minuta) => minuta && String(minuta) in figuraPorMinuta ? figuraPorMinuta[String(minuta)] : -1;
 
   const labels = [];
