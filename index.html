@@ -69,6 +69,54 @@ button:active{transform:scale(.97)}
 .btn-red{background:var(--red);color:#fff}.btn-red:hover{opacity:.85}
 .btn-purple{background:var(--accent2);color:#fff}.btn-purple:hover{opacity:.88}
 .btn-sm{padding:5px 10px;font-size:11px}
+/* ── Identificação de paletes ── */
+.idf-modos{margin-bottom:14px}
+.idf-help{font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.5}
+.idf-help b{color:var(--text)}
+.idf-scan-row{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap;margin-bottom:10px}
+.idf-current{background:var(--accent);color:#fff;border-radius:var(--radius);padding:8px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:150px}
+.idf-current .lbl{font-size:11px;font-weight:700;letter-spacing:1px;opacity:.85}
+.idf-current .val{font-size:44px;font-weight:900;line-height:1}
+.idf-scan{flex:1;min-width:240px;font-size:22px;padding:14px 16px;background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);color:var(--text);outline:none}
+.idf-scan:focus{border-color:var(--accent)}
+.idf-scan-big{width:100%;font-size:26px;padding:18px}
+.idf-feedback{min-height:44px;font-size:16px;font-weight:700;padding:10px 14px;border-radius:var(--radius);margin-bottom:10px;background:var(--surface)}
+.idf-feedback.ok{background:rgba(34,197,94,.15);color:var(--green)}
+.idf-feedback.err{background:rgba(239,68,68,.15);color:var(--red)}
+.idf-feedback.warn{background:rgba(245,158,11,.15);color:var(--yellow)}
+.idf-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.idf-stats{font-size:12px;color:var(--muted);margin-left:auto}
+.idf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:16px}
+.idf-pal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center;cursor:pointer;color:var(--text)}
+.idf-pal:hover{border-color:var(--accent)}
+.idf-pal .n{font-size:28px;font-weight:900;line-height:1.1}
+.idf-pal .c{font-size:11px;color:var(--muted)}
+.idf-pal.cheio{background:var(--surface2)}
+.idf-pal.cheio .c{color:var(--green)}
+.idf-pal.atual{border:2px solid var(--accent);background:rgba(79,110,247,.18)}
+.idf-pal.aberto{outline:2px dashed var(--yellow);outline-offset:2px}
+.idf-det{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.idf-det h3{font-size:15px;margin-bottom:8px}
+.idf-det table{width:100%;border-collapse:collapse;font-size:13px}
+.idf-det th,.idf-det td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+.idf-det th{color:var(--muted);font-size:11px;text-transform:uppercase}
+.idf-result{margin-top:16px}
+.idf-res-pals{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:10px 0 16px}
+.idf-res-pal{background:var(--green);color:#fff;border-radius:16px;padding:14px 30px;text-align:center;min-width:200px}
+.idf-res-pal .lbl{font-size:16px;font-weight:800;letter-spacing:2px}
+.idf-res-pal .n{font-size:120px;font-weight:900;line-height:1}
+.idf-res-pal .q{font-size:15px;font-weight:700;opacity:.9}
+.idf-res-pal.sec{background:var(--surface2);color:var(--text);border:2px solid var(--green)}
+.idf-res-pal.sec .n{font-size:80px}
+.idf-res-info{text-align:center;font-size:16px;color:var(--text);line-height:1.6}
+.idf-res-info .cod{font-size:34px;font-weight:900}
+.idf-res-nao{background:rgba(239,68,68,.15);color:var(--red);border-radius:16px;padding:26px;text-align:center;font-size:30px;font-weight:900;margin:10px 0 14px}
+.idf-num-lbl{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.idf-num-lbl input{width:70px;padding:7px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px}
+.idf-etq-preview{display:flex;flex-wrap:wrap;gap:10px}
+.idf-etq-mini{width:148px;height:105px;background:#fff;color:#000;border:1px solid #000;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.idf-etq-mini .n{font-size:52px;font-weight:900;line-height:1}
+.idf-etq-mini svg{width:110px;height:26px}
 
 /* Inputs */
 input[type=text],input[type=search]{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 13px;font-size:13px;outline:none}
@@ -694,6 +742,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
       <button class="tab-btn"        onclick="switchTab('etiquetas')" id="btnTabEtiquetas">🏷 Etiquetas</button>
       <button class="tab-btn"        onclick="switchTab('rosto')"     id="btnTabRosto">📄 Folha Rosto</button>
       <button class="tab-btn"        onclick="switchTab('siglas')"    id="btnTabSiglas">🗂 Siglas</button>
+      <button class="tab-btn"        onclick="switchTab('ident')"     id="btnTabIdent">🔎 Identificação</button>
     </div>
     <button class="btn-purple" onclick="switchTab('etiquetas')">🏷 Etiquetas</button>
   </div>
@@ -956,6 +1005,53 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
         </tr></thead>
         <tbody id="siglasBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: IDENTIFICAÇÃO DE PALETES ─────────────────────────────────────────
+       1) Montar: bipa a etiqueta do PALETE (PLT01…PLT30) e depois as caixas
+          que estão nele. 2) Consultar: bipa a etiqueta gerada pelo sistema e
+          mostra em qual(is) palete(s) aquele código está. -->
+  <div id="tabIdent" style="display:none" onclick="idfRefocar(event)">
+    <div class="tabs idf-modos">
+      <button class="tab-btn active" id="idfModoMontar"    onclick="idfSetModo('montar')">📦 1. Montar paletes</button>
+      <button class="tab-btn"        id="idfModoConsultar" onclick="idfSetModo('consultar')">🔍 2. Consultar etiqueta</button>
+      <button class="tab-btn"        id="idfModoEtq"       onclick="idfSetModo('etq')">🖨 Etiquetas de palete</button>
+    </div>
+
+    <div id="idfMontar">
+      <div class="idf-help">Bipe a <b>etiqueta do PALETE</b> e em seguida as <b>caixas</b> que estão sobre ele. Para trocar de palete, basta bipar a etiqueta do próximo.</div>
+      <div class="idf-scan-row">
+        <div class="idf-current"><span class="lbl">PALETE ATUAL</span><span class="val" id="idfCurPal">—</span></div>
+        <input id="idfScanMontar" class="idf-scan" placeholder="Bipe aqui o palete ou a caixa…" autocomplete="off"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();idfOnScanMontar(this.value);this.value='';}">
+      </div>
+      <div id="idfFeedback" class="idf-feedback"></div>
+      <div class="idf-actions">
+        <button class="btn-outline" onclick="idfDesfazer()">↩ Desfazer último</button>
+        <button class="btn-outline" onclick="idfLimparPalete()">🧹 Limpar palete atual</button>
+        <button class="btn-red"     onclick="idfLimparTudo()">🗑 Zerar tudo</button>
+        <span class="idf-stats" id="idfStats"></span>
+      </div>
+      <div class="idf-grid" id="idfGrid"></div>
+      <div id="idfDetalhe"></div>
+    </div>
+
+    <div id="idfConsultar" style="display:none">
+      <div class="idf-help">Bipe a <b>etiqueta do sistema</b> (Etiquetas → Minuta). Também aceita o código da caixa ou o código do produto digitado.</div>
+      <input id="idfScanConsulta" class="idf-scan idf-scan-big" placeholder="Bipe a etiqueta aqui…" autocomplete="off"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();idfConsultar(this.value);this.value='';}">
+      <div id="idfResultado" class="idf-result"></div>
+    </div>
+
+    <div id="idfEtq" style="display:none">
+      <div class="idf-help">Etiquetas simples para identificar os paletes (148 × 105 mm, uma por página — mesmo papel das etiquetas de volume). O código de barras contém <b>PLT</b> + número (ex.: PLT05).</div>
+      <div class="idf-actions">
+        <label class="idf-num-lbl">De <input type="number" id="idfEtqDe"  value="1"  min="1" max="99"></label>
+        <label class="idf-num-lbl">Até <input type="number" id="idfEtqAte" value="30" min="1" max="99"></label>
+        <button class="btn-primary" onclick="idfImprimirEtiquetas()">🖨 Imprimir etiquetas de palete</button>
+      </div>
+      <div class="idf-etq-preview" id="idfEtqPreview"></div>
     </div>
   </div>
 
@@ -1762,10 +1858,11 @@ function updateStats() {
 // TABS
 // ══════════════════════════════════════════════════════════════════════════════
 function switchTab(tab) {
-  ['dados','resumo','etiquetas','rosto','siglas'].forEach(t => {
+  ['dados','resumo','etiquetas','rosto','siglas','ident'].forEach(t => {
     $('tab'+t[0].toUpperCase()+t.slice(1)).style.display = t===tab?'':'none';
     $('btnTab'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
   });
+  if (tab==='ident')     idfAbrir();
   if (tab==='resumo')    renderResumo();
   if (tab==='etiquetas') renderLabels();
   if (tab==='rosto')     renderRosto();
@@ -3096,6 +3193,322 @@ function renderBarcodes(container) {
     } catch(e) { console.warn('BC error', val, e); }
   });
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// IDENTIFICAÇÃO DE PALETES
+// Fluxo: 1) imprimir etiquetas PLT01…PLT30 e colar nos paletes; 2) bipar o
+// palete e depois as caixas que estão nele (repetir para cada palete);
+// 3) na consulta, bipar a etiqueta do sistema → mostra o(s) palete(s).
+// Os registros ficam salvos neste navegador (localStorage).
+// ══════════════════════════════════════════════════════════════════════════════
+const IDF_KEY = 'idfPaletes_v1';
+const IDF_QTD_PADRAO = 30;
+let idfState = { atual: null, scans: [] };   // scans: [{ p, code, t }]
+let idfModo = 'montar';
+let idfAberto = null;                        // palete com o detalhe aberto
+let idfLinhas = [];                          // chaves das linhas do detalhe (botão −1)
+
+(function idfLoad(){
+  try {
+    const s = JSON.parse(localStorage.getItem(IDF_KEY) || 'null');
+    if (s && Array.isArray(s.scans)) idfState = { atual: s.atual ?? null, scans: s.scans };
+  } catch(e) {}
+})();
+function idfSave(){ try { localStorage.setItem(IDF_KEY, JSON.stringify(idfState)); } catch(e) {} }
+
+const idfPad = n => String(n).padStart(2, '0');
+
+// Código da etiqueta de palete: "PLT05" (aceita também "PLT-05", "plt5").
+function idfPaleteDoCodigo(v){
+  const m = String(v||'').trim().toUpperCase().match(/^PLT[-\s]?0*(\d{1,2})$/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+// "Núcleo" de um GTIN, para casar o código da caixa (ITF/GTIN-14, ex.:
+// 1 00 27084 12013 1) com o EAN/UPC da unidade que vem no XML (cEAN):
+// tira o dígito verificador, o dígito indicador do GTIN-14 e os zeros à esquerda.
+function idfGtinCore(v){
+  const s = String(v||'').replace(/\s/g, '');
+  if (!/^\d{8,14}$/.test(s)) return '';
+  let d = s.slice(0, -1);
+  if (d.length === 13) d = d.slice(1);
+  return d.replace(/^0+/, '');
+}
+
+// Índice dos produtos das NFs carregadas: por código (cProd) e por GTIN.
+let _idfIdxCache = null, _idfIdxRef = null, _idfIdxLen = -1;
+function idfIndice(){
+  if (_idfIdxCache && _idfIdxRef === allItems && _idfIdxLen === allItems.length) return _idfIdxCache;
+  _idfIdxRef = allItems; _idfIdxLen = allItems.length;
+  return (_idfIdxCache = idfMontarIndice());
+}
+function idfMontarIndice(){
+  const porCod = {}, porCore = {}, porSku = {};
+  for (const i of allItems) {
+    const c = String(i.cod).toUpperCase();
+    if (!porCod[c]) porCod[c] = { cod: i.cod, item: i.item, sku: i.sku };
+    const s = String(i.sku||'').trim();
+    if (s) (porSku[s] = porSku[s] || {})[c] = porCod[c];
+    const g = idfGtinCore(s);
+    if (g) (porCore[g] = porCore[g] || {})[c] = porCod[c];
+  }
+  return { porCod, porCore, porSku };
+}
+// Código bipado (caixa ou código digitado) → lista de produtos { cod, item }
+// Ordem: código do produto → GTIN idêntico ao cEAN do XML → GTIN equivalente.
+function idfResolver(code, idx){
+  const up = String(code||'').trim().toUpperCase();
+  if (idx.porCod[up]) return [idx.porCod[up]];
+  if (idx.porSku[up]) return Object.values(idx.porSku[up]);
+  const g = idfGtinCore(up);
+  if (g && idx.porCore[g]) return Object.values(idx.porCore[g]);
+  return [];
+}
+// Chave de agrupamento de um registro: código do produto, se reconhecido;
+// senão o próprio código bipado.
+function idfChave(code, idx){
+  const r = idfResolver(code, idx);
+  return r.length ? String(r[0].cod).toUpperCase() : 'RAW:' + String(code).trim().toUpperCase();
+}
+
+// Minuta de cada NF (mesma regra das etiquetas: Cargas tem prioridade).
+function idfMinutaFn(){
+  const m = {};
+  try {
+    if (window.CargasDB && window.CargasDB.listMinutas)
+      window.CargasDB.listMinutas().forEach(x => (x.nfs||[]).forEach(nf => { if (x.id) m[nf] = x.id; }));
+  } catch(e) {}
+  return nf => m[nf] || nfMinutas[nf] || '';
+}
+
+// Etiqueta do sistema: código de barras = NF + MINUTA + CÓD + volume (3 dígitos).
+function idfParseEtiqueta(v){
+  const s = String(v||'').trim();
+  if (s.length < 5 || !/^\d{3}$/.test(s.slice(-3))) return null;
+  const pre = s.slice(0, -3), vol = parseInt(s.slice(-3), 10);
+  const minutaDe = idfMinutaFn();
+  let aprox = null;
+  for (const i of allItems) {
+    const nf = String(i.nf), cod = String(i.cod);
+    if (!pre.startsWith(nf) || !pre.endsWith(cod) || pre.length < nf.length + cod.length) continue;
+    const minuta = minutaDe(nf);
+    if (pre === nf + minuta + cod) return { nf, cod, item: i.item, minuta, vol, qtd: i.qtd };
+    if (!aprox) aprox = { nf, cod, item: i.item, minuta: pre.slice(nf.length, pre.length - cod.length), vol, qtd: i.qtd };
+  }
+  return aprox;
+}
+
+// Bipe sonoro (ok = agudo curto; erro = grave duplo)
+let _idfAudio = null;
+function idfBeep(ok){
+  try {
+    _idfAudio = _idfAudio || new (window.AudioContext || window.webkitAudioContext)();
+    const tocar = (freq, ini, dur) => {
+      const o = _idfAudio.createOscillator(), g = _idfAudio.createGain();
+      o.frequency.value = freq; o.type = 'square'; g.gain.value = 0.08;
+      o.connect(g); g.connect(_idfAudio.destination);
+      o.start(_idfAudio.currentTime + ini); o.stop(_idfAudio.currentTime + ini + dur);
+    };
+    if (ok) tocar(1400, 0, 0.08); else { tocar(300, 0, 0.15); tocar(300, 0.2, 0.15); }
+  } catch(e) {}
+}
+
+function idfFeedback(html, tipo){
+  const el = $('idfFeedback'); if (!el) return;
+  el.className = 'idf-feedback ' + (tipo||''); el.innerHTML = html;
+}
+
+function idfAbrir(){ idfSetModo(idfModo); }
+
+function idfSetModo(m){
+  idfModo = m;
+  ['montar','consultar','etq'].forEach(x => {
+    const id = x==='etq' ? 'Etq' : x[0].toUpperCase()+x.slice(1);
+    $('idf'+id).style.display = x===m ? '' : 'none';
+    $('idfModo'+id).classList.toggle('active', x===m);
+  });
+  if (m==='montar') { idfRender(); setTimeout(()=>$('idfScanMontar').focus(), 0); }
+  if (m==='consultar') setTimeout(()=>$('idfScanConsulta').focus(), 0);
+  if (m==='etq') idfPreviewEtiquetas();
+}
+
+// Clicar em qualquer lugar "vazio" da aba devolve o foco ao campo de leitura,
+// para o leitor de código de barras nunca digitar no vazio.
+function idfRefocar(e){
+  if (e.target.closest('input,button,select,textarea,a,label')) return;
+  const inp = idfModo==='montar' ? $('idfScanMontar') : idfModo==='consultar' ? $('idfScanConsulta') : null;
+  if (inp && !window.getSelection().toString()) inp.focus();
+}
+
+function idfOnScanMontar(raw){
+  const v = String(raw||'').trim(); if (!v) return;
+  const p = idfPaleteDoCodigo(v);
+  if (p !== null) {
+    if (p < 1) { idfFeedback('⚠ Número de palete inválido', 'err'); idfBeep(false); return; }
+    idfState.atual = p; idfAberto = p; idfSave();
+    const n = idfState.scans.filter(s=>s.p===p).length;
+    idfFeedback(`📦 PALETE ${idfPad(p)} selecionado${n?` (já tem ${n} caixa(s))`:''} — agora bipe as caixas`, 'ok');
+    idfBeep(true); idfRender(); return;
+  }
+  if (!idfState.atual) { idfFeedback('⚠ Bipe primeiro a etiqueta do PALETE', 'err'); idfBeep(false); return; }
+  // Etiqueta do sistema bipada por engano no lugar da caixa?
+  if (allItems.length && idfParseEtiqueta(v) && !idfResolver(v, idfIndice()).length) {
+    idfFeedback('⚠ Isso é uma etiqueta do sistema — aqui bipe o código da CAIXA. Para consultar use “2. Consultar etiqueta”.', 'err');
+    idfBeep(false); return;
+  }
+  const idx = idfIndice();
+  const prods = idfResolver(v, idx);
+  idfState.scans.push({ p: idfState.atual, code: v, t: Date.now() }); idfSave();
+  const chave = idfChave(v, idx);
+  const qtdAqui = idfState.scans.filter(s => s.p===idfState.atual && idfChave(s.code, idx)===chave).length;
+  if (prods.length) {
+    idfFeedback(`✔ <b>${esc(prods.map(x=>x.cod).join(' / '))}</b> — ${esc(prods[0].item)} → Palete ${idfPad(idfState.atual)} (${qtdAqui} cx deste item)`, 'ok');
+    idfBeep(true);
+  } else {
+    idfFeedback(`⚠ Código <b>${esc(v)}</b> não encontrado nas NFs carregadas — registrado no Palete ${idfPad(idfState.atual)} mesmo assim (${qtdAqui} cx)`, 'warn');
+    idfBeep(false);
+  }
+  idfRender();
+}
+
+function idfDesfazer(){
+  const s = idfState.scans.pop();
+  if (!s) { toast('Nada para desfazer.'); return; }
+  idfSave(); idfFeedback(`↩ Removido: ${esc(s.code)} do Palete ${idfPad(s.p)}`, 'warn'); idfRender();
+}
+function idfLimparPalete(){
+  const p = idfState.atual; if (!p) { toast('⚠ Nenhum palete selecionado.', true); return; }
+  if (!confirm(`Apagar todos os registros do PALETE ${idfPad(p)}?`)) return;
+  idfState.scans = idfState.scans.filter(s=>s.p!==p); idfSave();
+  idfFeedback(`🧹 Palete ${idfPad(p)} limpo`, 'warn'); idfRender();
+}
+function idfLimparTudo(){
+  if (!idfState.scans.length && !idfState.atual) return;
+  if (!confirm('Zerar TODOS os paletes e registros? (use ao começar uma nova conferência)')) return;
+  idfState = { atual: null, scans: [] }; idfAberto = null; idfSave();
+  idfFeedback('🗑 Tudo zerado', 'warn'); idfRender();
+}
+function idfRemoverUm(p, chave){
+  const idx = idfIndice();
+  for (let i = idfState.scans.length-1; i >= 0; i--) {
+    const s = idfState.scans[i];
+    if (s.p===p && idfChave(s.code, idx)===chave) { idfState.scans.splice(i,1); break; }
+  }
+  idfSave(); idfRender();
+}
+function idfAbrirPalete(p){
+  idfAberto = idfAberto===p ? null : p;
+  if (idfState.atual !== p) { idfState.atual = p; idfSave(); idfFeedback(`📦 PALETE ${idfPad(p)} selecionado manualmente`, 'ok'); }
+  idfRender(); $('idfScanMontar').focus();
+}
+
+function idfRender(){
+  if (!$('idfGrid')) return;
+  $('idfCurPal').textContent = idfState.atual ? idfPad(idfState.atual) : '—';
+  const idx = idfIndice();
+  const porPal = {};
+  idfState.scans.forEach(s => { (porPal[s.p] = porPal[s.p] || []).push(s); });
+  const maxP = Math.max(IDF_QTD_PADRAO, idfState.atual||0, ...Object.keys(porPal).map(Number));
+  let h = '';
+  for (let p = 1; p <= maxP; p++) {
+    const lst = porPal[p] || [];
+    const skus = new Set(lst.map(s=>idfChave(s.code, idx))).size;
+    h += `<div class="idf-pal${lst.length?' cheio':''}${p===idfState.atual?' atual':''}${p===idfAberto?' aberto':''}" onclick="idfAbrirPalete(${p})">
+      <div class="n">${idfPad(p)}</div><div class="c">${lst.length ? `${lst.length} cx · ${skus} cód` : 'vazio'}</div></div>`;
+  }
+  $('idfGrid').innerHTML = h;
+  const usados = Object.keys(porPal).length;
+  $('idfStats').textContent = `${idfState.scans.length} caixa(s) bipada(s) em ${usados} palete(s)`;
+
+  // detalhe do palete aberto
+  const det = $('idfDetalhe');
+  if (!idfAberto) { det.innerHTML = ''; return; }
+  const grupos = {};
+  (porPal[idfAberto]||[]).forEach(s => {
+    const k = idfChave(s.code, idx);
+    if (!grupos[k]) { const r = idfResolver(s.code, idx); grupos[k] = { k, cod: r.length ? r.map(x=>x.cod).join(' / ') : '', item: r.length ? r[0].item : '', code: s.code, n: 0 }; }
+    grupos[k].n++;
+  });
+  const linhas = Object.values(grupos).sort((a,b)=>String(a.cod||'~'+a.code).localeCompare(String(b.cod||'~'+b.code), undefined, {numeric:true}));
+  idfLinhas = linhas.map(l=>l.k);
+  det.innerHTML = `<div class="idf-det"><h3>Palete ${idfPad(idfAberto)} — ${(porPal[idfAberto]||[]).length} caixa(s)</h3>
+    ${linhas.length ? `<table><thead><tr><th>Cód</th><th>Descrição</th><th>Código bipado</th><th>Caixas</th><th></th></tr></thead><tbody>
+    ${linhas.map((l,i)=>`<tr><td><b>${esc(l.cod)||'<span style="color:var(--yellow)">não identificado</span>'}</b></td><td>${esc(l.item)}</td><td style="font-family:monospace">${esc(l.code)}</td><td><b>${l.n}</b></td>
+      <td><button class="btn-outline btn-sm" onclick="idfRemoverUm(${idfAberto}, idfLinhas[${i}])">− 1</button></td></tr>`).join('')}
+    </tbody></table>` : '<div style="color:var(--muted);font-size:13px">Nenhuma caixa bipada neste palete.</div>'}</div>`;
+}
+
+// Consulta: etiqueta do sistema (ou caixa/código) → palete(s)
+function idfConsultar(raw){
+  const v = String(raw||'').trim(); if (!v) return;
+  const out = $('idfResultado');
+  const idx = idfIndice();
+  let info = null, cods = [];
+  const et = idfParseEtiqueta(v);
+  if (et) { info = et; cods = [String(et.cod).toUpperCase()]; }
+  else {
+    const r = idfResolver(v, idx);
+    if (r.length) { cods = r.map(x=>String(x.cod).toUpperCase()); info = { cod: r.map(x=>x.cod).join(' / '), item: r[0].item }; }
+  }
+  if (!cods.length) {
+    // pode ser uma caixa não identificada no XML — procura pelo código bruto
+    const k = 'RAW:' + v.toUpperCase();
+    const pals = idfContarPaletes(c => idfChave(c, idx) === k);
+    if (pals.length) { out.innerHTML = idfHtmlPaletes(pals) + `<div class="idf-res-info">Código <b>${esc(v)}</b></div>`; idfBeep(true); return; }
+    out.innerHTML = `<div class="idf-res-nao">❓ ETIQUETA NÃO RECONHECIDA</div><div class="idf-res-info">Lido: <b style="font-family:monospace">${esc(v)}</b><br>
+      <span style="color:var(--muted);font-size:13px">Verifique se os XMLs dessas NFs estão carregados.</span></div>`;
+    idfBeep(false); return;
+  }
+  const pals = idfContarPaletes(c => cods.includes(idfChave(c, idx)));
+  const infoHtml = `<div class="idf-res-info"><div class="cod">${esc(info.cod)}</div>${esc(info.item||'')}
+    ${info.nf ? `<br>NF <b>${esc(info.nf)}</b>${info.minuta ? ` · Minuta <b>${esc(info.minuta)}</b>` : ''} · Volume do produto <b>${info.vol}</b>` : ''}</div>`;
+  if (!pals.length) {
+    out.innerHTML = `<div class="idf-res-nao">✖ NÃO ESTÁ EM NENHUM PALETE BIPADO</div>` + infoHtml;
+    idfBeep(false); return;
+  }
+  out.innerHTML = idfHtmlPaletes(pals) + infoHtml;
+  idfBeep(true);
+}
+function idfContarPaletes(filtro){
+  const cont = {};
+  idfState.scans.forEach(s => { if (filtro(s.code)) cont[s.p] = (cont[s.p]||0) + 1; });
+  return Object.entries(cont).map(([p,n])=>({ p:+p, n })).sort((a,b)=> b.n-a.n || a.p-b.p);
+}
+function idfHtmlPaletes(pals){
+  return `<div class="idf-res-pals">${pals.map((x,i)=>`<div class="idf-res-pal${i?' sec':''}">
+    <div class="lbl">PALETE</div><div class="n">${idfPad(x.p)}</div><div class="q">${x.n} caixa(s) deste código</div></div>`).join('')}</div>`;
+}
+
+// Etiquetas de palete
+function idfFaixaEtq(){
+  let de = parseInt($('idfEtqDe').value, 10) || 1, ate = parseInt($('idfEtqAte').value, 10) || IDF_QTD_PADRAO;
+  de = Math.max(1, Math.min(99, de)); ate = Math.max(de, Math.min(99, ate));
+  const r = []; for (let n = de; n <= ate; n++) r.push(n); return r;
+}
+function idfPreviewEtiquetas(){
+  const box = $('idfEtqPreview'); if (!box) return;
+  box.innerHTML = idfFaixaEtq().map(n=>`<div class="idf-etq-mini"><div class="n">${n}</div><svg data-v="PLT${idfPad(n)}"></svg></div>`).join('');
+  box.querySelectorAll('svg[data-v]').forEach(s => { try { JsBarcode(s, s.dataset.v, { format:'CODE128', width:1, height:30, displayValue:false, margin:0 }); } catch(e) {} });
+}
+function idfImprimirEtiquetas(){
+  const nums = idfFaixaEtq();
+  const html = nums.map(n=>`<div class="plt"><div class="plt-lbl">PALETE</div><div class="plt-num">${n}</div><svg data-v="PLT${idfPad(n)}"></svg></div>`).join('');
+  const win = window.open('', '_blank');
+  if (!win) { toast('⚠ O navegador bloqueou a janela de impressão.', true); return; }
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Etiquetas de palete ${nums[0]}-${nums[nums.length-1]}</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+    <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff;font-family:Arial,sans-serif}
+    .plt{width:148mm;height:105mm;border:1.5px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;page-break-after:always;break-after:page;overflow:hidden}
+    .plt-lbl{font-size:20pt;font-weight:800;letter-spacing:6px}
+    .plt-num{font-size:170pt;font-weight:900;line-height:.95}
+    .plt svg{width:110mm;height:24mm;margin-top:2mm}
+    @page{size:A4 portrait;margin:5mm}<\/style></head><body>${html}
+    <script>window.onload=function(){setTimeout(function(){
+      document.querySelectorAll('svg[data-v]').forEach(function(s){try{JsBarcode(s,s.dataset.v,{format:'CODE128',width:3,height:80,displayValue:true,fontSize:20,margin:4});}catch(e){}});
+      setTimeout(function(){window.print();},500);},300);};<\/script></body></html>`);
+  win.document.close();
+}
+document.addEventListener('input', e => { if (e.target && (e.target.id==='idfEtqDe' || e.target.id==='idfEtqAte')) idfPreviewEtiquetas(); });
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PRINT (em lotes de 800 — evita arquivos gigantes e demora ao gerar na impressora)
