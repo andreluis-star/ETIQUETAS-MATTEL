@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paletes — Montagem e Consulta</title>
+<!-- Página AVULSA (fora do sistema): 01. Montar paletes e 02. Consultar
+     etiqueta. Usa só o nó "idf_paletes" do Firebase:
+       idf_paletes/catalogo → códigos, descrições e GTIN (publicado pelo sistema)
+       idf_paletes/scans    → cada caixa bipada { p, code, t, dev }
+     Não carrega nenhum outro módulo nem dado do sistema. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3350;--accent:#4f6ef7;--green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--text:#e8eaf6;--muted:#8b92b8;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+header h1{font-size:20px}
+.status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--yellow);flex-shrink:0}
+.dot.on{background:var(--green)}.dot.err{background:var(--red)}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+.modos{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.modo{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:var(--r);font-size:15px;font-weight:700;cursor:pointer}
+.modo.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.help{font-size:14px;color:var(--muted);margin-bottom:12px;line-height:1.5}.help b{color:var(--text)}
+.scan{width:100%;font-size:24px;padding:16px;background:var(--surface2);border:2px solid var(--border);border-radius:var(--r);color:var(--text);outline:none}
+.scan:focus{border-color:var(--accent)}
+.row{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap;margin-bottom:10px}
+.row .scan{flex:1;min-width:220px;width:auto}
+.atual{background:var(--accent);color:#fff;border-radius:var(--r);padding:8px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:140px}
+.atual .lbl{font-size:11px;font-weight:700;letter-spacing:1px;opacity:.85}.atual .val{font-size:44px;font-weight:900;line-height:1}
+.fb{min-height:44px;font-size:16px;font-weight:700;padding:10px 14px;border-radius:var(--r);margin-bottom:10px;background:var(--surface)}
+.fb.ok{background:rgba(34,197,94,.15);color:var(--green)}.fb.err{background:rgba(239,68,68,.15);color:var(--red)}.fb.warn{background:rgba(245,158,11,.15);color:var(--yellow)}
+.acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--accent)}.btn-red{background:var(--red);border-color:var(--red);color:#fff}.btn-sm{padding:4px 10px;font-size:12px}
+.stats{font-size:12px;color:var(--muted);margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-bottom:16px}
+.pal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px;text-align:center;cursor:pointer}
+.pal .n{font-size:28px;font-weight:900;line-height:1.1}.pal .c{font-size:11px;color:var(--muted)}
+.pal.cheio{background:var(--surface2)}.pal.cheio .c{color:var(--green)}
+.pal.sel{border:2px solid var(--accent);background:rgba(79,110,247,.18)}
+.det{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;overflow-x:auto}
+.det h3{font-size:15px;margin-bottom:8px}
+.det table{width:100%;border-collapse:collapse;font-size:13px}
+.det th,.det td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}.det th{color:var(--muted);font-size:11px;text-transform:uppercase}
+.res{margin-top:18px}
+.pals{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:10px 0 18px}
+.rp{background:var(--green);color:#fff;border-radius:18px;padding:14px 34px;text-align:center;min-width:200px}
+.rp .lbl{font-size:18px;font-weight:800;letter-spacing:3px}.rp .n{font-size:140px;font-weight:900;line-height:1}.rp .q{font-size:16px;font-weight:700;opacity:.9}
+.rp.sec{background:var(--surface2);color:var(--text);border:2px solid var(--green)}.rp.sec .n{font-size:90px}
+.info{text-align:center;font-size:17px;line-height:1.6}.info .cod{font-size:38px;font-weight:900}
+.nao{background:rgba(239,68,68,.15);color:var(--red);border-radius:18px;padding:26px;text-align:center;font-size:30px;font-weight:900;margin:10px 0 14px}
+.lido{text-align:center;font-family:monospace;color:var(--muted);margin-top:10px;font-size:13px}
+@media (max-width:600px){.rp .n{font-size:100px}.rp.sec .n{font-size:66px}.nao{font-size:22px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📦 Paletes — Montagem e Consulta</h1>
+  <div class="status"><span class="dot" id="dot"></span><span id="st">conectando…</span></div>
+</header>
+<main>
+  <div class="modos">
+    <button class="modo active" id="mMontar"    onclick="setModo('montar')">📦 01. Montar paletes</button>
+    <button class="modo"        id="mConsultar" onclick="setModo('consultar')">🔍 02. Consultar etiqueta</button>
+  </div>
+
+  <section id="secMontar">
+    <div class="help">Bipe a <b>etiqueta do PALETE</b> e em seguida as <b>caixas</b> que estão sobre ele. Para trocar de palete, basta bipar a etiqueta do próximo.</div>
+    <div class="row">
+      <div class="atual"><span class="lbl">PALETE ATUAL</span><span class="val" id="curPal">—</span></div>
+      <input id="scanMontar" class="scan" placeholder="Bipe aqui o palete ou a caixa…" autocomplete="off">
+    </div>
+    <div id="fb" class="fb"></div>
+    <div class="acoes">
+      <button class="btn" onclick="desfazer()">↩ Desfazer último</button>
+      <button class="btn" onclick="limparPalete()">🧹 Limpar palete atual</button>
+      <button class="btn btn-red" onclick="zerarTudo()">🗑 Zerar tudo</button>
+      <span class="stats" id="stats"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div id="detalhe"></div>
+  </section>
+
+  <section id="secConsultar" style="display:none">
+    <div class="help">Bipe a <b>etiqueta do sistema</b> (ou o código da caixa) para ver em qual palete ela está.</div>
+    <input id="scanConsulta" class="scan" placeholder="Bipe a etiqueta aqui…" autocomplete="off">
+    <div id="res" class="res"></div>
+  </section>
+</main>
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCSdcc_-NHMjIno3teJdFGJ6dSJR5bUqls",
+  authDomain: "cargas-mattel.firebaseapp.com",
+  databaseURL: "https://cargas-mattel-default-rtdb.firebaseio.com",
+  projectId: "cargas-mattel",
+  storageBucket: "cargas-mattel.firebasestorage.app",
+  messagingSenderId: "835464722375",
+  appId: "1:835464722375:web:d312edfda4c1e063e54be2"
+};
+const DB_PATH = 'idf_paletes';
+const QTD_PADRAO = 30;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const pad = n => String(n).padStart(2,'0');
+const ls = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} } };
+
+// Identificação deste aparelho (para "Desfazer último" desfazer só o que ELE bipou)
+let DEV = ls.get('plt_dev'); if (!DEV) { DEV = Math.random().toString(36).slice(2,10); ls.set('plt_dev', DEV); }
+
+let modo = 'montar';
+let atual = parseInt(ls.get('plt_atual'), 10) || null;   // palete atual deste aparelho
+let aberto = atual;
+let scans = {};          // id → { p, code, t, dev }
+let catalogo = [];       // [{ c, d, g }]
+let idx = null;
+let refScans = null, conectado = false;
+
+function status(kind, txt){ $('dot').className = 'dot ' + (kind||''); $('st').textContent = txt; }
+
+// ── Identificação de códigos ───────────────────────────────────────────────
+// Núcleo do GTIN: sem dígito verificador, sem indicador do GTIN-14, sem zeros à esquerda.
+function gtinCore(v){
+  const s = String(v||'').replace(/\s/g,'');
+  if (!/^\d{8,14}$/.test(s)) return '';
+  let d = s.slice(0,-1); if (d.length === 13) d = d.slice(1);
+  return d.replace(/^0+/,'');
+}
+function montarIndice(){
+  const porCod = {}, porGtin = {}, porCore = {};
+  catalogo.forEach(x => {
+    porCod[x.c] = x;
+    if (x.g) { porGtin[x.g] = porGtin[x.g] || x; const k = gtinCore(x.g); if (k) porCore[k] = porCore[k] || x; }
+  });
+  idx = { porCod, porGtin, porCore, lista: catalogo };
+}
+// Código da caixa / código do produto → item do catálogo
+function produto(code){
+  const s = String(code||'').trim().toUpperCase();
+  return idx.porCod[s] || idx.porGtin[s] || idx.porCore[gtinCore(s)] || null;
+}
+// Etiqueta do sistema: NF + MINUTA + CÓD + volume (3 dígitos) → item do catálogo
+function produtoDaEtiqueta(v){
+  const s = String(v||'').trim().toUpperCase();
+  if (s.length <= 5 || !/^\d{3}$/.test(s.slice(-3))) return null;
+  const pre = s.slice(0,-3);
+  let melhor = null;
+  idx.lista.forEach(x => { if (pre.length > x.c.length && pre.endsWith(x.c) && (!melhor || x.c.length > melhor.c.length)) melhor = x; });
+  return melhor;
+}
+// Chave de agrupamento de uma caixa bipada: código do produto, ou o código lido
+const chave = code => { const p = produto(code); return p ? p.c : 'RAW:' + String(code).trim().toUpperCase(); };
+const paleteDoCodigo = v => { const m = String(v||'').trim().toUpperCase().match(/^PLT[-\s]?0*(\d{1,2})$/); return m ? parseInt(m[1],10) : null; };
+
+// ── Sons ───────────────────────────────────────────────────────────────────
+let audio = null;
+function beep(ok){
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const t = (f, i, d) => { const o = audio.createOscillator(), g = audio.createGain(); o.type='square'; o.frequency.value=f; g.gain.value=.08; o.connect(g); g.connect(audio.destination); o.start(audio.currentTime+i); o.stop(audio.currentTime+i+d); };
+    if (ok) t(1400,0,.08); else { t(300,0,.15); t(300,.2,.15); }
+  } catch(e) {}
+}
+function fb(html, tipo){ const el = $('fb'); el.className = 'fb ' + (tipo||''); el.innerHTML = html; }
+
+// ── Modos ──────────────────────────────────────────────────────────────────
+function setModo(m){
+  modo = m;
+  $('secMontar').style.display = m==='montar' ? '' : 'none';
+  $('secConsultar').style.display = m==='consultar' ? '' : 'none';
+  $('mMontar').classList.toggle('active', m==='montar');
+  $('mConsultar').classList.toggle('active', m==='consultar');
+  focar();
+}
+function focar(){ const el = modo==='montar' ? $('scanMontar') : $('scanConsulta'); setTimeout(()=>el.focus(), 0); }
+// Clicar em área vazia devolve o foco ao campo de leitura
+document.addEventListener('click', e => { if (!e.target.closest('input,button,a') && !getSelection().toString()) focar(); });
+
+// ── 01. Montar ─────────────────────────────────────────────────────────────
+function lerMontar(raw){
+  const v = String(raw||'').trim(); if (!v) return;
+  if (!conectado) { fb('⚠ Sem conexão com a base — aguarde “conectado” no topo.', 'err'); beep(false); return; }
+  const p = paleteDoCodigo(v);
+  if (p !== null) {
+    if (p < 1) { fb('⚠ Número de palete inválido', 'err'); beep(false); return; }
+    atual = p; aberto = p; ls.set('plt_atual', p);
+    const n = Object.values(scans).filter(s=>s.p===p).length;
+    fb(`📦 PALETE ${pad(p)} selecionado${n?` (já tem ${n} caixa(s))`:''} — agora bipe as caixas`, 'ok');
+    beep(true); render(); return;
+  }
+  if (!atual) { fb('⚠ Bipe primeiro a etiqueta do PALETE', 'err'); beep(false); return; }
+  const prod = produto(v);
+  if (!prod && produtoDaEtiqueta(v)) {
+    fb('⚠ Isso é uma etiqueta do sistema — aqui bipe o código da CAIXA. Para consultar use “02. Consultar etiqueta”.', 'err');
+    beep(false); return;
+  }
+  // conta ANTES de gravar (o Firebase atualiza "scans" na hora em que grava)
+  const k = chave(v);
+  const qtd = Object.values(scans).filter(s => s.p===atual && chave(s.code)===k).length + 1;
+  refScans.push({ p: atual, code: v, t: Date.now(), dev: DEV })
+    .catch(e => { fb('⚠ Não foi possível salvar: ' + esc(e.message), 'err'); beep(false); });
+  if (prod) { fb(`✔ <b>${esc(prod.c)}</b> — ${esc(prod.d)} → Palete ${pad(atual)} (${qtd} cx deste item)`, 'ok'); beep(true); }
+  else { fb(`⚠ Código <b>${esc(v)}</b> não está no catálogo — registrado no Palete ${pad(atual)} mesmo assim (${qtd} cx)`, 'warn'); beep(false); }
+}
+function desfazer(){
+  const meus = Object.entries(scans).filter(([,s]) => s.dev===DEV).sort((a,b)=>b[1].t-a[1].t);
+  if (!meus.length) { fb('Nada deste aparelho para desfazer.', 'warn'); return; }
+  const [id, s] = meus[0];
+  refScans.child(id).remove();
+  fb(`↩ Removido: ${esc(s.code)} do Palete ${pad(s.p)}`, 'warn');
+}
+function limparPalete(){
+  if (!atual) { fb('⚠ Nenhum palete selecionado.', 'err'); return; }
+  if (!confirm(`Apagar todos os registros do PALETE ${pad(atual)}?`)) return;
+  const upd = {};
+  Object.entries(scans).forEach(([id,s]) => { if (s.p===atual) upd[id] = null; });
+  refScans.update(upd);
+  fb(`🧹 Palete ${pad(atual)} limpo`, 'warn');
+}
+function zerarTudo(){
+  if (!confirm('Zerar TODOS os paletes e registros? Isso vale para todos que usam esta página.')) return;
+  refScans.remove();
+  atual = null; aberto = null; ls.set('plt_atual', '');
+  fb('🗑 Tudo zerado', 'warn'); render();
+}
+function removerUm(p, k){
+  const alvo = Object.entries(scans).filter(([,s]) => s.p===p && chave(s.code)===k).sort((a,b)=>b[1].t-a[1].t)[0];
+  if (alvo) refScans.child(alvo[0]).remove();
+}
+function abrirPalete(p){
+  aberto = aberto===p ? null : p;
+  if (atual !== p) { atual = p; ls.set('plt_atual', p); fb(`📦 PALETE ${pad(p)} selecionado manualmente`, 'ok'); }
+  render(); focar();
+}
+let linhasDet = [];
+function render(){
+  $('curPal').textContent = atual ? pad(atual) : '—';
+  const porPal = {};
+  Object.values(scans).forEach(s => { (porPal[s.p] = porPal[s.p] || []).push(s); });
+  const maxP = Math.max(QTD_PADRAO, atual||0, ...Object.keys(porPal).map(Number));
+  let h = '';
+  for (let p = 1; p <= maxP; p++) {
+    const l = porPal[p] || [];
+    const cods = new Set(l.map(s=>chave(s.code))).size;
+    h += `<div class="pal${l.length?' cheio':''}${p===atual?' sel':''}" onclick="abrirPalete(${p})"><div class="n">${pad(p)}</div><div class="c">${l.length ? `${l.length} cx · ${cods} cód` : 'vazio'}</div></div>`;
+  }
+  $('grid').innerHTML = h;
+  $('stats').textContent = `${Object.keys(scans).length} caixa(s) em ${Object.keys(porPal).length} palete(s)`;
+  const det = $('detalhe');
+  if (!aberto) { det.innerHTML = ''; return; }
+  const g = {};
+  (porPal[aberto]||[]).forEach(s => {
+    const k = chave(s.code);
+    if (!g[k]) { const pr = produto(s.code); g[k] = { k, cod: pr ? pr.c : '', d: pr ? pr.d : '', code: s.code, n: 0 }; }
+    g[k].n++;
+  });
+  const linhas = Object.values(g).sort((a,b)=>String(a.cod||'~'+a.code).localeCompare(String(b.cod||'~'+b.code), undefined, {numeric:true}));
+  linhasDet = linhas.map(l=>l.k);
+  det.innerHTML = `<div class="det"><h3>Palete ${pad(aberto)} — ${(porPal[aberto]||[]).length} caixa(s)</h3>
+    ${linhas.length ? `<table><thead><tr><th>Cód</th><th>Descrição</th><th>Código bipado</th><th>Caixas</th><th></th></tr></thead><tbody>
+    ${linhas.map((l,i)=>`<tr><td><b>${l.cod ? esc(l.cod) : '<span style="color:var(--yellow)">não identificado</span>'}</b></td><td>${esc(l.d)}</td><td style="font-family:monospace">${esc(l.code)}</td><td><b>${l.n}</b></td>
+      <td><button class="btn btn-sm" onclick="removerUm(${aberto}, linhasDet[${i}])">− 1</button></td></tr>`).join('')}
+    </tbody></table>` : '<div style="color:var(--muted);font-size:13px">Nenhuma caixa bipada neste palete.</div>'}</div>`;
+}
+
+// ── 02. Consultar ──────────────────────────────────────────────────────────
+function consultar(raw){
+  const v = String(raw||'').trim(); if (!v) return;
+  const out = $('res');
+  if (!conectado) { out.innerHTML = '<div class="nao">⏳ Aguardando conexão…</div>'; beep(false); return; }
+  const prod = produtoDaEtiqueta(v) && !produto(v) ? produtoDaEtiqueta(v) : produto(v);
+  const k = prod ? prod.c : 'RAW:' + v.toUpperCase();
+  const cont = {};
+  Object.values(scans).forEach(s => { if (chave(s.code) === k) cont[s.p] = (cont[s.p]||0) + 1; });
+  const pals = Object.entries(cont).map(([p,n])=>({ p:+p, n })).sort((a,b)=>b.n-a.n || a.p-b.p);
+  const info = prod ? `<div class="info"><div class="cod">${esc(prod.c)}</div>${esc(prod.d)}</div>` : '';
+  const lido = `<div class="lido">lido: ${esc(v)}</div>`;
+  if (!pals.length) {
+    out.innerHTML = (prod ? '<div class="nao">✖ NÃO ESTÁ EM NENHUM PALETE</div>' : '<div class="nao">❓ ETIQUETA NÃO RECONHECIDA</div>') + info + lido;
+    beep(false); return;
+  }
+  out.innerHTML = `<div class="pals">${pals.map((x,i)=>`<div class="rp${i?' sec':''}"><div class="lbl">PALETE</div><div class="n">${pad(x.p)}</div><div class="q">${x.n} caixa(s) deste código</div></div>`).join('')}</div>` + info + lido;
+  beep(true);
+}
+
+// ── Leitor: Enter envia ────────────────────────────────────────────────────
+$('scanMontar').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); lerMontar(e.target.value); e.target.value=''; } });
+$('scanConsulta').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); consultar(e.target.value); e.target.value=''; } });
+
+// ── Firebase (tempo real) ──────────────────────────────────────────────────
+montarIndice(); render(); focar();
+function atualizarStatus(){
+  const n = Object.keys(scans).length;
+  status('on', `conectado · ${catalogo.length} códigos no catálogo · ${n} caixa(s) bipada(s)`);
+}
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const db = firebase.database();
+  refScans = db.ref(DB_PATH + '/scans');
+  const erro = e => {
+    conectado = false;
+    status('err', /permission/i.test(e && e.message) ? 'sem permissão na base (regra do Firebase para idf_paletes)' : 'erro de conexão');
+  };
+  db.ref(DB_PATH + '/catalogo').on('value', snap => {
+    const v = snap.val(); catalogo = (v && v.itens) || []; montarIndice(); render(); if (conectado) atualizarStatus();
+  }, erro);
+  refScans.on('value', snap => { scans = snap.val() || {}; conectado = true; render(); atualizarStatus(); }, erro);
+} catch(e) { status('err', 'Firebase não carregou'); }
+</script>
+</body>
+</html>
