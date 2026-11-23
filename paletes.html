@@ -53,8 +53,19 @@ main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
 .rp.sec{background:var(--surface2);color:var(--text);border:2px solid var(--green)}.rp.sec .n{font-size:90px}
 .info{text-align:center;font-size:17px;line-height:1.6}.info .cod{font-size:38px;font-weight:900}
 .nao{background:rgba(239,68,68,.15);color:var(--red);border-radius:18px;padding:26px;text-align:center;font-size:30px;font-weight:900;margin:10px 0 14px}
+.consulta-row{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
+.consulta-row .scan{flex:1 1 260px;min-width:0;width:auto;text-transform:uppercase}
+.consulta-row .scan::placeholder{text-transform:none}
+.kbd{flex:1 0 auto;font-size:15px;font-weight:700;padding:12px 16px;border-radius:var(--r);border:2px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;white-space:nowrap}
+.kbd.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-go{flex:1 0 auto;font-size:15px;font-weight:700;padding:12px 18px;border-radius:var(--r);border:2px solid var(--green);background:var(--green);color:#fff;cursor:pointer;display:none}
+.kbd-on .btn-go{display:block}
+.sug{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.sug button{background:var(--surface2);border:2px solid var(--border);color:var(--text);border-radius:var(--r);padding:10px 14px;cursor:pointer;text-align:left;font-size:13px;max-width:320px}
+.sug button b{display:block;font-size:22px}
+.sug-t{text-align:center;font-size:16px;font-weight:700;color:var(--yellow);margin-top:10px}
 .lido{text-align:center;font-family:monospace;color:var(--muted);margin-top:10px;font-size:13px}
-@media (max-width:600px){.rp .n{font-size:100px}.rp.sec .n{font-size:66px}.nao{font-size:22px}}
+@media (max-width:600px){.consulta-row .scan{flex-basis:100%}.rp .n{font-size:100px}.rp.sec .n{font-size:66px}.nao{font-size:22px}}
 </style>
 </head>
 <body>
@@ -86,8 +97,12 @@ main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
   </section>
 
   <section id="secConsultar" style="display:none">
-    <div class="help">Bipe a <b>etiqueta do sistema</b> (ou o código da caixa) para ver em qual palete ela está.</div>
-    <input id="scanConsulta" class="scan" placeholder="Bipe a etiqueta aqui…" autocomplete="off">
+    <div class="help">Bipe a <b>etiqueta do sistema</b> ou o código da caixa — ou digite o <b>código do produto</b> (ex.: C1817, JLM90). Sem bipador, toque em <b>⌨ Teclado</b>.</div>
+    <div class="consulta-row" id="consultaRow">
+      <input id="scanConsulta" class="scan" placeholder="Bipe a etiqueta ou digite o código…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="none" enterkeyhint="search">
+      <button class="btn-go" type="button" onclick="enviarConsulta()">🔍 Consultar</button>
+      <button class="kbd" id="btnKbd" type="button" onclick="alternarTeclado()">⌨ Teclado</button>
+    </div>
     <div id="res" class="res"></div>
   </section>
 </main>
@@ -133,7 +148,7 @@ function gtinCore(v){
 function montarIndice(){
   const porCod = {}, porGtin = {}, porCore = {};
   catalogo.forEach(x => {
-    porCod[x.c] = x;
+    porCod[String(x.c).toUpperCase()] = x;
     if (x.g) { porGtin[x.g] = porGtin[x.g] || x; const k = gtinCore(x.g); if (k) porCore[k] = porCore[k] || x; }
   });
   idx = { porCod, porGtin, porCore, lista: catalogo };
@@ -268,11 +283,49 @@ function render(){
 }
 
 // ── 02. Consultar ──────────────────────────────────────────────────────────
+// Busca por código digitado em parte: primeiro os que COMEÇAM com o texto,
+// depois os que CONTÊM. Ignora espaços, hífens e pontos.
+const normCod = t => String(t||'').toUpperCase().replace(/[\s.\-_/]/g,'');
+function buscarCodigos(v){
+  const q = normCod(v); if (q.length < 2) return [];
+  const ini = [], meio = [];
+  idx.lista.forEach(x => { const c = normCod(x.c); if (c === q) ini.unshift(x); else if (c.startsWith(q)) ini.push(x); else if (c.includes(q)) meio.push(x); });
+  if (ini.length && normCod(ini[0].c) === q) return [ini[0]];
+  return [...ini, ...meio];
+}
+// Teclado na tela: por padrão fica escondido (inputmode="none") para o
+// bipador trabalhar sem o teclado cobrir a tela. O botão libera o teclado.
+let tecladoOn = ls.get('plt_kbd') === '1';
+function aplicarTeclado(){
+  const el = $('scanConsulta');
+  el.setAttribute('inputmode', tecladoOn ? 'text' : 'none');
+  $('btnKbd').classList.toggle('on', tecladoOn);
+  $('btnKbd').textContent = tecladoOn ? '⌨ Fechar teclado' : '⌨ Teclado';
+  $('consultaRow').classList.toggle('kbd-on', tecladoOn);
+  el.placeholder = tecladoOn ? 'Digite o código (ex.: C1817)' : 'Bipe a etiqueta ou digite o código…';
+}
+function alternarTeclado(){
+  tecladoOn = !tecladoOn; ls.set('plt_kbd', tecladoOn ? '1' : '0'); aplicarTeclado();
+  const el = $('scanConsulta');
+  // blur + focus no mesmo toque: o celular reavalia o inputmode e abre/fecha o teclado
+  el.blur(); el.focus();
+}
+function enviarConsulta(){ const el = $('scanConsulta'); consultar(el.value); el.value=''; el.focus(); }
 function consultar(raw){
   const v = String(raw||'').trim(); if (!v) return;
   const out = $('res');
   if (!conectado) { out.innerHTML = '<div class="nao">⏳ Aguardando conexão…</div>'; beep(false); return; }
-  const prod = produtoDaEtiqueta(v) && !produto(v) ? produtoDaEtiqueta(v) : produto(v);
+  let prod = produtoDaEtiqueta(v) && !produto(v) ? produtoDaEtiqueta(v) : produto(v);
+  // Código digitado em parte (ex.: "1817" ou "JLM"): procura no catálogo
+  if (!prod && !paleteDoCodigo(v)) {
+    const achados = buscarCodigos(v);
+    if (achados.length === 1) prod = achados[0];
+    else if (achados.length > 1) {
+      const mais = achados.length > 12 ? `<div class="lido">mostrando 12 de ${achados.length} — digite mais caracteres</div>` : '';
+      out.innerHTML = `<div class="sug-t">Vários códigos encontrados — toque no certo:</div><div class="sug">${achados.slice(0,12).map(x=>`<button type="button" onclick="consultar('${esc(x.c).replace(/'/g,"\\'")}')"><b>${esc(x.c)}</b>${esc(x.d)}</button>`).join('')}</div>${mais}<div class="lido">digitado: ${esc(v)}</div>`;
+      beep(true); return;
+    }
+  }
   const k = prod ? prod.c : 'RAW:' + v.toUpperCase();
   const cont = {};
   Object.values(scans).forEach(s => { if (chave(s.code) === k) cont[s.p] = (cont[s.p]||0) + 1; });
@@ -280,7 +333,7 @@ function consultar(raw){
   const info = prod ? `<div class="info"><div class="cod">${esc(prod.c)}</div>${esc(prod.d)}</div>` : '';
   const lido = `<div class="lido">lido: ${esc(v)}</div>`;
   if (!pals.length) {
-    out.innerHTML = (prod ? '<div class="nao">✖ NÃO ESTÁ EM NENHUM PALETE</div>' : '<div class="nao">❓ ETIQUETA NÃO RECONHECIDA</div>') + info + lido;
+    out.innerHTML = (prod ? '<div class="nao">✖ NÃO ESTÁ EM NENHUM PALETE</div>' : '<div class="nao">❓ CÓDIGO / ETIQUETA NÃO RECONHECIDO</div>') + info + lido;
     beep(false); return;
   }
   out.innerHTML = `<div class="pals">${pals.map((x,i)=>`<div class="rp${i?' sec':''}"><div class="lbl">PALETE</div><div class="n">${pad(x.p)}</div><div class="q">${x.n} caixa(s) deste código</div></div>`).join('')}</div>` + info + lido;
@@ -290,6 +343,7 @@ function consultar(raw){
 // ── Leitor: Enter envia ────────────────────────────────────────────────────
 $('scanMontar').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); lerMontar(e.target.value); e.target.value=''; } });
 $('scanConsulta').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); consultar(e.target.value); e.target.value=''; } });
+aplicarTeclado();
 
 // ── Firebase (tempo real) ──────────────────────────────────────────────────
 montarIndice(); render(); focar();
