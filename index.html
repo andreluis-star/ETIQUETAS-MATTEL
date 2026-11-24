@@ -2969,8 +2969,8 @@ function mapaFiguraPorMinuta(minutaCargas, _procList) {
     }
   }
   // FIGURA DA MINUTA: cada minuta recebe uma figura conforme a sua posição
-  // (ordem crescente) entre TODAS as minutas do mesmo processo — não só das
-  // selecionadas — para que reimpressões parciais saiam com a mesma figura.
+  // entre TODAS as minutas do mesmo DIA (todos os processos do dia) — não só
+  // das selecionadas — para que reimpressões parciais saiam com a mesma figura.
   const minutaDaNf = nf => minutaCargas[nf] || nfMinutas[nf] || '';
   const nfParaProcCod = {};
   _procList.forEach(p=>{ (p.nfs||[]).forEach(nf=>{ nfParaProcCod[nf] = p.codigo || ''; }); });
@@ -2983,16 +2983,26 @@ function mapaFiguraPorMinuta(minutaCargas, _procList) {
     const c = (contagemMinProc[String(m)] = contagemMinProc[String(m)] || {});
     c[g] = (c[g] || 0) + 1;
   });
-  const minutasPorProc = {};
+  // As figuras NÃO se repetem no mesmo DIA: todas as minutas dos processos
+  // daquele dia entram numa única sequência (ordenada por processo e depois
+  // por minuta), e cada uma recebe a próxima figura da lista.
+  // Processo sem data → sequência própria (como antes).
+  const diaDoProc = {};
+  _procList.forEach(p=>{
+    if (p.ano && p.mes && p.dia) diaDoProc[p.codigo || ''] = `${p.ano}-${String(p.mes).padStart(2,'0')}-${String(p.dia).padStart(2,'0')}`;
+  });
+  const minutasPorDia = {};   // dia → [{ m, g }]
   for (const m in contagemMinProc) {
     const c = contagemMinProc[m];
     const g = Object.keys(c).sort((a,b)=> (c[b]-c[a]) || (!a - !b) || a.localeCompare(b))[0];
-    (minutasPorProc[g] = minutasPorProc[g] || []).push(m);
+    const dia = diaDoProc[g] || ('PROC:' + g);
+    (minutasPorDia[dia] = minutasPorDia[dia] || []).push({ m, g });
   }
+  const cmp = (a,b) => String(a).localeCompare(String(b), undefined, {numeric:true, sensitivity:'base'});
   const figuraPorMinuta = {};
-  for (const g in minutasPorProc) {
-    minutasPorProc[g].sort((a,b)=>a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}))
-      .forEach((m, i) => { figuraPorMinuta[m] = i; });
+  for (const dia in minutasPorDia) {
+    minutasPorDia[dia].sort((a,b)=> (!a.g - !b.g) || cmp(a.g, b.g) || cmp(a.m, b.m))
+      .forEach((x, i) => { figuraPorMinuta[x.m] = i; });
   }
   return figuraPorMinuta;
 }
