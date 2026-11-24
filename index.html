@@ -911,6 +911,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
               <button class="tab-btn"        id="btnSortMin" onclick="setLabelSort('minuta')" title="Agrupa as etiquetas por minuta (dentro de cada minuta, por NF)">Minuta</button>
             </div>
             <button class="tab-btn" id="btnSortDir" onclick="toggleLabelSortDir()" title="Inverter a ordem (crescente / decrescente)" style="margin-left:6px;">↓ A-Z</button>
+            <button class="tab-btn" id="btnSepSku" onclick="toggleSepSku()" title="Incluir ou não a etiqueta separadora entre um SKU e o próximo" style="margin-left:6px;display:none;">✂ Separadores: SIM</button>
           </div>
           <div class="label-count-badge">Etiquetas na seleção: <b id="labelCount">0</b></div>
           <button class="btn-purple" onclick="gerarEtiquetas()">✨ Gerar etiquetas</button>
@@ -2751,12 +2752,28 @@ let labelSortDir = 'asc';  // 'asc' (A-Z / crescente) | 'desc' (Z-A / decrescent
 let labelGenMode = 'nota'; // 'nota' | 'processo' | 'data' | 'minuta'
 let labelSelecionados = new Set(); // chaves marcadas no seletor atual
 let labelGerado = false; // já foi gerada a pré-visualização?
+// Separadores entre SKUs (modo Código/SKU) são opcionais. Padrão: ligados.
+// A escolha fica lembrada neste navegador.
+let labelSepSku = (()=>{ try { return localStorage.getItem('etq_sep_sku') !== '0'; } catch(e){ return true; } })();
+function atualizarBtnSepSku() {
+  const b = $('btnSepSku'); if (!b) return;
+  b.style.display = labelSortMode === 'cod' ? '' : 'none';
+  b.textContent = labelSepSku ? '✂ Separadores: SIM' : '✂ Separadores: NÃO';
+  b.classList.toggle('active', labelSepSku);
+}
+function toggleSepSku() {
+  labelSepSku = !labelSepSku;
+  try { localStorage.setItem('etq_sep_sku', labelSepSku ? '1' : '0'); } catch(e){}
+  atualizarBtnSepSku();
+  if (labelGerado) gerarEtiquetas();
+}
 
 function setLabelSort(mode) {
   labelSortMode = mode;
   $('btnSortNf').classList.toggle('active', mode==='nf');
   $('btnSortCod').classList.toggle('active', mode==='cod');
   if ($('btnSortMin')) $('btnSortMin').classList.toggle('active', mode==='minuta');
+  atualizarBtnSepSku();
   if (labelGerado) gerarEtiquetas(); // re-gera na nova ordem só se já foi gerado
 }
 
@@ -3113,7 +3130,7 @@ function buildLabelParams(nfsFiltro) {
   // No modo Código/SKU, insere uma ETIQUETA SEPARADORA entre um SKU e o
   // próximo — só ENTRE os grupos (nunca antes do primeiro nem após o último).
   // A etiqueta mostra as 3 últimas letras do PROCESSO do SKU seguinte.
-  if (labelSortMode === 'cod' && labels.length > 1) {
+  if (labelSortMode === 'cod' && labelSepSku && labels.length > 1) {
     // mapa NF → código do processo (via ponte com o Acompanhamento de Cargas)
     const nfParaProc = {};
     let procList = [];
