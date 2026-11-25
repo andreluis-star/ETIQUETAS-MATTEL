@@ -293,7 +293,8 @@ td.qtd{text-align:right;font-weight:600}
 .et-row4{grid-row:4;grid-column:1;background:#fff;color:#000;display:flex;align-items:center;justify-content:space-between;padding:1.5mm 3mm;border-bottom:1.5px solid #000}
 .et-cod-section{display:flex;flex-direction:column;justify-content:center}
 .et-cod-lbl{font-size:7pt;color:#000;line-height:1;margin-bottom:.5mm}
-.et-cod-val{font-size:44pt;font-weight:900;color:#000;letter-spacing:.5px;line-height:1}
+.et-cod-val{font-size:44pt;font-weight:900;color:#000;letter-spacing:.5px;line-height:1;padding:.5mm 2mm;border:1.5px solid #000;border-radius:1.5mm;align-self:flex-start}
+.et-cod-val.et-cod-inv{background:#000;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .et-sku-section{display:flex;flex-direction:column;align-items:flex-end;justify-content:center}
 .et-sku-lbl{font-size:7pt;color:#000;line-height:1;margin-bottom:.5mm}
 .et-sku-val{font-family:monospace;font-size:8pt;color:#000;font-weight:700}
@@ -908,6 +909,7 @@ td.sig-code{font-family:monospace;font-weight:700;color:var(--accent);font-size:
             <div class="tabs">
               <button class="tab-btn active" id="btnSortNf"  onclick="setLabelSort('nf')">Nota Fiscal</button>
               <button class="tab-btn"        id="btnSortCod" onclick="setLabelSort('cod')">Código (SKU)</button>
+              <button class="tab-btn"        id="btnSortQtd" onclick="setLabelSort('qtd')" title="Agrupa os SKUs pela quantidade de volumes: primeiro todos os SKUs com 1 volume, depois os com 2, 3...">Qtd. volumes (SKU)</button>
               <button class="tab-btn"        id="btnSortMin" onclick="setLabelSort('minuta')" title="Agrupa as etiquetas por minuta (dentro de cada minuta, por NF)">Minuta</button>
             </div>
             <button class="tab-btn" id="btnSortDir" onclick="toggleLabelSortDir()" title="Inverter a ordem (crescente / decrescente)" style="margin-left:6px;">↓ A-Z</button>
@@ -2713,7 +2715,7 @@ function buildLabel(p) {
   <div class="et-row4">
     <div class="et-cod-section">
       <span class="et-cod-lbl">Cód:</span>
-      <span class="et-cod-val">${esc(p.cod)}</span>
+      <span class="et-cod-val${p.codInv ? ' et-cod-inv' : ''}">${esc(p.cod)}</span>
     </div>
     <div class="et-sku-section">
       <span class="et-sku-lbl">CONT. GERAL ETIQ</span>
@@ -2747,7 +2749,8 @@ function buildLabel(p) {
 // ══════════════════════════════════════════════════════════════════════════════
 // ORDENAÇÃO DAS ETIQUETAS (por Nota Fiscal ou por Código/SKU)
 // ══════════════════════════════════════════════════════════════════════════════
-let labelSortMode = 'nf'; // 'nf' | 'cod' | 'minuta'
+let labelSortMode = 'nf'; // 'nf' | 'cod' | 'qtd' | 'minuta'
+const modoPorSku = () => labelSortMode === 'cod' || labelSortMode === 'qtd';
 let labelSortDir = 'asc';  // 'asc' (A-Z / crescente) | 'desc' (Z-A / decrescente)
 let labelGenMode = 'nota'; // 'nota' | 'processo' | 'data' | 'minuta'
 let labelSelecionados = new Set(); // chaves marcadas no seletor atual
@@ -2757,7 +2760,7 @@ let labelGerado = false; // já foi gerada a pré-visualização?
 let labelSepSku = (()=>{ try { return localStorage.getItem('etq_sep_sku') !== '0'; } catch(e){ return true; } })();
 function atualizarBtnSepSku() {
   const b = $('btnSepSku'); if (!b) return;
-  b.style.display = labelSortMode === 'cod' ? '' : 'none';
+  b.style.display = modoPorSku() ? '' : 'none';
   b.textContent = labelSepSku ? '✂ Separadores: SIM' : '✂ Separadores: NÃO';
   b.classList.toggle('active', labelSepSku);
 }
@@ -2772,6 +2775,7 @@ function setLabelSort(mode) {
   labelSortMode = mode;
   $('btnSortNf').classList.toggle('active', mode==='nf');
   $('btnSortCod').classList.toggle('active', mode==='cod');
+  if ($('btnSortQtd')) $('btnSortQtd').classList.toggle('active', mode==='qtd');
   if ($('btnSortMin')) $('btnSortMin').classList.toggle('active', mode==='minuta');
   atualizarBtnSepSku();
   if (labelGerado) gerarEtiquetas(); // re-gera na nova ordem só se já foi gerado
@@ -3090,7 +3094,22 @@ function buildLabelParams(nfsFiltro) {
   // Ordenação base (crescente). No modo Nota Fiscal, ordena por número da NF;
   // no modo Código, por código e depois NF. A direção (asc/desc) é aplicada
   // logo em seguida invertendo a lista final.
-  if (labelSortMode === 'cod') {
+  if (labelSortMode === 'qtd') {
+    // modo Qtd. volumes: agrupa os SKUs pela quantidade de etiquetas (volumes)
+    // que cada um tem na seleção — 1º todos com 1 volume, depois 2, 3... e,
+    // dentro de cada quantidade, por código; dentro do SKU, por NF e volume.
+    const volPorCod = {};
+    labels.forEach(l => { const k = String(l.cod); volPorCod[k] = (volPorCod[k]||0) + 1; });
+    labels.forEach(l => { l.qtdSku = volPorCod[String(l.cod)]; });
+    labels.sort((a,b) => {
+      if (a.qtdSku !== b.qtdSku) return a.qtdSku - b.qtdSku;
+      const c = String(a.cod).localeCompare(String(b.cod), undefined, { numeric:true, sensitivity:'base' });
+      if (c !== 0) return c;
+      const n = String(a.nf).localeCompare(String(b.nf), undefined, { numeric:true });
+      if (n !== 0) return n;
+      return a.volProd - b.volProd;
+    });
+  } else if (labelSortMode === 'cod') {
     labels.sort((a,b) => {
       const c = String(a.cod).localeCompare(String(b.cod), undefined, { numeric:true, sensitivity:'base' });
       if (c !== 0) return c;
@@ -3127,10 +3146,20 @@ function buildLabelParams(nfsFiltro) {
   const totalLabels = labels.length;
   labels.forEach((l, idx) => { l.seq = idx + 1; l.totalLabels = totalLabels; });
 
+  // Nos modos por SKU, o código alterna entre PRETO NO BRANCO e BRANCO NO
+  // PRETO a cada troca de SKU — mudança visível na pilha de etiquetas.
+  if (modoPorSku()) {
+    let inv = false;
+    labels.forEach((l, idx) => {
+      if (idx > 0 && String(l.cod) !== String(labels[idx-1].cod)) inv = !inv;
+      l.codInv = inv;
+    });
+  }
+
   // No modo Código/SKU, insere uma ETIQUETA SEPARADORA entre um SKU e o
   // próximo — só ENTRE os grupos (nunca antes do primeiro nem após o último).
   // A etiqueta mostra as 3 últimas letras do PROCESSO do SKU seguinte.
-  if (labelSortMode === 'cod' && labelSepSku && labels.length > 1) {
+  if (modoPorSku() && labelSepSku && labels.length > 1) {
     // mapa NF → código do processo (via ponte com o Acompanhamento de Cargas)
     const nfParaProc = {};
     let procList = [];
@@ -3333,7 +3362,8 @@ function labelPrintCss() {
     .et-row4{grid-row:4;grid-column:1;background:#fff;color:#000;display:flex;align-items:center;justify-content:space-between;padding:1.5mm 3mm;border-bottom:1.5px solid #000}
     .et-cod-section{display:flex;flex-direction:column;justify-content:center}
     .et-cod-lbl{font-size:7pt;color:#000;line-height:1;margin-bottom:.5mm}
-    .et-cod-val{font-size:44pt;font-weight:900;color:#000;letter-spacing:.5px;line-height:1}
+    .et-cod-val{font-size:44pt;font-weight:900;color:#000;letter-spacing:.5px;line-height:1;padding:.5mm 2mm;border:1.5px solid #000;border-radius:1.5mm;align-self:flex-start}
+    .et-cod-val.et-cod-inv{background:#000;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .et-sku-section{display:flex;flex-direction:column;align-items:flex-end;justify-content:center}
     .et-sku-lbl{font-size:7pt;color:#000;line-height:1;margin-bottom:.5mm}
     .et-sku-val{font-family:monospace;font-size:8pt;color:#000;font-weight:700}
